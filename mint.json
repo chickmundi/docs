@@ -72,7 +72,8 @@
         "product/authentication-strategy",
         "product/ai-architecture",
         "product/deployment-architecture",
-        "product/ui-ux-wireframes"
+        "product/ui-ux-wireframes",
+        "product/component-library"
       ]
     },
     {

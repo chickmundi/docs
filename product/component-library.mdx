@@ -1,0 +1,147 @@
+---
+title: 'Component Library'
+description: 'DealMarket Cameroon — Phase 14: design tokens and the reusable component system.'
+icon: 'shapes'
+---
+
+<Note>
+**Phase 14** of the DealMarket Cameroon build roadmap. This is the visual and interaction system applied to the layouts from [UI/UX Wireframes](/product/ui-ux-wireframes) to hit the "premium, Apple/Airbnb/Uber/Spotify-inspired" bar set in the [PRD §10](/product/requirements). Tokens are the literal contents of `packages/design-tokens` from [Folder Architecture §2](/product/folder-architecture); components are what both `apps/mobile` and `apps/web` build their screens from — no feature module hand-rolls its own button or card.
+</Note>
+
+## 1. Principles
+
+1. **One token source, two rendered outputs.** Every color, spacing, and type value is authored once in `packages/design-tokens` and compiled to a Dart theme file for Flutter and a Tailwind config for Next.js — never hand-copied between platforms (NFR-LOC-001, NFR-ENG-005).
+2. **Dark mode is a token swap, not a second design.** Every component is specified against semantic token names (`surface.primary`, `text.default`), never literal colors, so light/dark parity (NFR-UX §7) is automatic rather than a maintained duplicate.
+3. **Restraint over decoration.** Motion, shadow, and color are used to establish hierarchy and give feedback — not as embellishment. This is what separates "feels premium" from "feels busy," and it's the same discipline Apple/Airbnb-caliber products share despite very different visual styles.
+4. **Accessible by default, not by exception.** Contrast, tap-target size, and screen-reader labeling are component-level requirements checked in Storybook/Widgetbook (§8), not a late audit pass.
+5. **A component exists once someone building a screen needs it — no earlier.** No components are pre-built speculatively; the inventory in §5 is derived directly from the wireframes in Phase 13, not from a generic UI-kit checklist.
+
+---
+
+## 2. Foundations — Color
+
+| Token | Light | Dark | Usage |
+|---|---|---|---|
+| `color.primary.500` | `#0EA968` | `#22C57D` | Brand primary — savings/positive association, CTAs, active nav state |
+| `color.primary.700` | `#087749` | `#0EA968` | Pressed/emphasis state of primary |
+| `color.accent.500` | `#F5A623` | `#FFB84D` | Deal energy — discount badges, flash-deal highlights, countdown urgency at low time |
+| `color.danger.500` | `#E5484D` | `#F2555A` | Errors, expired-deal states, destructive actions |
+| `color.surface.default` | `#FFFFFF` | `#121212` | Base screen background |
+| `color.surface.raised` | `#F7F8F9` | `#1E1E1E` | Cards, sheets |
+| `color.text.default` | `#161B1D` | `#F2F3F4` | Primary text |
+| `color.text.muted` | `#5C6569` | `#A3ACB0` | Secondary text, metadata (distance, timestamps) |
+| `color.border.default` | `#E4E7E8` | `#2C2C2C` | Dividers, input borders |
+
+Each token has a full 50–900 numeric scale (not shown in full here) so components can express hover/pressed/disabled states without inventing one-off shades. Primary green was chosen for its savings/positive association (and quiet resonance with the Cameroonian flag palette without being literal); accent amber carries the "deal" energy that green alone can't — used sparingly (badges, urgency), never as a large surface color, so it stays an accent rather than competing with primary.
+
+## 3. Foundations — Typography
+
+| Token | Value | Notes |
+|---|---|---|
+| Typeface | Inter (variable) | Strong French-accent glyph support, excellent legibility at small sizes on mid/low-end Android screens (Phase 5, Amina/Junior device profile), free and license-clean for both platforms. |
+| `text.display` | 28/34, weight 700 | Screen titles (rare — most screens use `text.heading`) |
+| `text.heading` | 20/26, weight 600 | Section headers, Deal Detail product name |
+| `text.body` | 15/22, weight 400 | Default body copy |
+| `text.body-strong` | 15/22, weight 600 | Prices, key data points |
+| `text.caption` | 13/18, weight 400 | Metadata — distance, timestamps, confidence labels |
+
+## 4. Foundations — Spacing, Radius, Elevation, Motion
+
+| System | Scale |
+|---|---|
+| Spacing | 4px base grid: `4, 8, 12, 16, 24, 32, 40, 48, 64` — components compose from these only, no arbitrary pixel values |
+| Radius | `radius.sm=8, radius.md=12, radius.lg=16, radius.full=9999` — cards use `md`, buttons use `full` or `sm` depending on size, sheets use `lg` on the top corners only |
+| Elevation | `elevation.0` (flat) through `elevation.3` (modal/sheet) — expressed as shadow-in-light-mode, subtle border+lighter-surface-in-dark-mode (shadows read poorly on dark surfaces, a common dark-mode mistake this system deliberately avoids) |
+| Motion | `duration.fast=120ms`, `duration.default=200ms`, `duration.slow=320ms`; easing `standard = cubic-bezier(0.2, 0, 0, 1)` — used for all transitions, no per-component custom easing |
+
+---
+
+## 5. Component Inventory
+
+Organized atomic-design style; every entry maps back to a screen in Phase 13.
+
+### Atoms
+
+| Component | Variants | Used on |
+|---|---|---|
+| Button | primary, secondary, ghost, destructive · sizes: sm/md/lg | Everywhere |
+| TextField | default, with-icon, error | Search, forms, shopping list add-item |
+| Badge | discount (`-40%`), sponsored, new, confidence (✅/⚠) | Deal Card, OCR Review Item |
+| Chip | filter (selectable), category | Sort/filter bar, Categories |
+| CountdownTimer | inline, prominent | Deal Detail, Flash Deals card |
+| RatingStars | display-only, input | Store Profile |
+| Switch | on/off | Notification preferences |
+| Checkbox | default, indeterminate | Shopping list items |
+| Avatar | initials, image | Staff list, profile |
+
+### Molecules
+
+| Component | Composition | Used on |
+|---|---|---|
+| DealCard | image + Badge + price (strikethrough+promo) + distance + CountdownTimer | Home Feed, Search Results, Store Profile |
+| StoreCard | image + name + RatingStars + distance + follow Button | Map, Search |
+| PriceDisplay | original (strikethrough) + promo + discount Badge | Deal Card, Deal Detail |
+| SearchBar | TextField + filter Chip row | Search, Catalog (retailer) |
+| StatTile | label + value + trend indicator | Retailer Dashboard, Analytics |
+| SkeletonBlock | shape-matched loading placeholder | Every list/feed screen (Phase 13 §9) |
+| EmptyState | icon + message + primary Button | Favorites, Wishlist, Shopping List when empty |
+| Toast | success/error/info, auto-dismiss | Approve/reject actions, form submissions |
+| BottomNavBar | 5 fixed tabs, active-state indicator | Consumer app shell |
+| SidebarNavItem | icon + label + active state + badge (pending count) | Retailer portal shell |
+| ConfidenceField | label + value + confidence Badge + inline edit | OCR Review Item |
+
+### Organisms
+
+| Component | Composition | Used on |
+|---|---|---|
+| DealFeedList | DealCard grid/list + SkeletonBlock loading + EmptyState | Home Feed, Search Results |
+| DealDetailHeader | image carousel + PriceDisplay + CountdownTimer + action row (Favorite/Wishlist/Share) | Deal Detail |
+| StoreProfileHeader | map snippet + StoreCard header info + RatingStars | Store Profile |
+| OCRReviewItem | product image + ConfidenceField list + approve/reject/edit actions | OCR Review Queue |
+| CampaignSchedulerForm | promotion multi-select + date range + sponsorship toggle | Campaign Scheduling flow |
+| AnalyticsDashboardGrid | StatTile row + chart panels + top-performer tables | Retailer Dashboard, Analytics |
+| BasketOptimizerResult | per-store grouped item list + savings summary + directions Button | Shopping List → Basket Optimizer |
+
+---
+
+## 6. Example Component Spec — DealCard
+
+The single most-rendered component in the app (every feed, search, and store screen), so it gets a fully worked spec as the pattern other components follow:
+
+| Aspect | Spec |
+|---|---|
+| **Props** | `image`, `productName`, `originalPrice`, `promoPrice`, `discountPercent`, `distanceKm?`, `expiresAt`, `isSponsored`, `onTap`, `onFavoriteToggle?` |
+| **States** | default, pressed (elevation.1→0, scale 0.98 over `duration.fast`), loading (SkeletonBlock), sponsored (Badge + subtle `surface.raised` tint, never a different border color that could read as an error/warning state) |
+| **Accessibility** | Full card is one tap target ≥ 44×44pt (NFR-LOC-003); accessible label reads as "{productName}, {discountPercent} off, {distanceKm} kilometers away, expires in {time}" — the same information sighted users get visually, not a truncated version |
+| **Content rules** | `productName` truncates at 2 lines; `CountdownTimer` switches to `color.danger.500` text under 1 hour remaining as an urgency cue, consistent across every screen it appears on |
+| **Cross-platform** | Flutter: a single `DealCard` widget in `core/widgets`, consumed by every feature that needs it. Web equivalent doesn't exist — DealCard is mobile-only, since the retailer portal never renders the consumer feed. |
+
+---
+
+## 7. Cross-Platform Implementation
+
+| Layer | Mobile (Flutter) | Web (Next.js) |
+|---|---|---|
+| Token consumption | Generated `AppTheme` (ThemeData extension) from `packages/design-tokens` | Generated `tailwind.config.ts` from the same source |
+| Component base | Custom widget library in `apps/mobile/lib/core/widgets`, built on Flutter primitives (not Material defaults directly — Material 3 theming is customized to the token set, not left default) | [shadcn/ui](https://ui.shadcn.com) primitives (Radix-based, accessible by default) restyled via the generated Tailwind config, extended with DealMarket-specific composites (StatTile, OCRReviewItem, etc.) |
+| State management hook-in | Riverpod providers feed component props directly (no component owns network state itself) | React Server Components for static data, client components with local state for interactive pieces (form inputs, OCR review actions) |
+| Charts | `fl_chart`, themed via tokens | A React charting library themed via the generated Tailwind config, matching the same visual language (dataviz guidance applied consistently across both platforms) |
+
+Neither platform is allowed to introduce a one-off styled element outside this system for a production screen — if a screen needs something the library doesn't have, the component gets added to the library first (§5), not inlined into a feature module, per the module-boundary convention from Folder Architecture §7.
+
+---
+
+## 8. Governance & Tooling
+
+| Practice | Detail |
+|---|---|
+| Documentation & visual QA | Storybook for the web component set, Widgetbook for the Flutter widget set — every component in §5 has a story/entry showing all variants and states, reviewed alongside code changes. |
+| Visual regression | Automated screenshot diffing on the component libraries in CI, catching unintended visual drift before it reaches a real screen. |
+| Versioning | `packages/design-tokens` is versioned; a token change (e.g., adjusting `color.primary.500`) is a deliberate, reviewed PR — never silently different between the two apps because one was rebuilt more recently than the other. |
+| Contribution rule | A new component variant needs a real screen requirement backing it (principle 5, §1) — reviewed for whether an existing component's prop/variant covers the need before a new component is created. |
+
+---
+
+## Next Phase
+
+Phase 15: **Development Roadmap** — sequencing the MVP/Wave 1–3 feature set from the PRD into a concrete build order across the architecture, schema, and design system defined in Phases 4–14. Awaiting approval to proceed.
