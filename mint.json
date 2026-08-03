@@ -62,7 +62,8 @@
       "pages": [
         "product/requirements",
         "product/functional-requirements",
-        "product/non-functional-requirements"
+        "product/non-functional-requirements",
+        "product/system-architecture"
       ]
     },
     {
