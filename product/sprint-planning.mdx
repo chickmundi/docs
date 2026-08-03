@@ -1,0 +1,136 @@
+---
+title: 'Sprint Planning'
+description: 'DealMarket Cameroon — Phase 16: sprint breakdown for Milestones 0-4 (Foundation through MVP Launch).'
+icon: 'calendar-check'
+---
+
+<Note>
+**Phase 16** of the DealMarket Cameroon build roadmap. This breaks [Development Roadmap](/product/development-roadmap) Milestones 0–4 (Foundation through MVP Launch, weeks 1–23) into 2-week sprints with concrete backlog items. Wave 2 and Wave 3 (Milestones 5–6) are **intentionally not pre-broken into sprints here** — re-planning near-term work close to when it starts, with real MVP-phase velocity data in hand, produces a far more accurate breakdown than speculative planning today would.
+</Note>
+
+## 1. Cadence & Conventions
+
+- **Sprint length**: 2 weeks. **Ceremonies**: sprint planning, daily standup, sprint review/demo, retrospective — standard, not elaborated further here.
+- **Story format**: `As a <persona>, I want <capability>, so that <benefit>` with acceptance criteria that cite the specific FR-ID(s) it satisfies — every story traces back to Phase 2, not to ad hoc scope.
+- **Definition of Ready**: a story enters a sprint only once its FR is defined, its screen exists in Phase 13/14, and its API contract exists in Phase 9 (or is explicitly scoped as part of the story).
+- **Definition of Done** (sprint-level, distinct from the milestone-level exit criteria in Development Roadmap §6): code merged via CI-passing PR, unit/integration tests written, reviewed against the Component Library (Phase 14) where UI is involved, and demoed in sprint review.
+- **Squads**: Platform/Backend, AI/ML, Mobile, Web, Design, QA/DevOps — per Development Roadmap §4. Sprints below note which squad(s) own each block of work.
+
+---
+
+## 2. Sprints 1–2 — Milestone 0: Foundation
+
+<Tabs>
+  <Tab title="Sprint 1 (Weeks 1-2)">
+    **Goal**: Repo, environments, and core schema exist; nothing user-facing yet.
+
+    - _(Platform)_ Scaffold the monorepo per Folder Architecture: `apps/`, `supabase/`, `packages/`, CI workflow skeletons
+    - _(Platform)_ Provision three Supabase projects (dev/staging/prod); wire Deployment Architecture's Cloudflare/Vercel topology
+    - _(Platform)_ Migrations: core tenancy + catalog domains (`retailers`, `branches`, `staff_members`, `products`, `promotions`, `flyers`) per Database Schema §2–3
+    - _(AI/ML)_ Begin OCR de-risking: collect real flyer samples from 3–5 prospective pilot retailers, run initial extraction quality baseline
+    - _(Platform)_ Begin MTN MoMo + Orange Money sandbox/compliance process (external lead time — started earliest deliberately)
+    - _(Design)_ Design tokens v1 in `packages/design-tokens`: color, type, spacing, radius (Component Library §2–4)
+  </Tab>
+  <Tab title="Sprint 2 (Weeks 3-4)">
+    **Goal**: A staff member can authenticate and the base component sets exist in both apps.
+
+    - _(Platform)_ Migrations: consumer + monetization + marketing/AI domains (Database Schema §4–6); RLS policies migration (§6 pattern)
+    - _(Platform)_ Auth: OTP flow, staff invite/accept flow, custom-claims token hook (Authentication Strategy §3–4, §7)
+    - _(Platform)_ Cross-tenant RLS test suite scaffolded in `supabase/tests` (early, not deferred to hardening — NFR-SEC-008)
+    - _(Mobile)_ Base widget set: Button, TextField, Card shell, BottomNavBar, app shell/router/DI wiring
+    - _(Web)_ Base shadcn/ui-restyled component set: Button, Input, Card, SidebarNavItem, app shell/middleware wiring
+    - **Exit**: Development Roadmap Milestone 0 DoD met
+  </Tab>
+</Tabs>
+
+---
+
+## 3. Sprint 3 — Milestone 1: Walking Skeleton
+
+**Goal**: Prove the full stack end-to-end with the narrowest possible slice (Weeks 5–6).
+
+- _(Web)_ Retailer registration → Platform Admin approval → manual promotion create (single branch, single product, no OCR yet)
+- _(Platform)_ `POST /v1/promotions/{id}/publish` Edge Function live
+- _(Mobile)_ Home feed renders published promotions, unranked, unstyled — proves the read path
+- _(QA/DevOps)_ First full CI/CD round-trip to staging for all three pipelines
+- _(AI/ML, Platform)_ De-risking tracks continue in parallel, not blocking this sprint's goal
+- **Exit**: Development Roadmap Milestone 1 DoD met — a promotion is visibly flowing retailer portal → database → consumer app in staging
+
+---
+
+## 4. Sprints 4–7 — Milestone 2: MVP Core (Consumer + Retailer, parallel)
+
+<Tabs>
+  <Tab title="Sprint 4 (Weeks 7-8)">
+    **Consumer** _(Mobile)_: Home feed with sort controls (FR-DISC-002), categories (FR-DISC-005), Deal Detail screen with countdown (FR-DISC-006), keyword search (FR-DISC-004)
+
+    **Retailer** _(Web)_: Branch management (FR-CAT-001), staff invite/role UI (FR-AUTH-005, FR-OPS-001)
+  </Tab>
+  <Tab title="Sprint 5 (Weeks 9-10)">
+    **Consumer** _(Mobile)_: Favorites/wishlist (FR-PERS-001), shopping list (FR-PERS-003), store follow (FR-PERS-002), sharing to WhatsApp/social (FR-NOTIF-002)
+
+    **Retailer** _(Web)_: Manual promotion CRUD + scheduling (FR-CAT-003–004), flyer upload UI wired to Storage (FR-CAT-002)
+  </Tab>
+  <Tab title="Sprint 6 (Weeks 11-12)">
+    **Consumer** _(Mobile)_: Map, directions, store profiles (FR-LOC-001–003), FR/EN language switch, dark mode (FR-UX-001–002)
+
+    **Retailer/AI** _(Web, AI/ML)_: OCR pipeline production integration — extraction, confidence scoring, OCR Review Queue UI (FR-OCR-001–004), by now validated against the Sprint 1 accuracy baseline
+  </Tab>
+  <Tab title="Sprint 7 (Weeks 13-14)">
+    **Consumer** _(Mobile)_: Offline caching (FR-UX-003), onboarding flow (FR-UX-004), Flash Deals/Deal of the Day (FR-DISC-007)
+
+    **Retailer** _(Web)_: Basic analytics — views/clicks/favorites (FR-DASH-001)
+
+    _(QA/DevOps)_ Cross-squad integration pass — consumer and retailer tracks merge-test against each other's output for the first time at full MVP-core breadth
+
+    **Exit**: Development Roadmap Milestone 2 DoD met — all Wave 1 consumer/retailer FRs demoable per persona golden path
+  </Tab>
+</Tabs>
+
+---
+
+## 5. Sprints 8–9 — Milestone 3: Ranking, Payments, Notifications
+
+<Tabs>
+  <Tab title="Sprint 8 (Weeks 15-16)">
+    - _(AI/ML, Platform)_ Smart Deal Ranking service live with MVP weighting — distance, discount, price, popularity (FR-RANK-001, AI Architecture §5)
+    - _(Web)_ Platform Admin: retailer approval queue, basic moderation (FR-ADMIN-001–002)
+    - _(Mobile)_ Feed switches from unranked to ranked, sponsorship-bounded sort exposed as default (FR-DISC-003)
+  </Tab>
+  <Tab title="Sprint 9 (Weeks 17-18)">
+    - _(Platform)_ MTN Mobile Money + Orange Money billing live end-to-end for retailer subscriptions (FR-PAY-001–002, FR-PAY-004–005) — building on the Sprint 1-started integration track
+    - _(Platform, Mobile)_ Push notifications: followed-store updates, flash deals, basic geo-targeting (FR-NOTIF-001, FR-NOTIF-004)
+    - **Exit**: Development Roadmap Milestone 3 DoD met
+  </Tab>
+</Tabs>
+
+---
+
+## 6. Sprints 10–12 — Milestone 4: Hardening & Launch
+
+<Tabs>
+  <Tab title="Sprint 10 (Weeks 19-20)">
+    - _(QA/DevOps)_ Security review against OWASP-aligned checklist; full cross-tenant RLS test suite run (NFR-SEC-005, NFR-SEC-008)
+    - _(QA/DevOps)_ Load testing against NFR-SCALE-002 targets; performance tuning against NFR-PERF budgets
+  </Tab>
+  <Tab title="Sprint 11 (Weeks 21-22)">
+    - _(All squads)_ Closed beta: 3–5 pilot retailers live in Douala/Yaoundé with real flyers and real transactions
+    - Bug triage and fix cycle from beta feedback; no new feature scope enters during this sprint
+  </Tab>
+  <Tab title="Sprint 12 (Week 23)">
+    - _(QA/DevOps, Platform)_ Staged mobile rollout (5% → 25% → 100%) per Deployment Architecture §3.2
+    - **Exit**: Development Roadmap Milestone 4 DoD met — MVP public launch
+  </Tab>
+</Tabs>
+
+---
+
+## 7. Backlog Grooming Note for Wave 2/3
+
+When Milestone 4 nears completion, repeat this exercise for Milestone 5 (Wave 2) using actual velocity data from Sprints 1–12 rather than the illustrative week estimates in Development Roadmap §5 — a team's real throughput after three months together is a far better planning input than an upfront guess, and Wave 2/3 scope (Product Requirements §11) is stable enough to wait for it.
+
+---
+
+## Next Phase
+
+Phase 17: **Build Feature-by-Feature** — implementation, starting with Sprint 1. This is where the roadmap turns into actual code across `apps/mobile`, `apps/web`, and `supabase/`, which live in the application repository/repositories, not this documentation site.
