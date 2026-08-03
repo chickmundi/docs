@@ -1,0 +1,241 @@
+---
+title: 'Folder Architecture'
+description: 'DealMarket Cameroon — Phase 8: repository topology and project structure for the mobile app, web platform, and backend.'
+icon: 'folder-tree'
+---
+
+<Note>
+**Phase 8** of the DealMarket Cameroon build roadmap. This defines where code lives and how it's organized, implementing the Clean Architecture / DDD / feature-based requirements from [Non-Functional Requirements §8](/product/non-functional-requirements) against the [System Architecture](/product/system-architecture) and [Database Schema](/product/database-schema). API contracts and route-level detail are Phase 9; this is structure only.
+</Note>
+
+## 1. Repository Topology
+
+<Tabs>
+  <Tab title="Decision: single monorepo">
+    One repository (`dealmarket-cameroon`) houses the Flutter app, the Next.js platform, and the Supabase backend (migrations + Edge Functions).
+
+    **Rationale**: A schema change in Phase 6 typically touches three things at once — a migration, an Edge Function contract, and both clients' generated types. A monorepo makes that one atomic PR and one CI run, instead of coordinating merges across three repos with independent version drift. [Turborepo](https://turbo.build) orchestrates the TypeScript side (web + shared packages); Flutter is co-located but builds independently since it isn't part of the JS toolchain.
+
+    **Trade-off accepted**: The repo is larger and a mobile-only contributor pulls backend/web code they don't need. Mitigated with path-based CI triggers (§5) so a mobile PR never runs web/backend checks and vice versa.
+  </Tab>
+  <Tab title="Rejected: three repos">
+    Separate `mobile`, `web`, and `backend` repositories were considered (clean ownership boundaries, smaller individual checkouts) but rejected for now: cross-cutting schema changes would require coordinated multi-repo PRs and versioned contract packages from day one, which is overhead the team doesn't need at MVP scale. Revisit if/when mobile and web are owned by fully separate teams with independent release cadences.
+  </Tab>
+</Tabs>
+
+This documentation site (`chickmundi/docs`) remains a separate repository — it documents the product, it doesn't build it.
+
+## 2. Monorepo Root Structure
+
+```text
+dealmarket-cameroon/
+├── apps/
+│   ├── mobile/                  # Flutter consumer app
+│   └── web/                     # Next.js retailer portal + platform admin
+├── supabase/                    # Backend: migrations, Edge Functions, config
+├── packages/                    # Shared, TypeScript-consumable code
+│   ├── shared-types/            # Generated Supabase DB types + hand-written domain types
+│   ├── design-tokens/           # Colors, spacing, typography — source for web Tailwind config
+│   │                             # and mobile theme generation
+│   ├── i18n-source/             # FR/EN translation source of truth (exported to both clients)
+│   ├── eslint-config/
+│   └── tsconfig-base/
+├── tooling/
+│   └── scripts/                 # Codegen, release, seed-data scripts
+├── .github/
+│   └── workflows/                # CI pipelines (§5)
+├── turbo.json
+├── package.json
+└── README.md
+```
+
+`packages/design-tokens` and `packages/i18n-source` exist because NFR-LOC-001 and NFR-UX-002 require the same colors, spacing, and translated strings across two completely different UI frameworks — keeping the *source values* in one place and generating framework-specific output (Dart theme file, Tailwind config) avoids the two clients drifting out of sync.
+
+---
+
+## 3. Mobile App (`apps/mobile`) — Flutter
+
+Clean Architecture per feature: every feature module has its own `data` / `domain` / `presentation` layers, so business logic never depends on Flutter widgets or a specific data source implementation (NFR-ENG-001).
+
+```text
+apps/mobile/
+├── lib/
+│   ├── main.dart
+│   ├── main_dev.dart / main_staging.dart / main_prod.dart   # flavor entrypoints
+│   ├── app/
+│   │   ├── app.dart              # root widget, MaterialApp/router
+│   │   ├── router/                # go_router route table
+│   │   ├── theme/                 # generated from packages/design-tokens
+│   │   └── di/                    # dependency injection composition root (get_it)
+│   ├── core/
+│   │   ├── constants/
+│   │   ├── error/                 # Failure/Exception types, shared across features
+│   │   ├── network/                # Dio client, interceptors, retry/backoff
+│   │   ├── localization/           # FR/EN, generated from packages/i18n-source
+│   │   ├── offline/                 # local cache (Drift/Hive) — NFR-AVAIL-005
+│   │   └── widgets/                # shared design-system components
+│   ├── features/
+│   │   ├── deal_discovery/
+│   │   │   ├── data/
+│   │   │   │   ├── datasources/    # remote (Supabase) + local (cache) sources
+│   │   │   │   ├── models/         # DTOs, JSON (de)serialization
+│   │   │   │   └── repositories/   # implements domain repository interfaces
+│   │   │   ├── domain/
+│   │   │   │   ├── entities/
+│   │   │   │   ├── repositories/   # abstract interfaces (the "ports")
+│   │   │   │   └── usecases/       # one class per use case, e.g. GetRankedDealFeed
+│   │   │   └── presentation/
+│   │   │       ├── providers/      # Riverpod state
+│   │   │       ├── screens/
+│   │   │       └── widgets/
+│   │   ├── search/
+│   │   ├── product_comparison/
+│   │   ├── favorites_wishlist/
+│   │   ├── shopping_list/
+│   │   ├── store_map/
+│   │   ├── notifications/
+│   │   ├── sharing/
+│   │   ├── auth/
+│   │   ├── onboarding/
+│   │   ├── profile_settings/
+│   │   └── premium_membership/
+│   └── l10n/                      # generated .arb / .g.dart files
+├── test/
+│   └── features/...                # mirrors lib/features/, one test dir per feature
+├── integration_test/                # end-to-end flows (golden path per persona)
+├── assets/
+├── pubspec.yaml
+└── analysis_options.yaml
+```
+
+**Module boundary rule**: a feature may depend on `core/` and its own layers, but never reaches into another feature's `data/` or `domain/` internals directly — cross-feature interaction goes through a use case exposed at the feature's `domain/` boundary, or through shared state in `core/`. This is enforced by import-lint rules in CI (§5), not convention alone.
+
+---
+
+## 4. Web Platform (`apps/web`) — Next.js
+
+Retailer portal and platform admin share one Next.js app, separated by route groups and middleware-enforced role gating — they are one deployable, not two, since they share the same design system, auth, and most modules.
+
+```text
+apps/web/
+├── src/
+│   ├── app/                        # Next.js App Router — routes only, thin
+│   │   ├── (auth)/
+│   │   │   ├── login/
+│   │   │   └── register/
+│   │   ├── (retailer)/             # Retailer Owner/Staff portal
+│   │   │   ├── dashboard/
+│   │   │   ├── branches/
+│   │   │   ├── catalog/
+│   │   │   ├── promotions/
+│   │   │   ├── campaigns/
+│   │   │   ├── sponsorships/
+│   │   │   ├── coupons/
+│   │   │   ├── analytics/
+│   │   │   ├── marketing-assistant/
+│   │   │   ├── staff/
+│   │   │   ├── billing/
+│   │   │   ├── settings/
+│   │   │   └── layout.tsx           # role-gated: owner/staff only
+│   │   ├── (admin)/                 # Platform Admin console
+│   │   │   ├── retailers/
+│   │   │   ├── moderation/
+│   │   │   ├── calendar/
+│   │   │   ├── platform-analytics/
+│   │   │   └── layout.tsx           # role-gated: platform_admin only
+│   │   ├── layout.tsx
+│   │   └── globals.css
+│   ├── modules/                     # DDD-style feature modules — the real logic lives here
+│   │   ├── catalog/
+│   │   │   ├── domain/              # entities, value objects — no framework/Supabase imports
+│   │   │   ├── application/         # use-cases/services orchestrating repository interfaces
+│   │   │   ├── infrastructure/      # Supabase-backed repository implementations (the "adapters")
+│   │   │   └── ui/                  # React components specific to this module
+│   │   ├── promotions/
+│   │   ├── ocr-review/
+│   │   ├── campaigns/
+│   │   ├── sponsorships/
+│   │   ├── analytics/
+│   │   ├── marketing-assistant/
+│   │   ├── billing/
+│   │   ├── staff-management/
+│   │   └── auth/
+│   ├── shared/
+│   │   ├── ui/                      # design-system components (buttons, tables, charts)
+│   │   ├── hooks/
+│   │   ├── lib/                     # Supabase client, generated API types consumption
+│   │   ├── i18n/                    # generated from packages/i18n-source
+│   │   └── utils/
+│   ├── config/                       # feature flags, plan-tier gating config
+│   └── middleware.ts                 # auth + role/route-group gating
+├── public/
+├── tests/
+│   ├── unit/
+│   └── e2e/                          # Playwright, one spec per persona golden path
+├── next.config.js
+├── tailwind.config.ts                # generated from packages/design-tokens
+├── tsconfig.json
+└── package.json
+```
+
+Each `app/(group)/**/page.tsx` stays intentionally thin (data fetching + composing `modules/*/ui` components) — the `modules/` tree is where domain logic, use cases, and repository implementations live, mirroring the mobile app's `data`/`domain`/`presentation` split under different names (`infrastructure`/`domain`/`application`+`ui`) appropriate to a hexagonal-architecture style in a Next.js context.
+
+---
+
+## 5. Backend (`supabase/`)
+
+```text
+supabase/
+├── config.toml
+├── migrations/
+│   ├── 20260101_000_core_tenancy.sql          # retailers, branches, staff_members, brands
+│   ├── 20260101_001_catalog_promotions.sql     # categories, products, promotions, flyers, ocr_extractions
+│   ├── 20260101_002_consumer.sql               # consumers, favorites, shopping lists, engagement_events
+│   ├── 20260101_003_monetization.sql           # subscriptions, payments, sponsorships, coupons
+│   ├── 20260101_004_marketing_ai.sql           # calendar events, recommendations, marketing drafts
+│   ├── 20260101_005_notifications_governance.sql
+│   └── 20260101_006_rls_policies.sql           # policies kept separate from table creation for reviewability
+├── functions/                                   # Edge Functions — one directory per AI/business service (System Architecture §3.3)
+│   ├── ocr-pipeline/
+│   ├── deal-ranking/
+│   ├── recommendations/
+│   ├── marketing-generator/
+│   ├── knowledge-engine/
+│   ├── competition-insights/
+│   ├── payments-webhook-momo/
+│   ├── payments-webhook-orange/
+│   ├── payments-webhook-card/
+│   └── notifications-dispatch/
+├── tests/                                        # pgTAP tests, especially RLS policy verification (NFR-SEC-008)
+└── seed.sql                                       # local dev seed data matching persona scenarios
+```
+
+Migrations are grouped by schema domain (matching Phase 6's document structure) rather than one file per table, and RLS policies live in their own migration file so they're reviewed as a distinct, security-focused diff rather than buried inside table-creation SQL.
+
+---
+
+## 6. CI Trigger Boundaries
+
+To keep the monorepo's trade-off (§1) in check, CI workflows are path-scoped:
+
+| Workflow | Triggers on changes to | Runs |
+|---|---|---|
+| `mobile-ci.yml` | `apps/mobile/**`, `packages/design-tokens/**`, `packages/i18n-source/**` | Flutter analyze, unit tests, build |
+| `web-ci.yml` | `apps/web/**`, `packages/**` | Lint, type-check, unit tests, Playwright e2e |
+| `supabase-ci.yml` | `supabase/**` | Migration dry-run, pgTAP tests, Edge Function type-check |
+| `shared-ci.yml` | `packages/**` | Type-check + build shared packages before dependents run |
+
+## 7. Naming & Boundary Conventions
+
+| Rule | Applies to | Why |
+|---|---|---|
+| Feature/module folders are named by business capability, not by technical layer (`deal_discovery`, not `screens`) | Both apps | Keeps the folder tree navigable by what the code does, matching the Functional Requirements structure. |
+| `domain/` layers never import from `data`/`infrastructure` or any framework (Flutter widgets, Next.js, Supabase client) | Both apps | Enforces the dependency-inversion rule central to Clean Architecture — domain logic stays testable and portable. |
+| Cross-feature/module calls go through the target's public use-case/service API, never its internal repository or data source | Both apps | Prevents hidden coupling that would make features impossible to change independently later. |
+| Generated code (`shared-types`, `l10n`, theme files) is never hand-edited | Both apps | Keeps `packages/design-tokens` and `packages/i18n-source` as the single source of truth (NFR-LOC-001, NFR-ENG-005). |
+
+---
+
+## Next Phase
+
+Phase 9: **API Design** — the concrete API surface (Edge Function endpoints/RPCs, request/response contracts) that the `infrastructure`/`data` layers defined above implement against. Awaiting approval to proceed.
