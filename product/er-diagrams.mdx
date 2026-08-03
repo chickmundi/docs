@@ -1,0 +1,439 @@
+---
+title: 'ER Diagrams'
+description: 'DealMarket Cameroon — Phase 7: visual entity-relationship diagrams derived from the database schema.'
+icon: 'diagram-project'
+---
+
+<Note>
+**Phase 7** of the DealMarket Cameroon build roadmap. These diagrams visualize the schema defined in [Database Schema](/product/database-schema), split by domain for readability. Each diagram shows key attributes only (primary/foreign keys and the columns most relevant to understanding the relationship) — the full column list and types live in Phase 6, not here.
+</Note>
+
+## 1. Domain Overview
+
+How the six schema domains relate to one another. Arrows cross domain boundaries via the tenant (`retailers`) and consumer (`consumers`) anchors.
+
+```mermaid
+flowchart LR
+    subgraph D1["Core Identity & Tenancy"]
+        RET[retailers]
+        BR[branches]
+        STAFF[staff_members]
+    end
+    subgraph D2["Catalog & Promotions"]
+        PROD[products]
+        PROMO[promotions]
+        FLYER[flyers]
+    end
+    subgraph D3["Consumer & Personalization"]
+        CONS[consumers]
+        FAV[favorites / wishlist]
+        EVT[engagement_events]
+    end
+    subgraph D4["Monetization"]
+        SUB[subscriptions]
+        SPON[sponsorships]
+        PAY[payments]
+    end
+    subgraph D5["Marketing & AI"]
+        CAMP[campaign_recommendations]
+        CAL[commercial_calendar_events]
+        MKT[marketing_content_drafts]
+    end
+    subgraph D6["Notifications & Governance"]
+        NOTIF[notifications]
+        AUDIT[audit_logs]
+    end
+
+    RET --> BR
+    RET --> STAFF
+    RET --> PROMO
+    BR --> PROMO
+    STAFF --> FLYER
+    FLYER --> PROMO
+    PROD --> PROMO
+    CONS --> FAV
+    FAV --> PROD
+    CONS --> EVT
+    PROMO --> EVT
+    RET --> SUB
+    RET --> SPON
+    SUB --> PAY
+    RET --> CAMP
+    CAL --> CAMP
+    RET --> MKT
+    CONS --> NOTIF
+    STAFF --> AUDIT
+    PROMO --> MKT
+```
+
+---
+
+## 2. Core Identity & Tenancy
+
+```mermaid
+erDiagram
+    RETAILERS ||--o{ BRANCHES : "operates"
+    RETAILERS ||--o{ STAFF_MEMBERS : "employs"
+    RETAILERS ||--o| SUBSCRIPTION_PLANS : "subscribes to"
+    STAFF_MEMBERS }o--o{ BRANCHES : "scoped to (branch_scope[])"
+    RETAILERS ||--o{ BRANDS : "may represent (type=distributor)"
+
+    RETAILERS {
+        uuid id PK
+        text name
+        text slug UK
+        enum type "independent | chain | distributor"
+        enum status "pending_approval | active | suspended"
+        uuid subscription_plan_id FK
+        char country_code
+    }
+    BRANCHES {
+        uuid id PK
+        uuid retailer_id FK
+        text name
+        geography geolocation
+        jsonb opening_hours
+        enum status
+    }
+    STAFF_MEMBERS {
+        uuid id PK
+        uuid retailer_id FK
+        uuid auth_user_id FK
+        enum role "owner | campaign_manager | catalog_editor | analytics_viewer"
+        uuid_array branch_scope "null = org-wide"
+        enum status
+    }
+    BRANDS {
+        uuid id PK
+        uuid retailer_id FK "nullable"
+        text name
+    }
+```
+
+**Reading this diagram**: `staff_members.branch_scope` is not a foreign key column in the strict relational sense (it's a nullable UUID array) — it's shown as a many-to-many relationship to `BRANCHES` because that's its functional effect: a null value scopes a staff member to the whole retailer (Estelle persona), while a populated array scopes them to specific branches only (Brice persona).
+
+---
+
+## 3. Catalog & Promotions
+
+```mermaid
+erDiagram
+    RETAILERS ||--o{ PROMOTIONS : "publishes"
+    BRANCHES ||--o{ PROMOTIONS : "offered at"
+    PRODUCTS ||--o{ PROMOTIONS : "instance of"
+    CATEGORIES ||--o{ PRODUCTS : "classifies"
+    STAFF_MEMBERS ||--o{ FLYERS : "uploads"
+    FLYERS ||--o{ OCR_EXTRACTIONS : "processed into"
+    OCR_EXTRACTIONS |o--o| PROMOTIONS : "becomes (after review)"
+    PRODUCTS ||--o{ PRICE_HISTORY : "tracked over time"
+    RETAILERS ||--o{ PRICE_HISTORY : "at"
+    STAFF_MEMBERS ||--o{ PROMOTIONS : "reviews/publishes"
+
+    PRODUCTS {
+        uuid id PK
+        text name
+        uuid brand_id FK
+        uuid category_id FK
+        text barcode
+        vector embedding "pgvector(1536)"
+    }
+    PROMOTIONS {
+        uuid id PK
+        uuid retailer_id FK
+        uuid branch_id FK
+        uuid product_id FK "nullable until matched"
+        text quantity
+        text packaging
+        numeric original_price
+        numeric promo_price
+        timestamptz starts_at
+        timestamptz ends_at
+        enum status "pending_review | approved | published | expired | rejected"
+        enum source "ocr | manual"
+        numeric confidence_score "nullable"
+        uuid sponsorship_id FK "nullable"
+        uuid reviewed_by FK
+    }
+    FLYERS {
+        uuid id PK
+        uuid retailer_id FK
+        uuid uploaded_by FK
+        text file_url
+        enum file_type "pdf | image"
+        enum ocr_status
+    }
+    OCR_EXTRACTIONS {
+        uuid id PK
+        uuid flyer_id FK
+        jsonb extracted_fields
+        numeric confidence_score
+        uuid promotion_id FK "nullable"
+    }
+    PRICE_HISTORY {
+        uuid id PK
+        uuid product_id FK
+        uuid retailer_id FK
+        numeric price
+        timestamptz recorded_at
+    }
+    CATEGORIES {
+        uuid id PK
+        uuid parent_id FK "self-referencing"
+        text name_fr
+        text name_en
+    }
+```
+
+**Reading this diagram**: `OCR_EXTRACTIONS |o--o| PROMOTIONS` is intentionally optional-to-optional — an extraction exists before any promotion is created, and only links to one once a staff member approves it (FR-OCR-003). This is the schema-level enforcement of the human-verification gate from the System Architecture's OCR pipeline flow.
+
+---
+
+## 4. Consumer & Personalization
+
+```mermaid
+erDiagram
+    CONSUMERS ||--o{ FAVORITES : "saves"
+    CONSUMERS ||--o{ WISHLIST_ITEMS : "saves"
+    CONSUMERS ||--o{ SHOPPING_LISTS : "creates"
+    SHOPPING_LISTS ||--o{ SHOPPING_LIST_ITEMS : "contains"
+    CONSUMERS ||--o{ STORE_FOLLOWS : "follows"
+    RETAILERS ||--o{ STORE_FOLLOWS : "followed by"
+    CONSUMERS ||--o{ ENGAGEMENT_EVENTS : "generates"
+    PROMOTIONS ||--o{ ENGAGEMENT_EVENTS : "target of"
+    PRODUCTS ||--o{ FAVORITES : "favorited"
+    PRODUCTS ||--o{ WISHLIST_ITEMS : "wishlisted"
+    PRODUCTS ||--o{ SHOPPING_LIST_ITEMS : "listed"
+    CONSUMERS ||--o{ PUSH_TOKENS : "registers"
+    CONSUMERS ||--|| NOTIFICATION_PREFERENCES : "configures"
+
+    CONSUMERS {
+        uuid id PK
+        uuid auth_user_id FK
+        text display_name
+        enum preferred_language
+        geography home_location "nullable, consented"
+        enum membership_tier "free | premium"
+        uuid referred_by FK "nullable"
+    }
+    ENGAGEMENT_EVENTS {
+        uuid id PK
+        uuid consumer_id FK "nullable, anon browsing"
+        enum event_type "view | click | share | search | favorite | impression"
+        uuid promotion_id FK "nullable"
+        uuid product_id FK "nullable"
+        uuid retailer_id FK "denormalized"
+        text search_query "nullable"
+        timestamptz occurred_at
+    }
+    SHOPPING_LISTS {
+        uuid id PK
+        uuid consumer_id FK
+        text name
+    }
+    SHOPPING_LIST_ITEMS {
+        uuid id PK
+        uuid shopping_list_id FK
+        uuid product_id FK "nullable"
+        text free_text_item "nullable"
+        int quantity
+        boolean checked
+    }
+    STORE_FOLLOWS {
+        uuid consumer_id FK
+        uuid retailer_id FK
+    }
+    PUSH_TOKENS {
+        uuid id PK
+        uuid consumer_id FK "nullable"
+        uuid staff_member_id FK "nullable"
+        text fcm_token
+        text platform
+    }
+    NOTIFICATION_PREFERENCES {
+        uuid consumer_id PK_FK
+        boolean flash_deals
+        boolean wishlist_alerts
+        boolean followed_store_updates
+        boolean seasonal_reminders
+    }
+```
+
+**Reading this diagram**: `ENGAGEMENT_EVENTS.consumer_id` is nullable because anonymous browsing (FR-AUTH-002) must still be tracked for aggregate ranking/trending signals (FR-RANK-001) even without an account — this table is the busiest in the system and is partitioned monthly per the Phase 6 indexing notes.
+
+---
+
+## 5. Monetization
+
+```mermaid
+erDiagram
+    RETAILERS ||--o{ SUBSCRIPTIONS : "holds"
+    SUBSCRIPTION_PLANS ||--o{ SUBSCRIPTIONS : "defines"
+    SUBSCRIPTIONS ||--o{ PAYMENTS : "billed via"
+    RETAILERS ||--o{ PAYMENTS : "pays"
+    RETAILERS ||--o{ SPONSORSHIPS : "purchases"
+    SPONSORSHIPS ||--o| PROMOTIONS : "boosts (scope=product)"
+    RETAILERS ||--o{ COUPONS : "issues"
+    COUPONS ||--o{ COUPON_REDEMPTIONS : "redeemed as"
+    CONSUMERS ||--o{ COUPON_REDEMPTIONS : "redeems"
+
+    SUBSCRIPTION_PLANS {
+        uuid id PK
+        enum tier "free | professional | enterprise"
+        numeric price_monthly
+        jsonb feature_limits
+    }
+    SUBSCRIPTIONS {
+        uuid id PK
+        uuid retailer_id FK
+        uuid plan_id FK
+        enum status "active | past_due | cancelled"
+        timestamptz current_period_end
+    }
+    PAYMENTS {
+        uuid id PK
+        uuid subscription_id FK "nullable"
+        uuid retailer_id FK
+        numeric amount
+        enum provider "mtn_momo | orange_money | card"
+        text provider_reference
+        enum status "pending | succeeded | failed | refunded"
+    }
+    SPONSORSHIPS {
+        uuid id PK
+        uuid retailer_id FK
+        enum scope "product | category | store | homepage_banner"
+        uuid target_id "nullable, polymorphic"
+        timestamptz starts_at
+        timestamptz ends_at
+        numeric priority_weight
+        text placement_slot "nullable"
+    }
+    COUPONS {
+        uuid id PK
+        uuid retailer_id FK
+        text code
+        text discount_type
+        numeric discount_value
+        int max_redemptions
+    }
+    COUPON_REDEMPTIONS {
+        uuid id PK
+        uuid coupon_id FK
+        uuid consumer_id FK
+        timestamptz redeemed_at
+    }
+```
+
+---
+
+## 6. Marketing, AI & Retail Intelligence
+
+```mermaid
+erDiagram
+    RETAILERS ||--o{ CAMPAIGN_RECOMMENDATIONS : "receives"
+    COMMERCIAL_CALENDAR_EVENTS ||--o{ CAMPAIGN_RECOMMENDATIONS : "triggers"
+    RETAILERS ||--o{ MARKETING_CONTENT_DRAFTS : "generates"
+    PROMOTIONS ||--o{ MARKETING_CONTENT_DRAFTS : "featured in"
+    STAFF_MEMBERS ||--o{ MARKETING_CONTENT_DRAFTS : "approves"
+    CATEGORIES ||--o{ COMPETITION_INSIGHTS : "aggregated by"
+
+    COMMERCIAL_CALENDAR_EVENTS {
+        uuid id PK
+        char country_code
+        text name_fr
+        text name_en
+        jsonb event_date_rule
+        int4range lead_time_weeks
+    }
+    CAMPAIGN_RECOMMENDATIONS {
+        uuid id PK
+        uuid retailer_id FK
+        uuid calendar_event_id FK "nullable"
+        enum recommendation_type
+        jsonb generated_content
+        enum status "suggested | accepted | dismissed"
+    }
+    MARKETING_CONTENT_DRAFTS {
+        uuid id PK
+        uuid retailer_id FK
+        uuid promotion_id FK "nullable"
+        enum channel "facebook | instagram | tiktok | whatsapp | sms | email | push | flyer | banner"
+        enum language "fr | en"
+        enum status "draft | approved | sent"
+        uuid approved_by FK "nullable"
+    }
+    COMPETITION_INSIGHTS {
+        uuid id PK
+        uuid category_id FK
+        text region
+        enum metric_type "avg_price | engagement_index | trending_score"
+        numeric value
+        date period_start
+        date period_end
+    }
+```
+
+**Reading this diagram**: `COMPETITION_INSIGHTS` deliberately has **no `retailer_id` column** and no relationship to any single `RETAILERS` row — it only aggregates by `category_id` and `region`. This is the schema-level guarantee behind FR-COMP-002 (no retailer ever sees another retailer's raw data): the table structurally cannot carry a per-retailer identity back to consumers of this data.
+
+---
+
+## 7. Notifications & Governance
+
+```mermaid
+erDiagram
+    CONSUMERS ||--o{ NOTIFICATIONS : "receives"
+    STAFF_MEMBERS ||--o{ NOTIFICATIONS : "receives"
+    STAFF_MEMBERS ||--o{ AUDIT_LOGS : "generates (actor)"
+    PLATFORM_ADMINS ||--o{ AUDIT_LOGS : "generates (actor)"
+    PLATFORM_ADMINS ||--o{ MODERATION_FLAGS : "resolves"
+
+    NOTIFICATIONS {
+        uuid id PK
+        enum recipient_type "consumer | staff"
+        uuid recipient_id "polymorphic"
+        enum channel "push | email | sms | whatsapp"
+        enum category
+        jsonb payload
+        enum status "queued | sent | failed"
+    }
+    AUDIT_LOGS {
+        uuid id PK
+        enum actor_type "staff | platform_admin | system"
+        uuid actor_id "nullable"
+        text action
+        text entity_type
+        uuid entity_id
+        jsonb before_state
+        jsonb after_state
+        timestamptz occurred_at
+    }
+    MODERATION_FLAGS {
+        uuid id PK
+        text entity_type
+        uuid entity_id
+        text reason
+        enum status "open | resolved | dismissed"
+        uuid resolved_by FK "nullable"
+    }
+```
+
+---
+
+## 8. Cross-Domain Relationship Summary
+
+Foreign keys that connect entities across the diagrams above, for quick reference when a change in one domain might ripple into another:
+
+| Source | Target | Relationship |
+|---|---|---|
+| `promotions.sponsorship_id` | `sponsorships.id` | A published promotion may be boosted by an active sponsorship (Catalog ↔ Monetization) |
+| `engagement_events.promotion_id` | `promotions.id` | Every ranking/BI signal traces back to a specific deal (Consumer ↔ Catalog) |
+| `campaign_recommendations.retailer_id` | `retailers.id` | Seasonal recommendations are always retailer-scoped, even though the calendar itself is not (Marketing/AI ↔ Tenancy) |
+| `marketing_content_drafts.promotion_id` | `promotions.id` | Generated marketing copy is often anchored to a specific deal (Marketing/AI ↔ Catalog) |
+| `push_tokens.consumer_id` / `push_tokens.staff_member_id` | `consumers.id` / `staff_members.id` | One token table serves both client apps, disambiguated by which FK is populated (Notifications ↔ Consumer & Tenancy) |
+| `audit_logs.actor_id` | `staff_members.id` or `platform_admins.id` | Polymorphic actor reference, resolved via `actor_type` (Governance ↔ Tenancy) |
+
+---
+
+## Next Phase
+
+Phase 8: **Folder Architecture** — the concrete repository/project structure for the Flutter app and Next.js platform (Clean Architecture layers, feature-based modules) that this schema and the API design in Phase 9 will be implemented against. Awaiting approval to proceed.
