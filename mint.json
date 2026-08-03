@@ -1,6 +1,6 @@
 {
   "$schema": "https://mintlify.com/schema.json",
-  "name": "Starter Kit",
+  "name": "DealMarket Cameroon",
   "logo": {
     "dark": "/logo/dark.svg",
     "light": "/logo/light.svg"
@@ -55,6 +55,12 @@
         "introduction",
         "quickstart",
         "development"
+      ]
+    },
+    {
+      "group": "Product",
+      "pages": [
+        "product/requirements"
       ]
     },
     {

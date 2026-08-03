@@ -1,0 +1,269 @@
+---
+title: 'Product Requirements Document'
+description: 'DealMarket Cameroon — AI Retail Intelligence Platform. Phase 1 of the product build: complete product requirements.'
+icon: 'clipboard-list'
+---
+
+<Note>
+This is **Phase 1** of the DealMarket Cameroon build roadmap: complete product requirements. Functional requirements, non-functional requirements, system architecture, and subsequent phases follow in later documents, each pending approval before work begins.
+</Note>
+
+## 1. Executive Summary
+
+**DealMarket Cameroon** is a two-sided AI Retail Intelligence Platform connecting Cameroonian consumers with supermarket promotions, and giving supermarkets an AI-powered command center to plan, execute, and measure retail marketing. It consists of a consumer mobile app (Flutter), a retailer web platform (Next.js), and a centralized AI backend that powers deal ranking, OCR flyer ingestion, marketing content generation, and retail business intelligence.
+
+This is a commercial SaaS product, not a prototype. It is designed from day one to scale across Cameroon and expand into additional African markets without major architectural rework.
+
+| | |
+|---|---|
+| **Working name** | DealMarket Cameroon |
+| **Tagline (FR)** | Toutes les meilleures promotions des supermarchés du Cameroun réunies dans une seule application. |
+| **Tagline (EN)** | All the best supermarket deals in Cameroon, in one app. |
+| **Mission** | Help Cameroonians save money every day while helping supermarkets increase sales through AI and retail business intelligence. |
+| **Primary market** | Cameroon (Douala, Yaoundé, and secondary cities first) |
+| **Expansion target** | Sub-Saharan Africa, country-by-country, same architecture |
+
+---
+
+## 2. Problem Statement
+
+**Consumers** in Cameroon have no single place to discover and compare supermarket promotions. Deals are scattered across printed flyers, WhatsApp forwards, and individual store visits, making price comparison slow and inefficient, and causing consumers to miss savings.
+
+**Supermarkets** — from national chains to independent stores — have limited digital tools to reach price-sensitive shoppers, plan promotional calendars around Cameroonian cultural and commercial events, understand which products and campaigns actually drive results, or compete effectively with each other on evolving digital channels. Flyer creation and distribution is manual, slow, and disconnected from any measurement of outcomes.
+
+There is no existing platform in Cameroon that combines consumer deal discovery with AI-driven retail intelligence for merchants.
+
+---
+
+## 3. Product Overview
+
+The platform is composed of three tightly integrated parts:
+
+<CardGroup cols={3}>
+  <Card title="Consumer Mobile App" icon="mobile-screen">
+    Flutter app (iOS/Android) for discovering, comparing, and saving on supermarket deals.
+  </Card>
+  <Card title="Retail Intelligence Web Platform" icon="chart-line">
+    Next.js admin portal for supermarkets to publish promotions and access AI-driven business intelligence.
+  </Card>
+  <Card title="Centralized AI Backend" icon="brain">
+    Shared services for OCR, deal ranking, recommendations, marketing generation, and analytics — powering both front ends.
+  </Card>
+</CardGroup>
+
+Both products read from and write to the same backend and data model, so a promotion published once by a retailer is instantly available, rankable, and analyzable across the consumer app, the admin portal, and all AI features.
+
+---
+
+## 4. Target Users
+
+### 4.1 Consumers
+
+- Families managing household grocery budgets
+- Students and young professionals who are price-sensitive
+- Working professionals seeking convenience and time savings
+
+### 4.2 Retailers
+
+- Independent, single-location supermarkets
+- National and regional supermarket chains with multiple branches
+- Distributors and manufacturers who want product-level visibility and sponsorship
+- Retail marketing managers responsible for promotional planning and ROI
+
+Detailed personas (goals, pain points, behaviors, device/connectivity profile) are produced in the **User Personas** phase, informed by this document.
+
+---
+
+## 5. Target Retail Partners
+
+The platform must support an **unlimited number of supermarkets**, including but not limited to:
+
+- SPAR Cameroon
+- Santa Lucia
+- Mahima
+- Dovv
+- Casino Supermarché
+- Leader Price
+- Independent supermarkets
+- Wholesale distributors
+
+Onboarding must not assume a fixed or small partner set — the data model and admin tooling must scale to hundreds of retailers and thousands of branches without redesign.
+
+---
+
+## 6. Product Scope
+
+### 6.1 Consumer App — Core Capabilities
+
+<AccordionGroup>
+  <Accordion title="Deal discovery">
+    Nearby deals via GPS; best deals sortable by distance, price, discount, popularity, sponsorship, and AI relevance; powerful search; product categories; flash deals; Deal of the Day; deal expiration countdowns; price history.
+  </Accordion>
+  <Accordion title="Comparison">
+    Product comparison across stores; store comparison; price history trends.
+  </Accordion>
+  <Accordion title="Personalization">
+    AI-personalized recommendations; smart shopping-list and basket optimization; favorites, wishlist, and follow-supermarket features; recent searches and trending products feed into ranking.
+  </Accordion>
+  <Accordion title="Location & store info">
+    Map of nearby supermarkets; directions; opening hours; store profiles; location-based push notifications.
+  </Accordion>
+  <Accordion title="Notifications">
+    Push notifications, including geo-targeted and wishlist/flash-sale alerts.
+  </Accordion>
+  <Accordion title="Sharing">
+    Share products/deals to WhatsApp, Facebook, Instagram, Messenger, Telegram, TikTok.
+  </Accordion>
+  <Accordion title="Experience">
+    French and English; dark mode; offline caching; premium onboarding; accessibility.
+  </Accordion>
+</AccordionGroup>
+
+### 6.2 Retailer Admin Portal — Core Capabilities
+
+<AccordionGroup>
+  <Accordion title="Catalog & promotions">
+    Manage multiple branches; upload PDF flyers and images; create promotions manually; schedule campaigns; manage coupons.
+  </Accordion>
+  <Accordion title="Monetization tools">
+    Sponsor products, categories, or the store itself; purchase homepage banners; manage featured placements.
+  </Accordion>
+  <Accordion title="Engagement">
+    Manage followers; send push notifications; create WhatsApp campaigns; generate flyers.
+  </Accordion>
+  <Accordion title="Operations">
+    Manage staff and roles; audit logs; role-based permissions.
+  </Accordion>
+  <Accordion title="Intelligence">
+    View analytics dashboards; download reports; receive continuous AI recommendations.
+  </Accordion>
+</AccordionGroup>
+
+### 6.3 AI OCR Engine
+
+Automatically ingests PDF catalogs, flyers, images, and scanned brochures, extracting per product: image, name, brand, category, barcode (if present), original price, promotional price, discount percentage, promotion period, store, quantity, packaging, and a confidence score. All extracted data requires **human verification before publishing**.
+
+### 6.4 Smart Deal Ranking
+
+An AI ranking algorithm determines the "best deal" surfaced to each consumer, using: distance, discount, price, popularity, user preferences, shopping history, season, product availability, sponsored priority, store rating, recent searches, and trending products.
+
+### 6.5 Retail Business Intelligence
+
+The web platform functions as an **AI Retail Command Center**, continuously answering: what to promote, when, and how; which products are trending or losing engagement; which categories are growing; which campaigns delivered the highest ROI; which promotions should be extended; and how the retailer compares to competitors — without exposing confidential competitor data.
+
+### 6.6 Cameroon Retail Knowledge Engine
+
+The AI understands Cameroonian commercial and cultural calendar behavior and proactively prepares campaigns **2–6 weeks in advance** for: New Year, Youth Day, Valentine's Day, Women's Day, Ramadan, Easter, Labour Day, National Day, Back-to-School, Black Friday, Christmas, New Year's Eve, Mother's Day, Father's Day, Eid, and Lent. For each event it recommends products, discounts, campaign names, push notification copy, advertising budget, sponsorship suggestions, flyers, and social copy, campaign duration, target audience, and timing.
+
+### 6.7 AI Marketing Assistant
+
+Auto-generates, in French and English: Facebook and Instagram campaigns/captions, WhatsApp and SMS campaigns, TikTok captions, email campaigns, push notification copy, store posters, flyers, promotional banners, slogans, calls-to-action, and ad copy.
+
+### 6.8 AI Competition Analysis
+
+Compares participating supermarkets on best prices, most-viewed products, trending categories, engagement, price competitiveness, and promotion effectiveness — surfacing recommendations to each retailer without exposing another retailer's confidential data.
+
+### 6.9 Customer Insights
+
+Analyzes searches, favorites, shares, wishlist activity, clicks, location, season, and shopping behavior to recommend what each retailer should promote next.
+
+### 6.10 Business Intelligence Dashboard
+
+Executive dashboards covering views, clicks, shares, favorites, followers, conversion estimates, ROI, a promotion health score, AI insights, top-performing categories and stores, weekly/monthly/seasonal trends, and forecasts — with downloadable executive reports.
+
+---
+
+## 7. Monetization
+
+| Category | Examples |
+|---|---|
+| Retailer subscriptions | Free, Professional, Enterprise tiers |
+| Sponsorship | Sponsored products, stores, categories; homepage banners; featured deals |
+| AI subscriptions | AI Marketing subscription; AI Analytics subscription; Retail Intelligence subscription |
+| Advertising | Manufacturer advertising; distributor portal access |
+| Campaigns | Coupon campaigns |
+| Consumer | Premium consumer membership; referral program |
+
+## 8. Payments
+
+Must support **MTN Mobile Money**, **Orange Money**, and **Visa/Mastercard**, with recurring subscription billing for retailer plans.
+
+## 9. Notification Channels
+
+Push notifications, email, and SMS at launch; WhatsApp notifications planned as a future channel. Must support scheduled campaigns, geo-targeted campaigns, wishlist alerts, flash-sale alerts, and seasonal reminders.
+
+## 10. Experience Bar
+
+The product must feel premium — inspired by Apple, Airbnb, Uber, Spotify, Google Maps, and Amazon Shopping: modern, minimal, fast, beautiful, with smooth animations, strong accessibility, dark mode, and excellent onboarding.
+
+---
+
+## 11. MVP Scope vs. Later Phases
+
+Given the breadth of this brief, requirements are prioritized into delivery waves. This prioritization will be revisited during roadmap/sprint planning, but sets initial expectations:
+
+<Tabs>
+  <Tab title="MVP (Wave 1)">
+    - Consumer app: deal browsing, search, categories, nearby deals (GPS), favorites, store profiles, map, sharing, FR/EN, dark mode
+    - Smart deal ranking (core factors: distance, discount, price, popularity)
+    - Retailer portal: branch management, manual promotion creation, PDF/image flyer upload
+    - AI OCR engine with human-verification workflow
+    - Basic analytics dashboard (views, clicks, favorites)
+    - MTN Mobile Money + Orange Money payments
+    - Push notifications (basic + geo-targeted)
+  </Tab>
+  <Tab title="Wave 2">
+    - Sponsorship system (products, categories, stores, banners)
+    - Coupon campaigns; WhatsApp campaign creation
+    - AI Marketing Assistant (social/ad copy generation)
+    - Cameroon Retail Knowledge Engine (seasonal campaign recommendations)
+    - Expanded BI dashboard (ROI, promotion health score, forecasts)
+    - Premium consumer membership; referral program
+  </Tab>
+  <Tab title="Wave 3">
+    - AI competition analysis
+    - Customer insights engine (behavioral recommendations)
+    - Distributor/manufacturer advertising portal
+    - Visa/Mastercard billing; Enterprise subscription tier
+    - WhatsApp notification channel
+    - Multi-country expansion tooling
+  </Tab>
+</Tabs>
+
+## 12. Assumptions & Constraints
+
+- **Connectivity & devices**: Significant share of users are on mid/low-end Android devices with variable mobile data quality — offline caching and lightweight payloads are a hard requirement, not a nice-to-have.
+- **Bilingual by default**: French and English are both first-class languages throughout the consumer app, admin portal, and all AI-generated content — not a translation layer bolted on later.
+- **Mobile money is primary**: MTN Mobile Money and Orange Money are the dominant payment methods in-market and must be treated as first-class, not secondary to card payments.
+- **Flyer-driven retail culture**: Much of Cameroonian retail promotion still happens via printed/PDF flyers — the OCR pipeline is not a convenience feature, it is core to retailer onboarding at scale.
+- **Human-in-the-loop AI**: All AI-extracted or AI-generated content that reaches consumers or represents pricing (OCR extraction, generated marketing copy) requires human verification before publishing, to protect data accuracy and brand trust.
+- **Multi-tenancy from day one**: Data model, auth, and admin tooling must assume many independent retailer organizations with multiple branches and staff roles, even though early launch will have a small partner set.
+- **Designed for expansion**: No architectural decision should assume Cameroon-only; country/currency/language/tax configuration must be data-driven, not hardcoded.
+
+## 13. Out of Scope (Initial Release)
+
+- E-commerce checkout / online ordering (this is a deal-discovery and marketing platform, not a marketplace, at launch)
+- In-app delivery logistics
+- WhatsApp Business API notification channel (planned, not launch)
+- Non-supermarket retail verticals (pharmacies, electronics, fashion) — architecture should not preclude this later, but it is not in scope now
+
+## 14. Key Risks
+
+| Risk | Mitigation direction |
+|---|---|
+| Low retailer digital literacy slows onboarding | OCR-first onboarding path requiring minimal manual data entry; guided flows |
+| OCR accuracy on low-quality scanned flyers | Confidence scoring + mandatory human verification step before publishing |
+| Mobile money payment integration reliability | Abstract payment providers behind a common interface; monitor and alert on failures |
+| Data cost sensitivity limits consumer engagement | Aggressive caching, image optimization, offline-first UX |
+| Competitive/confidential data leakage between retailers | Strict aggregation and anonymization rules in the competition-analysis engine |
+| Scope breadth risks slow time-to-market | Phased MVP/Wave delivery (Section 11) with explicit approval gates per phase |
+
+## 15. Expansion Strategy
+
+The platform must be designed so that adding a new country requires **configuration, not architectural change**: new currency, language, payment providers, tax rules, and a localized commercial calendar (the "Retail Knowledge Engine" is inherently country-specific and must be a pluggable data layer, not hardcoded logic). This principle governs decisions in every subsequent phase, starting with system architecture and database schema.
+
+---
+
+## Next Phase
+
+Phase 2: **Functional Requirements** — translating each capability above into specific, testable functional requirements per user role. Awaiting approval to proceed.
