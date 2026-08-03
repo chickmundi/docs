@@ -1,0 +1,241 @@
+---
+title: 'Functional Requirements'
+description: 'DealMarket Cameroon — Phase 2: functional requirements per actor and module.'
+icon: 'list-check'
+---
+
+<Note>
+**Phase 2** of the DealMarket Cameroon build roadmap. Builds directly on the [Product Requirements Document](/product/requirements). Each requirement is tagged with priority — **MVP**, **Wave 2**, or **Wave 3** — matching the delivery waves defined there. Non-functional requirements (performance, security, scalability, availability) are covered separately in Phase 3.
+</Note>
+
+## 1. Actors
+
+| Actor | Description |
+|---|---|
+| **Consumer** | End user of the mobile app; unauthenticated (browsing) or authenticated (personalized features) |
+| **Retailer Owner** | Full administrative control over a retailer organization on the web platform |
+| **Retailer Staff** | Scoped access to a subset of admin portal functions, per role permissions |
+| **Platform Admin** | DealMarket internal staff operating the platform, moderating content, managing retailer onboarding |
+| **AI System** | Automated backend processes (OCR, ranking, recommendation, generation) acting on behalf of the platform, always subject to human verification where noted |
+
+Requirement IDs use the pattern `FR-<MODULE>-<NUMBER>`.
+
+---
+
+## 2. Authentication & Account Management
+
+| ID | Requirement | Actor | Priority |
+|---|---|---|---|
+| FR-AUTH-001 | Consumers can register and sign in via phone number (OTP), email/password, or supported social sign-in. | Consumer | MVP |
+| FR-AUTH-002 | Consumers can browse deals, search, and view store profiles without creating an account. | Consumer | MVP |
+| FR-AUTH-003 | Consumers must be authenticated to use favorites, wishlist, shopping list, follow-store, and personalized recommendations. | Consumer | MVP |
+| FR-AUTH-004 | Retailer Owners register their organization and are verified by a Platform Admin before publishing goes live. | Retailer Owner, Platform Admin | MVP |
+| FR-AUTH-005 | Retailer Owners can invite Retailer Staff and assign role-based permissions (e.g., Catalog Editor, Campaign Manager, Analytics Viewer). | Retailer Owner | MVP |
+| FR-AUTH-006 | All authentication actions (login, role change, permission grant) are recorded in an audit log. | System | MVP |
+| FR-AUTH-007 | Consumers can delete their account and request data export, in compliance with data protection requirements. | Consumer | MVP |
+
+---
+
+## 3. Consumer App — Deal Discovery
+
+| ID | Requirement | Actor | Priority |
+|---|---|---|---|
+| FR-DISC-001 | The app shows nearby deals ranked by GPS proximity when location permission is granted. | Consumer | MVP |
+| FR-DISC-002 | Consumers can sort deal listings by distance, price, discount percentage, popularity, or AI relevance. | Consumer | MVP |
+| FR-DISC-003 | Sponsored deals are visually labeled as sponsored and are blended into rankings per the Smart Deal Ranking algorithm, not simply pinned above all organic results. | Consumer | MVP |
+| FR-DISC-004 | Consumers can search products and stores by free-text keyword, with results in French or English matching the app's active language. | Consumer | MVP |
+| FR-DISC-005 | The app organizes deals into browsable product categories. | Consumer | MVP |
+| FR-DISC-006 | Each deal detail view shows original price, promotional price, discount percentage, promotion validity window, and a live countdown to expiration. | Consumer | MVP |
+| FR-DISC-007 | The app surfaces a "Deal of the Day" and a "Flash Deals" section, refreshed on a defined schedule. | Consumer | MVP |
+| FR-DISC-008 | Each product shows price history across previous promotions where data exists. | Consumer | Wave 2 |
+| FR-DISC-009 | Consumers can compare the same or equivalent product's price across multiple participating stores. | Consumer | Wave 2 |
+| FR-DISC-010 | Consumers can compare two or more stores side-by-side on price competitiveness, ratings, and deal variety. | Consumer | Wave 2 |
+| FR-DISC-011 | The app displays currently trending products/categories, derived from aggregate consumer engagement. | Consumer | Wave 2 |
+
+---
+
+## 4. Consumer App — Personalization
+
+| ID | Requirement | Actor | Priority |
+|---|---|---|---|
+| FR-PERS-001 | Authenticated consumers can save products to Favorites and a Wishlist. | Consumer | MVP |
+| FR-PERS-002 | Consumers can follow specific supermarkets to prioritize their deals in the feed and receive their updates. | Consumer | MVP |
+| FR-PERS-003 | Consumers can build and edit a shopping list. | Consumer | MVP |
+| FR-PERS-004 | The app generates personalized deal recommendations based on browsing history, favorites, and location. | Consumer, AI System | Wave 2 |
+| FR-PERS-005 | The app offers AI-driven shopping basket optimization, suggesting the lowest-cost combination of stores/products for a given shopping list. | Consumer, AI System | Wave 2 |
+| FR-PERS-006 | Wishlist items trigger an alert to the consumer when they go on promotion or drop in price. | Consumer, System | Wave 2 |
+
+---
+
+## 5. Consumer App — Location & Store Information
+
+| ID | Requirement | Actor | Priority |
+|---|---|---|---|
+| FR-LOC-001 | The app displays a map of nearby participating supermarkets. | Consumer | MVP |
+| FR-LOC-002 | Consumers can get turn-by-turn directions to a selected store. | Consumer | MVP |
+| FR-LOC-003 | Each store has a profile page showing opening hours, address, contact info, active promotions, and follower count. | Consumer | MVP |
+| FR-LOC-004 | The app supports geo-targeted push notifications when a consumer is near a store running a relevant promotion. | Consumer, System | Wave 2 |
+
+---
+
+## 6. Consumer App — Notifications & Sharing
+
+| ID | Requirement | Actor | Priority |
+|---|---|---|---|
+| FR-NOTIF-001 | Consumers receive push notifications for followed-store updates and flash deals, with in-app notification preference controls. | Consumer | MVP |
+| FR-NOTIF-002 | Consumers can share a product or deal to WhatsApp, Facebook, Instagram, Messenger, Telegram, or TikTok via native share sheets. | Consumer | MVP |
+| FR-NOTIF-003 | Consumers receive seasonal reminder notifications tied to the Cameroon commercial calendar (e.g., Back-to-School deals). | Consumer, System | Wave 2 |
+| FR-NOTIF-004 | Consumers can opt into or out of each notification category independently. | Consumer | MVP |
+
+---
+
+## 7. Consumer App — Experience
+
+| ID | Requirement | Actor | Priority |
+|---|---|---|---|
+| FR-UX-001 | The app is fully usable in French and in English, with a user-controlled language switch. | Consumer | MVP |
+| FR-UX-002 | The app supports light and dark mode, following system preference by default with manual override. | Consumer | MVP |
+| FR-UX-003 | Previously loaded deals, favorites, and store info remain viewable offline; the app clearly indicates stale/cached data. | Consumer | MVP |
+| FR-UX-004 | First-time users complete a guided onboarding flow covering location permission, language, and core navigation. | Consumer | MVP |
+
+---
+
+## 8. Retailer Portal — Catalog & Promotions
+
+| ID | Requirement | Actor | Priority |
+|---|---|---|---|
+| FR-CAT-001 | Retailer Owners can create and manage multiple branches under one organization, each with its own address, hours, and geolocation. | Retailer Owner | MVP |
+| FR-CAT-002 | Retailer Staff with appropriate permissions can upload PDF flyers and product images for automatic processing by the AI OCR Engine. | Retailer Staff | MVP |
+| FR-CAT-003 | Retailer Staff can create and edit individual promotions manually (product, price, discount, validity window, branch/category scope) without requiring a flyer upload. | Retailer Staff | MVP |
+| FR-CAT-004 | Promotions can be scheduled to go live and expire automatically at defined dates/times. | Retailer Staff | MVP |
+| FR-CAT-005 | Retailer Owners can create and distribute digital coupons with redemption tracking. | Retailer Owner | Wave 2 |
+| FR-CAT-006 | Retailer Staff can generate a shareable flyer/poster directly from a set of active promotions. | Retailer Staff, AI System | Wave 2 |
+
+---
+
+## 9. Retailer Portal — Monetization Tools
+
+| ID | Requirement | Actor | Priority |
+|---|---|---|---|
+| FR-MON-001 | Retailer Owners can sponsor individual products to boost their ranking in consumer search/discovery, subject to budget and duration settings. | Retailer Owner | Wave 2 |
+| FR-MON-002 | Retailer Owners can sponsor a category or their entire store profile. | Retailer Owner | Wave 2 |
+| FR-MON-003 | Retailer Owners can purchase homepage banner placements for a defined date range, subject to availability/inventory rules. | Retailer Owner | Wave 2 |
+| FR-MON-004 | The system prevents double-booking of exclusive placements (e.g., homepage banner slots) and shows real-time availability. | System | Wave 2 |
+
+---
+
+## 10. Retailer Portal — Engagement Tools
+
+| ID | Requirement | Actor | Priority |
+|---|---|---|---|
+| FR-ENG-001 | Retailer Owners can view and export their list of followers (aggregate counts and trends; individual consumer PII is not exposed beyond what consent allows). | Retailer Owner | MVP |
+| FR-ENG-002 | Retailer Staff can send push notifications to followers of their store, with scheduling and audience targeting (e.g., by branch/location). | Retailer Staff | Wave 2 |
+| FR-ENG-003 | Retailer Staff can create WhatsApp campaign content and target lists for external distribution. | Retailer Staff | Wave 2 |
+
+---
+
+## 11. Retailer Portal — Operations
+
+| ID | Requirement | Actor | Priority |
+|---|---|---|---|
+| FR-OPS-001 | Retailer Owners can invite, deactivate, and manage roles/permissions for Retailer Staff. | Retailer Owner | MVP |
+| FR-OPS-002 | All catalog, promotion, and campaign actions are attributed to the acting staff user and recorded in an audit log visible to the Retailer Owner. | System | MVP |
+| FR-OPS-003 | Retailer Owners can configure organization-level settings (branding, default language, notification defaults). | Retailer Owner | MVP |
+
+---
+
+## 12. AI OCR Engine
+
+| ID | Requirement | Actor | Priority |
+|---|---|---|---|
+| FR-OCR-001 | The system automatically processes uploaded PDF flyers and images to extract per-product: image, name, brand, category, barcode (if present), original price, promotional price, discount percentage, promotion period, store, quantity, and packaging. | AI System | MVP |
+| FR-OCR-002 | Each extracted product record includes a confidence score. | AI System | MVP |
+| FR-OCR-003 | No AI-extracted promotion is published to consumers until a Retailer Staff user reviews and approves it. | Retailer Staff | MVP |
+| FR-OCR-004 | The review interface lets staff correct any extracted field before approval, and flags low-confidence fields for attention. | Retailer Staff | MVP |
+| FR-OCR-005 | Rejected or corrected extractions are logged and usable to monitor/improve OCR accuracy over time. | System | Wave 2 |
+
+---
+
+## 13. Smart Deal Ranking
+
+| ID | Requirement | Actor | Priority |
+|---|---|---|---|
+| FR-RANK-001 | The ranking algorithm scores each candidate deal using, at minimum, distance, discount, price, and popularity. | AI System | MVP |
+| FR-RANK-002 | The ranking algorithm additionally incorporates user preferences, shopping history, current season, product availability, sponsored priority, store rating, recent searches, and trending signals as they become available. | AI System | Wave 2 |
+| FR-RANK-003 | Sponsored placement influences ranking within defined, bounded limits — it cannot fully override relevance for a consumer (e.g., a sponsored deal 50km away does not outrank a highly relevant nearby organic deal). | AI System | MVP |
+| FR-RANK-004 | Ranking recomputes as relevant inputs change (new location, new promotion, expired promotion) within an acceptable latency defined in the non-functional requirements. | AI System | MVP |
+
+---
+
+## 14. Retail Business Intelligence & Cameroon Knowledge Engine
+
+| ID | Requirement | Actor | Priority |
+|---|---|---|---|
+| FR-BI-001 | The platform generates continuous AI recommendations answering what to promote, when, and how, per retailer. | AI System | Wave 2 |
+| FR-BI-002 | The platform identifies trending products/categories and products losing engagement, per retailer. | AI System | Wave 2 |
+| FR-BI-003 | The platform ranks past campaigns by estimated ROI and recommends which active promotions should be extended. | AI System | Wave 2 |
+| FR-BI-004 | The system maintains a Cameroon commercial-calendar data set (New Year, Youth Day, Valentine's Day, Women's Day, Ramadan, Easter, Labour Day, National Day, Back-to-School, Black Friday, Christmas, New Year's Eve, Mother's Day, Father's Day, Eid, Lent) and surfaces campaign recommendations to retailers 2–6 weeks ahead of each event. | AI System | Wave 2 |
+| FR-BI-005 | Seasonal campaign recommendations include suggested products, discounts, campaign name, notification copy, budget guidance, sponsorship suggestions, flyer/social copy, duration, target audience, and timing. | AI System | Wave 2 |
+| FR-BI-006 | The commercial calendar is stored as configurable data, not hardcoded logic, so new countries/events can be added without a code change. | System | Wave 2 |
+
+---
+
+## 15. AI Marketing Assistant
+
+| ID | Requirement | Actor | Priority |
+|---|---|---|---|
+| FR-MKT-001 | Retailer Staff can generate, in French or English, draft social captions (Facebook, Instagram, TikTok), WhatsApp/SMS/email campaign copy, push notification copy, and ad copy from a selected promotion or campaign brief. | Retailer Staff, AI System | Wave 2 |
+| FR-MKT-002 | Retailer Staff can generate flyers, posters, and promotional banners from selected products/promotions. | Retailer Staff, AI System | Wave 2 |
+| FR-MKT-003 | All AI-generated marketing content is editable and requires explicit staff approval before it is published or sent. | Retailer Staff | Wave 2 |
+
+---
+
+## 16. AI Competition Analysis & Customer Insights
+
+| ID | Requirement | Actor | Priority |
+|---|---|---|---|
+| FR-COMP-001 | Retailers can view aggregate, anonymized competitive benchmarks (price competitiveness, trending categories, promotion effectiveness) without seeing another named retailer's confidential data. | Retailer Owner | Wave 3 |
+| FR-COMP-002 | The system never exposes another retailer's raw sales, cost, or margin data through the competition analysis feature. | System | Wave 3 |
+| FR-INS-001 | The system analyzes consumer searches, favorites, shares, wishlist activity, clicks, location, and season to recommend which products a retailer should promote next. | AI System | Wave 3 |
+
+---
+
+## 17. Business Intelligence Dashboard
+
+| ID | Requirement | Actor | Priority |
+|---|---|---|---|
+| FR-DASH-001 | Retailer Owners can view views, clicks, shares, favorites, and follower counts per promotion, product, and store, over selectable time ranges. | Retailer Owner | MVP |
+| FR-DASH-002 | The dashboard shows weekly and monthly trends for the above metrics. | Retailer Owner | Wave 2 |
+| FR-DASH-003 | The dashboard computes a promotion health score and conversion estimates per active campaign. | AI System | Wave 2 |
+| FR-DASH-004 | The dashboard surfaces top-performing categories and stores, and seasonal trend/forecast views. | AI System | Wave 2 |
+| FR-DASH-005 | Retailer Owners can download an executive report (PDF/export) summarizing dashboard data for a selected period. | Retailer Owner | Wave 2 |
+
+---
+
+## 18. Monetization & Payments
+
+| ID | Requirement | Actor | Priority |
+|---|---|---|---|
+| FR-PAY-001 | Retailer Owners can subscribe to Free, Professional, or Enterprise plans, with feature access gated by plan tier. | Retailer Owner | MVP |
+| FR-PAY-002 | The platform processes retailer payments via MTN Mobile Money and Orange Money. | Retailer Owner, System | MVP |
+| FR-PAY-003 | The platform processes retailer payments via Visa/Mastercard. | Retailer Owner, System | Wave 3 |
+| FR-PAY-004 | The system supports recurring subscription billing with automated renewal, proration, and failed-payment handling. | System | MVP |
+| FR-PAY-005 | Retailer Owners can view billing history and download invoices/receipts. | Retailer Owner | MVP |
+| FR-PAY-006 | Consumers can subscribe to a premium membership tier and participate in a referral program. | Consumer | Wave 2 |
+
+---
+
+## 19. Platform Administration
+
+| ID | Requirement | Actor | Priority |
+|---|---|---|---|
+| FR-ADMIN-001 | Platform Admins can review and approve/reject new retailer registrations. | Platform Admin | MVP |
+| FR-ADMIN-002 | Platform Admins can moderate flagged content (promotions, uploaded images, generated marketing copy). | Platform Admin | MVP |
+| FR-ADMIN-003 | Platform Admins can view platform-wide analytics across all retailers and consumers, distinct from any single retailer's view. | Platform Admin | Wave 2 |
+| FR-ADMIN-004 | Platform Admins can configure the Cameroon commercial calendar and, in future, additional country calendars. | Platform Admin | Wave 2 |
+
+---
+
+## Next Phase
+
+Phase 3: **Non-Functional Requirements** — performance, scalability, security, availability, localization, and compliance requirements that apply across all functional areas above. Awaiting approval to proceed.
