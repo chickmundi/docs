@@ -1,0 +1,393 @@
+---
+title: 'Database Schema'
+description: 'DealMarket Cameroon — Phase 6: Postgres schema, relationships, and row-level security approach.'
+icon: 'database'
+---
+
+<Note>
+**Phase 6** of the DealMarket Cameroon build roadmap. This defines the Postgres schema (Supabase) implementing the [System Architecture](/product/system-architecture) and the design implications from [User Personas](/product/user-personas). Visual entity-relationship diagrams are produced in Phase 7; this document is the field-level source of truth those diagrams are drawn from.
+</Note>
+
+## 1. Conventions
+
+- **Primary keys**: `uuid` everywhere (`gen_random_uuid()`), never auto-increment integers — avoids leaking record counts and simplifies future multi-region/multi-country sharding.
+- **Timestamps**: every table has `created_at timestamptz not null default now()` and `updated_at timestamptz not null default now()` (maintained via trigger). Soft-delete via `deleted_at timestamptz` where records must be recoverable/auditable (promotions, products); hard delete elsewhere (e.g., ephemeral push tokens).
+- **Tenancy column**: every retailer-scoped table carries `retailer_id uuid not null references retailers(id)` directly or via a non-nullable join, so RLS can be applied uniformly (NFR-SEC-008).
+- **Money**: stored as `numeric(12,2)` in the smallest sensible currency unit for the locale, plus a `currency` column (`char(3)`, ISO 4217) — never assume XAF-only, per the expansion strategy (NFR-SCALE-005).
+- **Enums**: implemented as Postgres `enum` types where the value set is small and stable (status fields); lookup tables where retailers/admins need to extend the set (categories).
+- **Auth linkage**: `auth.users` (Supabase-managed) is the source of identity; `consumers` and `staff_members` are 1:1 profile extensions keyed on `auth_user_id`, never duplicating credentials.
+
+---
+
+## 2. Core Identity & Tenancy
+
+### `retailers`
+Top-level tenant — one row per retailer organization (independent store or chain).
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid pk | |
+| name | text not null | |
+| slug | text unique not null | URL-safe identifier |
+| type | enum(`independent`,`chain`,`distributor`) | Distributor rows back the manufacturer persona (Phase 5) |
+| status | enum(`pending_approval`,`active`,`suspended`) | Gates FR-ADMIN-001 |
+| subscription_plan_id | uuid fk → `subscription_plans.id` | nullable until first subscription |
+| country_code | char(2) | ISO 3166-1, drives locale/calendar/payment config (NFR-SCALE-005) |
+| default_language | enum(`fr`,`en`) | |
+| logo_url, brand_color | text | for portal + generated flyers |
+
+### `branches`
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid pk | |
+| retailer_id | uuid fk → `retailers.id` not null | |
+| name | text not null | |
+| address | text | |
+| geolocation | geography(Point, 4326) | PostGIS; indexed for nearby-store queries (FR-DISC-001, FR-LOC-001) |
+| opening_hours | jsonb | structured per-weekday hours |
+| phone | text | |
+| status | enum(`active`,`inactive`) | |
+
+### `staff_members`
+Implements branch-scoped roles required by the Brice persona (Phase 5).
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid pk | |
+| retailer_id | uuid fk → `retailers.id` not null | |
+| auth_user_id | uuid fk → `auth.users.id` unique not null | |
+| role | enum(`owner`,`campaign_manager`,`catalog_editor`,`analytics_viewer`) | FR-AUTH-005 |
+| branch_scope | uuid[] null | null = org-wide (Owner/Estelle persona); populated array = branch-limited (Brice persona) |
+| invited_by | uuid fk → `staff_members.id` | audit trail |
+| status | enum(`invited`,`active`,`deactivated`) | |
+
+### `brands`
+Manufacturer/distributor entity, independent of any single retailer (Distributor persona, Phase 5; Wave 3).
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid pk | |
+| retailer_id | uuid fk → `retailers.id` null | set only if the brand row is itself a `distributor`-type retailer account |
+| name | text not null | |
+| logo_url | text | |
+
+### `platform_admins`
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid pk | |
+| auth_user_id | uuid fk → `auth.users.id` unique not null | |
+| role | enum(`ops`,`super_admin`) | Sandrine persona |
+
+---
+
+## 3. Catalog & Promotions
+
+### `categories`
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid pk | |
+| parent_id | uuid fk → `categories.id` null | self-referencing tree |
+| name_fr, name_en | text not null | localized labels (NFR-LOC-001) |
+| icon | text | |
+
+### `products`
+Canonical product catalog, reusable across retailers for comparison features (FR-DISC-009).
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid pk | |
+| name | text not null | |
+| brand_id | uuid fk → `brands.id` null | |
+| category_id | uuid fk → `categories.id` | |
+| barcode | text null | from OCR when available (FR-OCR-001) |
+| default_image_url | text | |
+| embedding | vector(1536) | pgvector; powers semantic search and recommendations |
+
+### `promotions`
+The core deal record — one row per store-scoped promotional offer. Central entity referenced throughout Functional Requirements §3, §8, §12–14.
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid pk | |
+| retailer_id | uuid fk → `retailers.id` not null | |
+| branch_id | uuid fk → `branches.id` not null | |
+| product_id | uuid fk → `products.id` null | null until matched/confirmed against canonical catalog |
+| raw_product_name, brand_text | text | as extracted/entered, pre-matching |
+| quantity, packaging | text | e.g. "1kg", "pack of 6" — mandatory structured fields per Marie persona (Phase 5) |
+| original_price, promo_price | numeric(12,2) not null | |
+| currency | char(3) not null | |
+| discount_percent | numeric(5,2) generated | computed from prices |
+| starts_at, ends_at | timestamptz not null | drives countdown UI (FR-DISC-006) and auto-expiry (FR-CAT-004) |
+| status | enum(`pending_review`,`approved`,`published`,`expired`,`rejected`) | OCR gate (FR-OCR-003) |
+| source | enum(`ocr`,`manual`) | |
+| confidence_score | numeric(3,2) null | set only when `source = ocr` (FR-OCR-002) |
+| sponsorship_id | uuid fk → `sponsorships.id` null | |
+| image_url | text | |
+| reviewed_by | uuid fk → `staff_members.id` null | |
+
+### `flyers`
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid pk | |
+| retailer_id | uuid fk → `retailers.id` not null | |
+| uploaded_by | uuid fk → `staff_members.id` not null | |
+| file_url | text not null | Supabase Storage path |
+| file_type | enum(`pdf`,`image`) | |
+| ocr_status | enum(`queued`,`processing`,`completed`,`failed`) | |
+
+### `ocr_extractions`
+One row per product candidate extracted from a flyer, before it becomes/updates a `promotions` row (FR-OCR-001/002).
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid pk | |
+| flyer_id | uuid fk → `flyers.id` not null | |
+| extracted_fields | jsonb not null | raw structured extraction |
+| confidence_score | numeric(3,2) | |
+| promotion_id | uuid fk → `promotions.id` null | linked once reviewed/approved |
+
+### `price_history`
+Append-only, populated when a promotion is published/expires (FR-DISC-008).
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid pk | |
+| product_id | uuid fk → `products.id` not null | |
+| retailer_id | uuid fk → `retailers.id` not null | |
+| price | numeric(12,2) not null | |
+| recorded_at | timestamptz not null | |
+
+---
+
+## 4. Consumer & Personalization
+
+### `consumers`
+1:1 profile extension of `auth.users`.
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid pk | |
+| auth_user_id | uuid fk → `auth.users.id` unique not null | |
+| display_name | text | |
+| preferred_language | enum(`fr`,`en`) | |
+| home_location | geography(Point, 4326) null | consented location for defaults |
+| membership_tier | enum(`free`,`premium`) | FR-PAY-006 |
+| referred_by | uuid fk → `consumers.id` null | referral program |
+
+### `favorites`, `wishlist_items`
+Near-identical shape; kept as separate tables since they carry different notification semantics (FR-PERS-001, FR-PERS-006).
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid pk | |
+| consumer_id | uuid fk → `consumers.id` not null | |
+| product_id | uuid fk → `products.id` not null | |
+| created_at | timestamptz | |
+
+### `shopping_lists` / `shopping_list_items`
+| Table | Key columns |
+|---|---|
+| `shopping_lists` | id, consumer_id fk, name, created_at |
+| `shopping_list_items` | id, shopping_list_id fk, product_id fk null, free_text_item text null, quantity, checked boolean |
+
+### `store_follows`
+| Column | Type | Notes |
+|---|---|---|
+| consumer_id | uuid fk → `consumers.id` | composite pk with retailer_id |
+| retailer_id | uuid fk → `retailers.id` | FR-PERS-002 |
+
+### `engagement_events`
+High-volume analytics event log — views, clicks, shares, search — feeds Smart Ranking, BI Dashboard, and Customer Insights (FR-RANK, FR-DASH, FR-INS). Partitioned by month for scale (NFR-SCALE-002).
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid pk | |
+| consumer_id | uuid fk → `consumers.id` null | null for unauthenticated browsing |
+| event_type | enum(`view`,`click`,`share`,`search`,`favorite`,`impression`) | |
+| promotion_id | uuid fk → `promotions.id` null | |
+| product_id | uuid fk → `products.id` null | |
+| retailer_id | uuid fk → `retailers.id` null | denormalized for fast retailer-scoped analytics queries |
+| search_query | text null | when `event_type = search` |
+| occurred_at | timestamptz not null | |
+
+### `push_tokens`, `notification_preferences`
+| Table | Key columns |
+|---|---|
+| `push_tokens` | id, consumer_id fk, staff_member_id fk (one of the two set), fcm_token, platform, last_seen_at |
+| `notification_preferences` | consumer_id fk pk, flash_deals boolean, wishlist_alerts boolean, followed_store_updates boolean, seasonal_reminders boolean, geo_targeted boolean |
+
+---
+
+## 5. Monetization
+
+### `subscription_plans`
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid pk | |
+| tier | enum(`free`,`professional`,`enterprise`) | FR-PAY-001 |
+| price_monthly | numeric(12,2) | |
+| currency | char(3) | |
+| feature_limits | jsonb | e.g. max branches, max sponsored slots — gates features by tier |
+
+### `subscriptions`
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid pk | |
+| retailer_id | uuid fk → `retailers.id` not null | |
+| plan_id | uuid fk → `subscription_plans.id` not null | |
+| status | enum(`active`,`past_due`,`cancelled`) | |
+| current_period_end | timestamptz | |
+| payment_provider | enum(`mtn_momo`,`orange_money`,`card`) | |
+
+### `payments`
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid pk | |
+| subscription_id | uuid fk → `subscriptions.id` null | null for one-off purchases (sponsorship, banner) |
+| retailer_id | uuid fk → `retailers.id` not null | |
+| amount, currency | numeric, char(3) | |
+| provider | enum(`mtn_momo`,`orange_money`,`card`) | |
+| provider_reference | text | external transaction id |
+| status | enum(`pending`,`succeeded`,`failed`,`refunded`) | NFR-AVAIL-003 |
+
+### `sponsorships`
+Backs sponsored products/categories/stores and homepage banners (FR-MON-001–004).
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid pk | |
+| retailer_id | uuid fk → `retailers.id` not null | |
+| scope | enum(`product`,`category`,`store`,`homepage_banner`) | |
+| target_id | uuid null | product_id/category_id depending on `scope`; null for `store`/`homepage_banner` |
+| starts_at, ends_at | timestamptz | |
+| budget | numeric(12,2) | |
+| priority_weight | numeric(4,2) | bounded input to Deal Ranking Service (FR-RANK-003) |
+| placement_slot | text null | for homepage banners — enforces exclusivity (FR-MON-004) |
+
+### `coupons`, `coupon_redemptions`
+| Table | Key columns |
+|---|---|
+| `coupons` | id, retailer_id fk, code, discount_type, discount_value, starts_at, ends_at, max_redemptions |
+| `coupon_redemptions` | id, coupon_id fk, consumer_id fk, redeemed_at |
+
+---
+
+## 6. Marketing, AI & Retail Intelligence
+
+### `commercial_calendar_events`
+Configuration-driven, not hardcoded (NFR-SCALE-005) — backs the Cameroon Retail Knowledge Engine (FR-BI-004–006).
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid pk | |
+| country_code | char(2) | supports multi-country expansion |
+| name_fr, name_en | text | e.g. "Fête du Travail" / "Labour Day" |
+| event_date_rule | jsonb | fixed date or computed (e.g. Ramadan, Easter) |
+| lead_time_weeks | int4range | drives the "2–6 weeks ahead" recommendation trigger |
+
+### `campaign_recommendations`
+AI-generated seasonal/marketing suggestions awaiting retailer action (FR-BI-005, FR-MKT-001).
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid pk | |
+| retailer_id | uuid fk → `retailers.id` not null | |
+| calendar_event_id | uuid fk → `commercial_calendar_events.id` null | null for non-seasonal, ad hoc recommendations |
+| recommendation_type | enum(`seasonal_campaign`,`promotion_extension`,`sponsorship_suggestion`) | |
+| generated_content | jsonb | products, copy, budget guidance, timing — per FR-BI-005 |
+| status | enum(`suggested`,`accepted`,`dismissed`) | |
+
+### `marketing_content_drafts`
+AI Marketing Assistant output, always draft-first (FR-MKT-003).
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid pk | |
+| retailer_id | uuid fk → `retailers.id` not null | |
+| promotion_id | uuid fk → `promotions.id` null | |
+| channel | enum(`facebook`,`instagram`,`tiktok`,`whatsapp`,`sms`,`email`,`push`,`flyer`,`banner`) | |
+| language | enum(`fr`,`en`) | |
+| content | text or jsonb | text copy, or asset reference for flyers/banners |
+| status | enum(`draft`,`approved`,`sent`) | |
+| approved_by | uuid fk → `staff_members.id` null | |
+
+### `competition_insights`
+Pre-aggregated, anonymized cross-retailer metrics only — never raw per-retailer rows (FR-COMP-002, structural enforcement per System Architecture §5).
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid pk | |
+| category_id | uuid fk → `categories.id` | |
+| region | text | aggregation boundary, never store-identifying at low volume |
+| metric_type | enum(`avg_price`,`engagement_index`,`trending_score`) | |
+| value | numeric | |
+| period_start, period_end | date | |
+
+---
+
+## 7. Notifications & Governance
+
+### `notifications`
+Delivery log for push/email/SMS (FR-NOTIF, FR-ENG-002).
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid pk | |
+| recipient_type | enum(`consumer`,`staff`) | |
+| recipient_id | uuid | polymorphic ref to `consumers.id` or `staff_members.id` |
+| channel | enum(`push`,`email`,`sms`,`whatsapp`) | `whatsapp` reserved, Wave 2+ |
+| category | enum(`flash_deal`,`wishlist_alert`,`followed_store`,`seasonal_reminder`,`campaign`) | maps to `notification_preferences` |
+| payload | jsonb | |
+| status | enum(`queued`,`sent`,`failed`) | |
+| sent_at | timestamptz null | |
+
+### `audit_logs`
+Immutable, append-only (NFR-SEC-004).
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid pk | |
+| actor_type | enum(`staff`,`platform_admin`,`system`) | |
+| actor_id | uuid null | |
+| action | text not null | e.g. `promotion.publish`, `staff.role_change` |
+| entity_type, entity_id | text, uuid | |
+| before_state, after_state | jsonb null | |
+| occurred_at | timestamptz not null | |
+
+### `moderation_flags`
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid pk | |
+| entity_type, entity_id | text, uuid | promotion, flyer, marketing content, etc. |
+| reason | text | |
+| status | enum(`open`,`resolved`,`dismissed`) | |
+| resolved_by | uuid fk → `platform_admins.id` null | FR-ADMIN-002 |
+
+---
+
+## 8. Row-Level Security Approach
+
+RLS is enabled on every tenant-scoped table (NFR-SEC-008). Policies follow three repeatable patterns rather than one-off logic per table:
+
+| Pattern | Applies to | Rule |
+|---|---|---|
+| **Tenant-owned** | `promotions`, `flyers`, `sponsorships`, `subscriptions`, `payments`, `marketing_content_drafts`, `campaign_recommendations` | `retailer_id = (select retailer_id from staff_members where auth_user_id = auth.uid())`, further narrowed by `branch_scope` for branch-limited roles (Brice persona) on `promotions`/`flyers`. |
+| **Consumer-owned** | `favorites`, `wishlist_items`, `shopping_lists`, `store_follows`, `notification_preferences` | `consumer_id = (select id from consumers where auth_user_id = auth.uid())`. |
+| **Public-read** | `products`, `categories`, `promotions` where `status = 'published'`, `branches` | Readable by any authenticated or anonymous client (FR-AUTH-002); writes always go through Edge Functions, never direct client writes. |
+| **Admin-override** | All tables, for `platform_admins` role | Explicit additional policy granting read (and narrowly scoped write, e.g. `retailers.status`, `moderation_flags`) — audited via `audit_logs`, never a blanket bypass (System Architecture §5). |
+
+`competition_insights` has no tenant column by design — it is populated only by a privileged backend process reading across tenants and writing pre-aggregated rows, so no retailer-facing RLS policy can accidentally expose another retailer's raw data (FR-COMP-002).
+
+## 9. Indexing & Performance Notes
+
+- `branches.geolocation` — GiST index for nearby-store queries (NFR-PERF-001, FR-DISC-001).
+- `promotions (retailer_id, status, ends_at)` — composite index supporting the dominant "active promotions for retailer" and expiry-sweep queries.
+- `products.embedding` — `ivfflat` (or `hnsw`) pgvector index for semantic search/recommendations (NFR-PERF-002).
+- `engagement_events` — monthly range partitioning plus an index on `(retailer_id, occurred_at)` for dashboard queries (NFR-PERF-004); older partitions can be rolled up/archived per the data retention policy (NFR-PRIV-001).
+- Full-text search index (`pg_trgm` or `tsvector`) on `products.name` / `promotions.raw_product_name` for FR-DISC-004 keyword search, bilingual (French/English) configs.
+
+---
+
+## Next Phase
+
+Phase 7: **ER Diagrams** — visual entity-relationship diagrams derived from this schema, grouped by domain (tenancy, catalog, consumer, monetization, AI/marketing) for easier review and onboarding of new engineers. Awaiting approval to proceed.

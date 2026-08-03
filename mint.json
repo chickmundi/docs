@@ -64,7 +64,8 @@
         "product/functional-requirements",
         "product/non-functional-requirements",
         "product/system-architecture",
-        "product/user-personas"
+        "product/user-personas",
+        "product/database-schema"
       ]
     },
     {
