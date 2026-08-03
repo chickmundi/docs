@@ -67,7 +67,8 @@
         "product/user-personas",
         "product/database-schema",
         "product/er-diagrams",
-        "product/folder-architecture"
+        "product/folder-architecture",
+        "product/api-design"
       ]
     },
     {
