@@ -1,0 +1,119 @@
+---
+title: 'Non-Functional Requirements'
+description: 'DealMarket Cameroon — Phase 3: performance, scalability, security, availability, localization, and compliance requirements.'
+icon: 'shield-check'
+---
+
+<Note>
+**Phase 3** of the DealMarket Cameroon build roadmap. These requirements apply across all functional areas defined in [Functional Requirements](/product/functional-requirements) and constrain every subsequent phase — architecture, database schema, API design, and deployment.
+</Note>
+
+Requirement IDs use the pattern `NFR-<CATEGORY>-<NUMBER>`.
+
+---
+
+## 1. Performance
+
+| ID | Requirement |
+|---|---|
+| NFR-PERF-001 | Consumer app cold start renders the deal feed in under 2.5s on a mid-tier Android device (4GB RAM) on a 3G/4G connection. |
+| NFR-PERF-002 | Deal search and filter results return in under 500ms (p95) at the API layer under normal load. |
+| NFR-PERF-003 | Smart Deal Ranking recomputation for a location/context change completes in under 300ms (p95) server-side. |
+| NFR-PERF-004 | Retailer portal dashboard views load in under 3s (p95) for date ranges up to 12 months. |
+| NFR-PERF-005 | AI OCR extraction of a standard flyer (up to 20 pages / 50 products) completes and is ready for human review within 5 minutes. |
+| NFR-PERF-006 | Image assets served to the consumer app are optimized/responsive (appropriately sized, modern formats) to minimize data usage on constrained connections. |
+| NFR-PERF-007 | Push notification delivery reaches 95% of targeted, reachable devices within 2 minutes of trigger, excluding OS-level throttling outside platform control. |
+
+## 2. Scalability
+
+| ID | Requirement |
+|---|---|
+| NFR-SCALE-001 | The platform supports an unbounded, growing number of retailer organizations and branches without schema or architectural redesign (per PRD Section 5). |
+| NFR-SCALE-002 | The backend scales horizontally to support at minimum 500,000 monthly active consumer app users and 5,000 retailer accounts at Wave 2 maturity, with a documented path beyond that. |
+| NFR-SCALE-003 | AI/OCR processing runs as an asynchronous, queued pipeline that scales independently of the consumer-facing API, so flyer processing volume never degrades app responsiveness. |
+| NFR-SCALE-004 | Multi-tenancy (per-retailer data isolation) is enforced at the data layer, not only in application logic, so scale-out does not risk cross-tenant data leakage. |
+| NFR-SCALE-005 | The system is designed to add a new country (currency, language, tax rules, commercial calendar, payment providers) via configuration, without code-level architectural change (per PRD Section 15). |
+
+## 3. Availability & Reliability
+
+| ID | Requirement |
+|---|---|
+| NFR-AVAIL-001 | Consumer-facing API and app functionality (browsing, search) target 99.9% uptime, measured monthly. |
+| NFR-AVAIL-002 | Retailer portal targets 99.5% uptime, measured monthly, with planned maintenance windows communicated in advance. |
+| NFR-AVAIL-003 | Payment processing failures are retried with backoff and surfaced to the retailer with a clear status; no payment is silently lost. |
+| NFR-AVAIL-004 | The system maintains automated daily backups of all persistent data, with a documented Recovery Point Objective (RPO) ≤ 24 hours and Recovery Time Objective (RTO) ≤ 4 hours. |
+| NFR-AVAIL-005 | Core browsing and search functionality degrades gracefully (cached/offline data) rather than fully failing when backend connectivity is interrupted on the client. |
+| NFR-AVAIL-006 | A single retailer's data or traffic spike (e.g., a viral promotion) cannot degrade service for other retailers or consumers (noisy-neighbor isolation). |
+
+## 4. Security
+
+| ID | Requirement |
+|---|---|
+| NFR-SEC-001 | All client-server traffic is encrypted in transit (TLS 1.2+); all sensitive data at rest is encrypted. |
+| NFR-SEC-002 | Authentication uses industry-standard mechanisms (OTP, hashed/salted credentials, or federated sign-in); no plaintext credential storage anywhere in the system. |
+| NFR-SEC-003 | All admin portal and API access enforces role-based access control (RBAC) matching the roles defined in Functional Requirements (Retailer Owner, Retailer Staff, Platform Admin). |
+| NFR-SEC-004 | Every state-changing action (catalog edits, campaign publishing, permission changes, payment operations) is captured in an immutable audit log with actor, timestamp, and before/after state. |
+| NFR-SEC-005 | The platform is resilient to the OWASP Top 10 (injection, broken auth, XSS, broken access control, etc.), verified through security review before each major release. |
+| NFR-SEC-006 | Payment credentials and provider secrets are never stored directly by the platform where a PCI-compliant tokenization/hosted-flow alternative exists (mobile money and card providers). |
+| NFR-SEC-007 | Rate limiting and abuse detection protect public-facing endpoints (search, registration, OTP) against scraping and brute-force attacks. |
+| NFR-SEC-008 | Cross-tenant data isolation is verified by automated tests — one retailer's staff can never query or mutate another retailer's data via any API path. |
+| NFR-SEC-009 | AI-generated or AI-extracted content that is consumer-facing or price-bearing cannot bypass the human-verification gate defined in Functional Requirements, even via alternate API paths. |
+
+## 5. Data Privacy & Compliance
+
+| ID | Requirement |
+|---|---|
+| NFR-PRIV-001 | The platform defines and enforces a data retention policy for consumer behavioral data (searches, clicks, location history), with automatic expiry/anonymization beyond the retention window. |
+| NFR-PRIV-002 | Consumers can request account deletion and data export, fulfilled within a defined SLA (per FR-AUTH-007). |
+| NFR-PRIV-003 | Location data is only collected with explicit consumer consent and is used solely for the features that require it (nearby deals, geo-targeted notifications, directions). |
+| NFR-PRIV-004 | Competitive/business data of one retailer is never exposed to another retailer beyond the aggregated, anonymized form defined in Functional Requirements (FR-COMP-001/002). |
+| NFR-PRIV-005 | The platform's data handling practices are documented in a privacy policy available in French and English, aligned with applicable Cameroonian data protection regulation. |
+
+## 6. Localization & Accessibility
+
+| ID | Requirement |
+|---|---|
+| NFR-LOC-001 | All user-facing strings (consumer app, retailer portal, AI-generated content, notifications) are sourced from a translation layer supporting French and English at minimum, with no hardcoded UI strings. |
+| NFR-LOC-002 | Currency, date, and number formatting adapt to the active locale/country configuration. |
+| NFR-LOC-003 | The consumer app meets baseline mobile accessibility guidelines (sufficient color contrast, scalable text, screen-reader-compatible labels for primary flows). |
+| NFR-LOC-004 | Adding a new language requires only translation-resource updates, not code changes to UI components. |
+
+## 7. Usability & UX Quality
+
+| ID | Requirement |
+|---|---|
+| NFR-UX-001 | Core consumer flows (browse → view deal → save/share) are completable in 3 taps or fewer from the home screen. |
+| NFR-UX-002 | The design system (components, spacing, typography, motion) is consistent across the consumer app and, where applicable, the retailer portal, per a shared design language. |
+| NFR-UX-003 | All primary flows include appropriate loading, empty, and error states — no blank screens or unhandled failures visible to end users. |
+
+## 8. Maintainability & Engineering Quality
+
+| ID | Requirement |
+|---|---|
+| NFR-ENG-001 | Both codebases (Flutter, Next.js) follow Clean Architecture / feature-based organization with clear separation of presentation, domain, and data layers. |
+| NFR-ENG-002 | Business logic is covered by automated unit tests; critical user flows are covered by integration/E2E tests, with a minimum coverage threshold enforced in CI. |
+| NFR-ENG-003 | All code changes pass through CI (build, lint, type-check, test) before merge; no direct pushes to production branches. |
+| NFR-ENG-004 | Public and internal APIs are documented (OpenAPI or equivalent) and versioned to avoid breaking existing clients on deploy. |
+| NFR-ENG-005 | Configuration (feature flags, country/locale settings, commercial calendar data) is externalized from code, per the expansion strategy in the PRD. |
+
+## 9. Observability & Operations
+
+| ID | Requirement |
+|---|---|
+| NFR-OPS-001 | All backend services emit structured logs, metrics, and traces sufficient to diagnose a production incident without code changes. |
+| NFR-OPS-002 | Critical failures (payment errors, OCR pipeline stalls, notification delivery failures) trigger automated alerts to the engineering/on-call team. |
+| NFR-OPS-003 | AI feature outputs (ranking, recommendations, generated content) are monitored for quality/drift over time, with a feedback loop from human corrections (e.g., OCR review edits). |
+| NFR-OPS-004 | Deployment supports zero-downtime releases for the backend and web platform. |
+
+## 10. Cost & Resource Efficiency
+
+| ID | Requirement |
+|---|---|
+| NFR-COST-001 | AI/LLM and OCR calls are cost-monitored per retailer/feature, with usage visibility to inform subscription-tier limits. |
+| NFR-COST-002 | Media storage and delivery (flyer PDFs, product images) uses tiered/CDN-backed storage to control bandwidth and storage cost at scale. |
+
+---
+
+## Next Phase
+
+Phase 4: **System Architecture** — translating the functional and non-functional requirements into a concrete architecture (services, data flow, AI pipeline, deployment topology) for both the Flutter consumer app and the Next.js retailer platform on the shared Supabase/AI backend. Awaiting approval to proceed.

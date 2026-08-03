@@ -61,7 +61,8 @@
       "group": "Product",
       "pages": [
         "product/requirements",
-        "product/functional-requirements"
+        "product/functional-requirements",
+        "product/non-functional-requirements"
       ]
     },
     {
