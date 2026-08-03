@@ -70,7 +70,8 @@
         "product/folder-architecture",
         "product/api-design",
         "product/authentication-strategy",
-        "product/ai-architecture"
+        "product/ai-architecture",
+        "product/deployment-architecture"
       ]
     },
     {
