@@ -68,7 +68,8 @@
         "product/database-schema",
         "product/er-diagrams",
         "product/folder-architecture",
-        "product/api-design"
+        "product/api-design",
+        "product/authentication-strategy"
       ]
     },
     {
