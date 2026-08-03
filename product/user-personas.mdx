@@ -1,0 +1,186 @@
+---
+title: 'User Personas'
+description: 'DealMarket Cameroon — Phase 5: consumer and retailer personas informing schema, UX, and AI ranking design.'
+icon: 'users'
+---
+
+<Note>
+**Phase 5** of the DealMarket Cameroon build roadmap. These personas are hypothesis-driven, synthesized from the target-user definitions in the [Product Requirements Document](/product/requirements) and general Cameroonian market context. Treat them as working assumptions to validate with real user interviews during discovery/beta — not final research — but they are specific enough to drive concrete decisions in [Database Schema](#) (Phase 6), UI/UX Wireframes (Phase 13), and AI ranking weight tuning.
+</Note>
+
+Each persona maps back to functional requirements and directly informs a design decision noted at the end of its card.
+
+---
+
+## 1. Consumer Personas
+
+<AccordionGroup>
+  <Accordion title="Amina — The Budget-Conscious Mother (Primary Consumer Persona)" defaultOpen="true">
+    **Age 34 · Douala · Married, 3 children · Mid-tier Android phone (4GB RAM) · Prepaid mobile data, tops up weekly**
+
+    **Goals:** Stretch a fixed household budget across weekly grocery shopping; know which of the 2–3 supermarkets near her has the best prices this week before leaving home; avoid wasted trips.
+
+    **Pain points:** Currently relies on WhatsApp flyer forwards from family/neighbors, often expired by the time she sees them; no way to compare prices across stores without visiting each one; mobile data is precious, so she avoids apps that feel heavy or slow.
+
+    **Behavior:** Checks the app 2–3 times per week, mainly Thursday–Saturday before the weekend shop; strongly favors nearby stores; shares good deals to a family WhatsApp group; builds a shopping list before leaving home.
+
+    **Key features:** Nearby deals, price/discount sort, shopping list, WhatsApp sharing, offline caching, French-language UI, deal expiration countdown.
+
+    **Design implication:** Feed ranking must weight *distance* and *discount* heavily by default (FR-RANK-001); shopping list and offline caching are MVP, not later polish (NFR-PERF-006, FR-UX-003).
+  </Accordion>
+
+  <Accordion title="Junior — The Price-Savvy Student">
+    **Age 20 · Yaoundé, near campus · Single, shares an apartment · Entry-level Android phone · Very limited data budget**
+
+    **Goals:** Find the cheapest version of everyday items (rice, oil, toiletries); discover flash deals and steep discounts; look good sharing finds with friends on social media.
+
+    **Pain points:** Smallest budget of all personas — extremely discount-sensitive, not brand-loyal; low tolerance for data-heavy apps; distrusts prices that seem "too good," wants confidence the deal is real and current.
+
+    **Behavior:** Browses opportunistically, often triggered by a push notification about a flash deal; shares deals to TikTok/Instagram stories more than WhatsApp; rarely visits a store profile page directly, goes straight to the best-discount feed.
+
+    **Key features:** Flash deals, Deal of the Day, discount-percentage sort, TikTok/Instagram sharing, push notifications, low-data mode.
+
+    **Design implication:** Sort-by-discount must be a first-class, easily reached control, not buried in a filter menu; image payloads need aggressive compression for this segment (NFR-PERF-006); social share targets must include TikTok/Instagram, not just WhatsApp (FR-NOTIF-002).
+  </Accordion>
+
+  <Accordion title="Paul — The Busy Professional">
+    **Age 38 · Douala (Bonapriso/Akwa) · Working professional, small family · Mid-to-high-end smartphone · Reliable data plan**
+
+    **Goals:** Save time, not necessarily maximum money; wants a fast, reliable, premium-feeling app that surfaces good deals without much effort; values convenience features like directions and store hours.
+
+    **Pain points:** Has the least time to compare prices manually; abandons apps that feel slow, cluttered, or low-quality; more brand- and store-loyal than Amina or Junior.
+
+    **Behavior:** Uses the app less frequently but with higher intent; follows 2–3 favorite stores rather than browsing broadly; uses map/directions and store-hours features more than any other persona; more likely to try premium membership if it saves real time or money.
+
+    **Key features:** Follow-store, personalized recommendations, map/directions, store profiles with hours, premium membership, dark mode, clean/fast UI.
+
+    **Design implication:** Personalization (FR-PERS-004) and follow-store features (FR-PERS-002) need to work well even with sparse interaction history, since Paul won't generate much behavioral data; premium membership (FR-PAY-006) is aimed squarely at this persona.
+  </Accordion>
+
+  <Accordion title="Marie — The Household Bulk Buyer">
+    **Age 45 · Yaoundé, extended family household · Buys for 6–8 people, sometimes for extended family/neighbors too · Basic-to-mid Android phone**
+
+    **Goals:** Find the best deals on bulk/family-size packaging; plan larger, less frequent shopping trips (often monthly or around paydays) rather than frequent small ones; make a single trip cover multiple categories efficiently.
+
+    **Pain points:** Needs to compare packaging/quantity, not just headline price, to judge real value; existing flyers rarely make bulk pricing clear; planning a multi-category trip across categories is currently manual and error-prone.
+
+    **Behavior:** Uses shopping list and basket-optimization features most heavily of all personas; shops in bursts around income cycles and seasonal events (Back-to-School, Christmas); most likely persona to use AI basket optimization once available.
+
+    **Key features:** Shopping list, AI basket optimization, category browsing, seasonal deal awareness, quantity/packaging detail on deal cards.
+
+    **Design implication:** Deal records must always carry quantity/packaging as structured fields, not just price (already in FR-OCR-001); AI basket optimization (FR-PERS-005) has a clear anchor persona to design and test against, not an abstract "some users."
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 2. Retailer Personas
+
+<AccordionGroup>
+  <Accordion title="Chief Ngozi — Independent Supermarket Owner (Primary Retailer Persona)" defaultOpen="true">
+    **Owns a single-location supermarket in a secondary city · Runs the business day-to-day herself · Moderate digital literacy · Already uses WhatsApp Business informally to reach customers**
+
+    **Goals:** Reach more nearby customers without hiring marketing staff or learning complex software; digitize the paper flyer she already prints weekly with minimal extra effort; understand, in plain terms, whether the app is bringing her customers.
+
+    **Pain points:** No time or staff for manual data entry; wary of software that feels built for large chains; needs to see clear value before committing budget beyond a free tier.
+
+    **Behavior:** Would upload the same PDF/photo flyer she already produces for print, and expects the app to do the rest; checks a simple dashboard occasionally, not daily; most likely to start on the Free tier and upgrade only once she sees follower/view growth.
+
+    **Key features:** AI OCR flyer upload with easy review, simple analytics (views/clicks/followers), Free tier, mobile-friendly admin (portal must work well on a phone browser, not just desktop).
+
+    **Design implication:** The OCR review UI (FR-OCR-003/004) is this persona's entire onboarding experience — it must be fast and forgiving of messy scans, since she is the most common retailer type by count (per PRD §5, "unlimited supermarkets" includes many independents like her).
+  </Accordion>
+
+  <Accordion title="Estelle — Retail Marketing Manager, National Chain">
+    **Manages marketing across 8+ branches for a chain (SPAR/Casino/Leader Price-type organization) · High digital literacy · Reports to regional/country management on ROI**
+
+    **Goals:** Plan and schedule promotional campaigns across all branches from one place; justify marketing spend with real ROI numbers; stay ahead of Cameroonian seasonal commercial moments (Ramadan, Back-to-School, Christmas) without manually tracking a calendar; outperform competing chains.
+
+    **Pain points:** Currently coordinates flyers and campaigns branch-by-branch with no unified view; has no reliable way to measure which promotions actually drove engagement; seasonal planning today is informal/tribal knowledge, easy to miss a timing window.
+
+    **Behavior:** Heavy user of the BI dashboard and executive reports; schedules campaigns weeks in advance; the primary user of sponsorship tools (product/category/store sponsorship, homepage banners) since she controls a real marketing budget; acts on Retail Knowledge Engine seasonal recommendations.
+
+    **Key features:** Multi-branch management, campaign scheduling, BI dashboard with ROI/health score, executive report export, sponsorship tools, Cameroon Retail Knowledge Engine, AI Marketing Assistant, competition analysis.
+
+    **Design implication:** Multi-branch data modeling (FR-CAT-001) and role-based staff permissions (FR-AUTH-005) exist primarily because of this persona; she is the anchor user for the entire Wave 2/3 BI and monetization feature set.
+  </Accordion>
+
+  <Accordion title="Brice — Branch Catalog Staff">
+    **Works at a single branch under Estelle's organization · Handles day-to-day flyer/promotion uploads · Limited decision-making authority, scoped permissions**
+
+    **Goals:** Get today's promotions uploaded and live quickly; avoid making pricing or campaign decisions above his authority; not accidentally affect other branches.
+
+    **Pain points:** Needs a permission model that prevents mistakes (e.g., publishing a national campaign, changing another branch's data); wants a straightforward task list, not a full analytics suite.
+
+    **Behavior:** Uses the OCR upload and review flow multiple times per week; rarely touches sponsorship, billing, or cross-branch settings, because his role doesn't grant access.
+
+    **Key features:** Scoped catalog/promotion tools limited to his branch, OCR upload/review, basic status visibility (what's pending, live, expired).
+
+    **Design implication:** Confirms role-based access control must be enforced at the branch level, not just the organization level — a Retailer Staff role needs a `branch_id` scope option, not only an org-wide role (extends FR-AUTH-005 / NFR-SEC-003 into the schema design).
+  </Accordion>
+
+  <Accordion title="Distributor/Manufacturer Persona — Brand Representative">
+    **Represents a consumer goods brand distributed through multiple retailers · Wants product visibility independent of any single store · Interested in sponsorship and advertising, not catalog management**
+
+    **Goals:** Get a brand's products visible and sponsored across many retailers at once; understand how the brand's products perform across the platform, not just at one store.
+
+    **Pain points:** Today has no direct channel into retailer promotions or consumer visibility except through each retailer individually; wants aggregate performance data a single retailer's dashboard can't provide.
+
+    **Behavior:** A Wave 3 user of the distributor/manufacturer advertising portal; interacts with sponsorship and analytics, not with day-to-day catalog operations.
+
+    **Key features:** Cross-retailer product sponsorship, brand-level analytics, manufacturer advertising tools.
+
+    **Design implication:** Confirms the data model needs a brand/manufacturer entity distinct from retailer organizations, so sponsorship and analytics can be queried by brand across tenants (a Wave 3 schema concern, flagged now so Phase 6 doesn't have to retrofit it).
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 3. Internal Persona
+
+<Accordion title="Sandrine — Platform Admin (DealMarket Internal Ops)">
+  **DealMarket internal staff, Cameroon operations team · Approves retailer onboarding, moderates content, configures the commercial calendar**
+
+  **Goals:** Onboard new retailers quickly and safely; catch bad/fraudulent listings before consumers see them; keep the seasonal calendar and platform-wide config current as the business expands to new events or, eventually, new countries.
+
+  **Pain points:** Needs visibility across all tenants (unlike any retailer user) without that access being loosely governed; needs an efficient queue-based workflow for approvals and moderation, not one-off manual digging.
+
+  **Behavior:** Works through queues (pending retailer approvals, flagged content) daily; occasionally updates calendar/config data; consumes platform-wide analytics distinct from any single retailer's view.
+
+  **Key features:** Retailer approval queue, content moderation tools, platform-wide analytics, commercial calendar configuration UI.
+
+  **Design implication:** Confirms Platform Admin needs an explicit, audited cross-tenant access path (per NFR-SEC / FR-ADMIN-001–004) — this is a deliberate, narrow exception to multi-tenant isolation, not a loophole, and must be modeled as such in Phase 6.
+</Accordion>
+
+---
+
+## 4. Persona-to-Priority Matrix
+
+| Persona | Primary wave served | Core features they anchor |
+|---|---|---|
+| Amina (Budget-Conscious Mother) | MVP | Nearby deals, sort by price/discount, shopping list, sharing |
+| Junior (Price-Savvy Student) | MVP | Flash deals, discount sort, push notifications, social sharing |
+| Paul (Busy Professional) | MVP → Wave 2 | Follow-store, map/directions, personalization, premium membership |
+| Marie (Household Bulk Buyer) | MVP → Wave 2 | Shopping list, basket optimization, quantity/packaging detail |
+| Chief Ngozi (Independent Owner) | MVP | OCR upload/review, basic analytics, Free tier |
+| Estelle (Chain Marketing Manager) | Wave 2 → Wave 3 | Multi-branch management, BI dashboard, sponsorship, Knowledge Engine, AI Marketing Assistant |
+| Brice (Branch Staff) | MVP | Scoped catalog tools, branch-level permissions |
+| Distributor/Manufacturer | Wave 3 | Cross-retailer sponsorship, brand analytics |
+| Sandrine (Platform Admin) | MVP | Retailer approval, moderation |
+
+This confirms the MVP/Wave prioritization set in the PRD is anchored to real (hypothesized) usage patterns — the MVP already needs to serve one full consumer archetype (Amina/Junior/Brice/Ngozi/Sandrine) end-to-end, while Estelle's richer BI/monetization needs are correctly deferred to Wave 2/3.
+
+## 5. Carried-Forward Design Implications
+
+These are the concrete decisions this phase locks in for later phases:
+
+1. **Schema (Phase 6):** Branch-scoped staff roles (Brice), a distinct brand/manufacturer entity (Distributor persona), and quantity/packaging as structured fields on every deal record (Marie) must be in the data model from the start, even if some features using them ship later.
+2. **Ranking weights (AI Architecture, Phase 11):** Default ranking should lean on distance + discount (Amina, Junior) since they represent the highest-frequency MVP usage pattern; personalization weight increases matter more for lower-frequency, higher-intent users (Paul).
+3. **Onboarding UX (Wireframes, Phase 13):** Retailer onboarding must be designed around Chief Ngozi's "upload the flyer I already have" mental model as the default path, not a rich multi-step catalog wizard.
+4. **Permissions model (Auth Strategy, Phase 10):** Role-based access needs a branch-level scope, not just an org-level role, confirmed by Brice's persona.
+
+---
+
+## Next Phase
+
+Phase 6: **Database Schema** — the concrete Postgres schema (tables, relationships, RLS policies) implementing the architecture from Phase 4 and the persona-driven requirements above. Awaiting approval to proceed.
