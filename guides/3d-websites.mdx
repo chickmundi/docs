@@ -1,0 +1,125 @@
+---
+title: 'Designing 3D Websites with Claude'
+description: 'A practical guide to building interactive 3D web experiences with Claude, covering the core skills, libraries, and plugins you need'
+---
+
+Building a 3D website means combining traditional web development with real-time
+graphics programming. Claude can act as a pair-programmer for every layer of
+that stack — from scaffolding a Three.js scene to tuning shaders — but it
+helps to understand the pieces so you can direct Claude effectively and
+review what it produces.
+
+## What "3D website" usually means
+
+Most production 3D sites on the web are built with **WebGL** (or its newer
+sibling **WebGPU**) rendered through a JavaScript scene-graph library, then
+wrapped in a normal frontend framework for layout, routing, and content:
+
+- **Rendering layer** — [Three.js](https://threejs.org) is the de facto
+  standard. [Babylon.js](https://www.babylonjs.com) is a strong alternative,
+  especially for games.
+- **Framework glue** — [React Three Fiber](https://docs.pmnd.rs/react-three-fiber)
+  (`@react-three/fiber`) lets you declare a Three.js scene as React
+  components, and [`@react-three/drei`](https://github.com/pmndrs/drei) adds
+  ready-made helpers (orbit controls, loaders, environment maps, text, etc.).
+- **Animation** — [GSAP](https://gsap.com), [Framer Motion](https://www.framer.com/motion/),
+  or `@react-spring/three` for tweening camera moves, scroll-triggered
+  reveals, and UI transitions.
+- **Assets** — 3D models are shipped as `.glb`/`.gltf` (compressed binary
+  meshes), textures as compressed image formats (KTX2/Basis), and HDRIs for
+  lighting environments.
+
+## Core skills to bring (or ask Claude for)
+
+You don't need to be a graphics engineer to direct the work, but these
+concepts come up constantly:
+
+1. **Scene fundamentals** — cameras (perspective vs. orthographic), lights
+   (ambient, directional, point, environment/IBL), and materials
+   (`MeshStandardMaterial` vs. `MeshPhysicalMaterial` for PBR look).
+2. **Coordinate math** — vectors, quaternions/Euler rotations, and world vs.
+   local space. Claude handles the arithmetic; you mostly need to describe
+   intent ("rotate the model to face the camera on scroll").
+3. **Asset pipeline** — sourcing or generating models, optimizing polycount,
+   compressing with tools like `gltf-transform` or `gltfpack`, and lazy
+   loading large scenes with `<Suspense>`.
+4. **Performance budgeting** — draw call counts, texture memory, frame time.
+   3D sites live or die on mobile GPU performance, so ask Claude to profile
+   with the browser's Performance/Spector.js tools, not just "make it work."
+5. **Shader basics (GLSL)** — for custom effects (particle fields, distortion,
+   shimmer) you'll eventually want a `ShaderMaterial` with vertex/fragment
+   shaders. Claude can write and explain these, but review them like any
+   other code — small math errors produce visually confusing bugs.
+6. **Motion/interaction design** — easing curves, scroll-linked storytelling
+   (`ScrollTrigger`), and graceful degradation for users who prefer reduced
+   motion (`prefers-reduced-motion`).
+
+## How Claude fits into the workflow
+
+- **Claude Code / the Claude Agent SDK** can scaffold a full Vite + React +
+  React Three Fiber project, run the dev server, and iterate against real
+  browser output — this is the most reliable path for anything beyond a
+  toy scene, since Claude can actually see build errors and console output.
+- **Artifacts** (in Claude.ai or the API) are great for quick, self-contained
+  Three.js prototypes — a single `<canvas>` scene you can iterate on
+  conversationally before moving it into a real project.
+- Relevant built-in skills to invoke while working in Claude Code:
+  - `web-artifacts-builder` — for multi-component artifact builds that need
+    React, Tailwind, and state management around a 3D canvas.
+  - `artifact-design` — visual/UX judgment calls (layout, hierarchy, motion
+    restraint) before you start writing scene code.
+  - `artifact-diagramming` — useful if part of the site explains a system
+    visually rather than purely decoratively.
+  - `theme-factory` — for applying a consistent color/type theme across the
+    2D chrome (nav, copy, buttons) that wraps the 3D canvas.
+
+## Plugins / MCP tools worth knowing about
+
+If your Claude environment has MCP servers connected, a few are directly
+useful for 3D web work:
+
+| Tool | What it's for |
+|---|---|
+| `higgsfield` (`generate_3d`) | Turns a 2D image into a 3D `.glb` mesh — useful for quickly generating placeholder or stylized 3D assets instead of modeling from scratch. |
+| `higgsfield` (`create_website` / `deploy_website` / `publish_website`) | Scaffolds and ships a website end-to-end, including instructions retrievable via `get_website_creation_instructions`. |
+| `Onepage` (`create_vibe_section`, `read_files`/`write_files`) | Lets you drop a custom React component — e.g. a Three.js canvas — into a section of a no-code site, with its own build step (`build_react_app`). |
+| `Canva` | Generate and export 2D brand assets (textures, logos, UI graphics) to composite into the 3D scene or its surrounding chrome. |
+| `Supabase` | Backend/storage if the site needs to persist user-generated content, leaderboard data, or uploaded models. |
+
+None of these replace the Three.js/React Three Fiber code itself — they help
+with asset generation, scaffolding, and deployment around it.
+
+## Suggested workflow
+
+1. **Define the moment**, not the whole site. 3D work is expensive to iterate
+   on — pick one hero interaction (a rotating product, a particle hero, a
+   scroll-driven camera path) and get it feeling right before expanding.
+2. **Scaffold with Claude Code**: `npm create vite@latest my-3d-site -- --template react-ts`,
+   then add `three @react-three/fiber @react-three/drei`.
+3. **Source or generate assets** — low-poly models you model/download, or
+   generate quick ones with a tool like `generate_3d` above. Compress before
+   shipping (`npx gltf-transform optimize`).
+4. **Build the scene incrementally**: static mesh → lighting/environment →
+   camera controls → interaction → performance pass. Ask Claude to run the
+   dev server and check the console/frame time at each step rather than
+   writing the whole scene in one shot.
+5. **Layer in the 2D UI** (nav, copy, CTAs) using ordinary CSS/Tailwind —
+   don't put text inside the 3D canvas unless it's part of the effect.
+6. **Test on real hardware**, especially a mid-range phone. What's smooth on
+   a dev laptop GPU is often unusable on mobile.
+7. **Add reduced-motion and fallback paths** — a static image or CSS-only
+   hero for users with `prefers-reduced-motion` or WebGL unavailable.
+
+## Example prompt to start with
+
+```text
+Scaffold a Vite + React + TypeScript project with React Three Fiber.
+Build a hero section with a single rotating low-poly model, ambient +
+directional lighting, OrbitControls disabled (auto-rotate only), and a
+scroll-triggered camera dolly-in using GSAP ScrollTrigger. Keep the canvas
+under 60 draw calls and target 60fps on a mid-range mobile GPU. Run the
+dev server and report the console output.
+```
+
+Being specific about performance targets and interaction constraints up
+front produces much better first drafts than "make me a cool 3D website."
