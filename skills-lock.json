@@ -7,6 +7,12 @@
       "skillPath": "higgsfield-websites/SKILL.md",
       "computedHash": "dafe6953f4b0e34b4dffddb39783f81d117481b193c9a141281f20c7746daf11"
     },
+    "supabase": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase/SKILL.md",
+      "computedHash": "583344c20e90f3654dbb0632f088d89fd9f1dde8ac85e8a644dd12eee59b1380"
+    },
     "web-artifacts-builder": {
       "source": "anthropics/skills",
       "sourceType": "github",
