@@ -1,0 +1,53 @@
+/* ============ TOP BAR ============ */
+.topbar{background:var(--deep); color:var(--on-deep); font-size:12.5px}
+.topbar .wrap{display:flex; align-items:center; gap:14px; min-height:38px; flex-wrap:wrap}
+.topbar a{opacity:.82} .topbar a:hover{opacity:1}
+.topbar .addr-lnk{display:none}
+@media (min-width:620px){ .topbar .addr-lnk{display:inline} }
+.open-dot{width:7px;height:7px;border-radius:50%;background:#4ADE80;display:inline-block;margin-right:6px;box-shadow:0 0 0 3px rgba(74,222,128,.22)}
+.topbar .spacer{flex:1}
+.topbar .lang button{color:var(--on-deep)}
+.topbar .lang button[aria-pressed="true"]{background:var(--on-deep); color:var(--deep)}
+.lang{display:flex; gap:2px; background:rgba(255,255,255,.1); border-radius:99px; padding:2px}
+.lang button{padding:2px 9px; border-radius:99px; font-size:11.5px; font-weight:700; opacity:.7}
+.lang button[aria-pressed="true"]{background:var(--paper); color:var(--ink); opacity:1}
+
+/* ============ HEADER ============ */
+.hdr{position:sticky; top:0; z-index:60; background:var(--paper); border-bottom:1px solid var(--line)}
+.hdr .wrap{display:flex; align-items:center; gap:14px; padding-block:12px}
+.brand{display:flex; align-items:center; gap:10px; flex-shrink:0}
+.brand .mark{width:38px;height:38px;border-radius:11px;background:var(--accent);display:grid;place-items:center;flex-shrink:0}
+.brand .mark svg{width:23px;height:23px}
+.brand b{font-family:var(--disp); font-size:17px; line-height:.95; letter-spacing:-.03em; display:block}
+.brand span{font-family:var(--mono); font-size:9px; letter-spacing:.16em; color:var(--ink-3); text-transform:uppercase}
+.brand .txt{display:none}
+@media (min-width:520px){ .brand .txt{display:block} }
+
+.search{flex:1; display:flex; align-items:center; gap:8px; background:var(--surface); border:1.5px solid var(--line-2); border-radius:99px; padding:7px 8px 7px 14px; min-width:0}
+.search:focus-within{border-color:var(--ink); box-shadow:0 0 0 3px var(--accent-soft)}
+.search input{flex:1; border:0; background:none; font:inherit; font-size:15px; color:var(--ink); min-width:0; outline:none}
+.search input::placeholder{color:var(--ink-3)}
+.scope{display:none; border-right:1px solid var(--line); padding-right:10px; margin-right:2px}
+@media (min-width:760px){ .scope{display:block} }
+.scope select{font:inherit; font-size:13.5px; font-weight:600; border:0; background:none; color:var(--ink-2); cursor:pointer; outline:none}
+.search .go{width:34px;height:34px;border-radius:50%;background:var(--ink);color:var(--paper);display:grid;place-items:center;flex-shrink:0}
+.hdr-acts{display:flex; align-items:center; gap:4px}
+.iconbtn{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;position:relative}
+.iconbtn:hover{background:var(--paper-2)}
+.iconbtn svg{width:21px;height:21px}
+.badge{position:absolute; top:4px; right:3px; min-width:18px; height:18px; padding:0 5px; border-radius:99px; background:var(--accent); color:var(--accent-ink); font-size:11px; font-weight:700; display:grid; place-items:center; line-height:1}
+.hdr-acts .iconbtn:first-child{display:none}
+@media (min-width:900px){ .hdr-acts .iconbtn:first-child{display:grid} }
+
+/* ============ CATALOG SWITCH ============ */
+.switch{border-bottom:1px solid var(--line); background:var(--paper); position:sticky; top:63px; z-index:55}
+.switch .wrap{display:flex; gap:6px; align-items:center; overflow-x:auto; scrollbar-width:none}
+.switch .wrap::-webkit-scrollbar{display:none}
+.tab{position:relative; padding:13px 2px; margin-right:20px; font-weight:700; font-size:15px; color:var(--ink-3); white-space:nowrap; display:flex; align-items:center; gap:7px}
+.tab svg{width:17px;height:17px;opacity:.75}
+.tab[aria-selected="true"]{color:var(--ink)}
+.tab[aria-selected="true"]::after{content:""; position:absolute; left:0; right:0; bottom:-1px; height:3px; background:var(--accent); border-radius:3px 3px 0 0}
+.switch .right{margin-left:auto; display:none; gap:16px; font-size:13.5px; font-weight:600; color:var(--ink-2)}
+@media (min-width:900px){ .switch .right{display:flex} }
+.switch .right a:hover{color:var(--accent)}
+

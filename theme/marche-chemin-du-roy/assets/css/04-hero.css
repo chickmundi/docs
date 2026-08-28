@@ -1,0 +1,45 @@
+/* ============ HERO ============ */
+.hero{padding-block:clamp(26px,5vw,54px)}
+.hero-grid{display:grid; gap:20px}
+@media (min-width:900px){ .hero-grid{grid-template-columns:1.15fr .85fr; gap:28px; align-items:stretch} }
+.hero-main{position:relative; overflow:hidden; border-radius:var(--r-lg); background:var(--deep); color:var(--on-deep); padding:clamp(24px,5vw,44px); display:flex; flex-direction:column; justify-content:flex-end; min-height:340px}
+.hero-main .motif-layer{position:absolute; inset:0; opacity:.30}
+.hero-main .glow{position:absolute; right:-14%; top:-30%; width:62%; aspect-ratio:1; border-radius:50%; background:radial-gradient(circle, rgba(232,163,23,.42), transparent 66%)}
+.hero-main .glow2{position:absolute; left:-18%; bottom:-34%; width:58%; aspect-ratio:1; border-radius:50%; background:radial-gradient(circle, rgba(197,35,58,.5), transparent 66%)}
+.hero-main > *{position:relative}
+.eyebrow{display:inline-flex; align-items:center; gap:8px; background:var(--on-deep-line); border:1px solid var(--on-deep-line); color:var(--on-deep); padding:5px 12px; border-radius:99px; font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; margin-bottom:auto; align-self:flex-start}
+.hero-main h1{font-size:clamp(34px,6.4vw,60px); margin-top:26px; color:var(--on-deep)}
+.hero-main h1 em{font-style:normal; color:var(--gold)}
+.hero-main .sub{margin-top:14px; font-size:clamp(15px,2vw,17.5px); color:var(--on-deep-2); max-width:44ch}
+.hero-cta{display:flex; flex-wrap:wrap; gap:10px; margin-top:24px}
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:13px 22px; border-radius:99px; font-weight:700; font-size:15px; transition:transform .12s ease, background .15s ease}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--accent); color:#fff}
+.btn-primary:hover{background:#A81B30}
+.btn-ghost{border:1.5px solid var(--on-deep-line); color:var(--on-deep)}
+.btn-ghost:hover{background:var(--on-deep-line)}
+.btn svg{width:17px;height:17px}
+
+.hero-side{display:grid; gap:14px; grid-template-rows:auto 1fr}
+.promo{border-radius:var(--r-lg); padding:22px; position:relative; overflow:hidden; background:var(--gold-soft); border:1px solid var(--line)}
+.promo h3{font-size:20px; margin-bottom:6px}
+.promo p{font-size:14px; color:var(--ink-2); max-width:26ch}
+.promo .price{margin-top:12px; display:flex; align-items:baseline; gap:8px}
+.promo .price b{font-family:var(--disp); font-size:28px}
+.promo .price s{color:var(--ink-3); font-size:15px}
+.promo .art{position:absolute; right:-8px; bottom:-8px; width:120px; opacity:.9}
+.promo .cta{margin-top:14px; display:inline-flex; align-items:center; gap:6px; font-weight:700; font-size:14px; color:var(--accent); border-bottom:2px solid currentColor; padding-bottom:1px}
+.promo--beaute{background:var(--indigo); border-color:transparent; color:#EDEFF6}
+.promo--beaute p{color:rgba(237,239,246,.72)}
+.promo--beaute .cta{color:var(--gold)}
+.promo--beaute s{color:rgba(237,239,246,.5)}
+
+/* ============ TRUST STRIP ============ */
+.trust{border-block:1px solid var(--line); background:var(--surface-2)}
+.trust .wrap{display:grid; grid-template-columns:repeat(2,1fr); gap:1px; padding:0; background:var(--line)}
+@media (min-width:820px){ .trust .wrap{grid-template-columns:repeat(4,1fr)} }
+.trust-item{background:var(--surface-2); padding:18px var(--pad); display:flex; gap:11px; align-items:flex-start}
+.trust-item svg{width:20px;height:20px;flex-shrink:0;margin-top:2px;color:var(--green)}
+.trust-item b{display:block; font-size:14px; font-weight:700; line-height:1.25}
+.trust-item span{display:block; font-size:12.5px; color:var(--ink-2); margin-top:2px}
+

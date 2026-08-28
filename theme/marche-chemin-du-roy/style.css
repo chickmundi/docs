@@ -1,0 +1,22 @@
+/*
+Theme Name:   Marché Chemin-du-Roy
+Theme URI:    https://marchecheminduroy.com
+Author:       Marché Chemin-du-Roy
+Description:  Thème WooCommerce sur mesure pour le Marché Chemin-du-Roy — épicerie afro-caribéenne et beauté à Trois-Rivières. Bilingue FR/EN via l'extension MCR Bilingue. Custom WooCommerce theme; bilingual FR/EN through the MCR Bilingue companion plugin.
+Version:      1.0.0
+Requires at least: 6.4
+Tested up to: 6.8
+Requires PHP: 8.0
+WC requires at least: 8.0
+WC tested up to: 9.4
+License:      GNU General Public License v2 or later
+License URI:  https://www.gnu.org/licenses/gpl-2.0.html
+Text Domain:  mcr
+Tags:         e-commerce, custom-colors, translation-ready, accessibility-ready, block-styles
+*/
+
+/*
+ * Presentation lives in assets/css/*.css, enqueued in dependency order by
+ * inc/assets.php. This file carries the theme header only — WordPress requires
+ * it to exist, but nothing here is loaded on the front end.
+ */

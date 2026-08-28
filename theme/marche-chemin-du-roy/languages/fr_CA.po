@@ -1,0 +1,669 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Marche Chemin-du-Roy 1.0.0\n"
+"Report-Msgid-Bugs-To: https://marchecheminduroy.com\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: fr_CA\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Domain: mcr\n"
+
+#. Theme Name of the theme
+#. Author of the theme
+#: style.css
+#: inc/customizer.php:22
+msgid "Marché Chemin-du-Roy"
+msgstr ""
+
+#. Theme URI of the theme
+#: style.css
+msgid "https://marchecheminduroy.com"
+msgstr ""
+
+#. Description of the theme
+#: style.css
+msgid "Thème WooCommerce sur mesure pour le Marché Chemin-du-Roy — épicerie afro-caribéenne et beauté à Trois-Rivières. Bilingue FR/EN via l'extension MCR Bilingue. Custom WooCommerce theme; bilingual FR/EN through the MCR Bilingue companion plugin."
+msgstr ""
+
+#: 404.php:19
+msgid "This page has moved off the shelf"
+msgstr "Cette page a quitté la tablette"
+
+#: 404.php:20
+msgid "The page you were looking for is not here. Try a search, or head back to the aisles."
+msgstr "La page que vous cherchez n’est plus ici. Essayez une recherche ou retournez aux rayons."
+
+#: 404.php:40
+msgid "Back to the shop"
+msgstr "Retour au magasin"
+
+#: footer.php:23
+msgid "Shop"
+msgstr "Magasiner"
+
+#: footer.php:24
+msgid "Orders"
+msgstr "Commandes"
+
+#: footer.php:25
+msgid "The shop"
+msgstr "Le magasin"
+
+#. translators: 1: current year, 2: site name.
+#: footer.php:54
+msgid "© %1$s %2$s"
+msgstr "© %1$s %2$s"
+
+#: footer.php:64
+msgid "Accepted payment methods"
+msgstr "Modes de paiement acceptés"
+
+#: front-page.php:26
+msgid "This week at the counter"
+msgstr "Cette semaine au comptoir"
+
+#: front-page.php:27
+msgid "Fresh arrivals and the staples that move fastest."
+msgstr "Les nouveautés et les essentiels qui partent le plus vite."
+
+#: header.php:22
+msgid "Skip to content"
+msgstr "Aller au contenu"
+
+#: header.php:29
+msgid "Open now"
+msgstr "Ouvert maintenant"
+
+#: header.php:31
+msgid "Closed right now"
+msgstr "Présentement fermé"
+
+#: header.php:68
+msgid "My account"
+msgstr "Mon compte"
+
+#: header.php:73
+#: inc/template-tags.php:539
+msgid "My list"
+msgstr "Ma liste"
+
+#: header.php:80
+#: inc/template-tags.php:456
+#: inc/template-tags.php:547
+msgid "Basket"
+msgstr "Panier"
+
+#: inc/assets.php:90
+msgid "In cart"
+msgstr "Au panier"
+
+#: inc/assets.php:91
+#: inc/woocommerce/product-card.php:182
+msgid "Add"
+msgstr "Ajouter"
+
+#: inc/assets.php:92
+msgid "Adding…"
+msgstr "Ajout…"
+
+#: inc/assets.php:93
+msgid "Could not add that item. Please try again."
+msgstr "Impossible d’ajouter cet article. Veuillez réessayer."
+
+#: inc/assets.php:94
+#: inc/woocommerce/cart-fragments.php:67
+msgid "Your basket is empty."
+msgstr "Votre panier est vide."
+
+#: inc/assets.php:95
+msgid "Free delivery unlocked"
+msgstr "Livraison gratuite débloquée"
+
+#. translators: %s: formatted remaining amount, e.g. $12.50
+#: inc/assets.php:97
+msgid "%s more for free delivery"
+msgstr "encore %s pour la livraison gratuite"
+
+#: inc/assets.php:98
+msgid "Item removed."
+msgstr "Article retiré."
+
+#: inc/assets.php:99
+msgid "Undo"
+msgstr "Annuler"
+
+#. translators: 1: required PHP version, 2: current PHP version.
+#: inc/compat.php:28
+msgid "PHP %1$s or later is required. This server runs PHP %2$s."
+msgstr "PHP %1$s ou plus récent est requis. Ce serveur utilise PHP %2$s."
+
+#. translators: 1: required WordPress version, 2: current WordPress version.
+#: inc/compat.php:37
+msgid "WordPress %1$s or later is required. This site runs WordPress %2$s."
+msgstr "WordPress %1$s ou plus récent est requis. Ce site utilise WordPress %2$s."
+
+#: inc/compat.php:51
+msgid "The Marché Chemin-du-Roy theme cannot load."
+msgstr "Le thème Marché Chemin-du-Roy ne peut pas se charger."
+
+#: inc/customizer.php:28
+msgid "Store details"
+msgstr "Coordonnées du magasin"
+
+#: inc/customizer.php:33
+msgid "Street address"
+msgstr "Adresse"
+
+#: inc/customizer.php:34
+msgid "Phone number"
+msgstr "Numéro de téléphone"
+
+#: inc/customizer.php:35
+msgid "WhatsApp number (digits only)"
+msgstr "Numéro WhatsApp (chiffres seulement)"
+
+#: inc/customizer.php:36
+msgid "Contact email"
+msgstr "Courriel de contact"
+
+#: inc/customizer.php:37
+msgid "Map link"
+msgstr "Lien vers la carte"
+
+#: inc/customizer.php:58
+#: inc/template-tags.php:426
+msgid "Catalogues"
+msgstr "Catalogues"
+
+#: inc/customizer.php:60
+msgid "The beauty catalogue uses the indigo palette. Pick the top-level product category that holds it."
+msgstr "Le catalogue beauté utilise la palette indigo. Choisissez la catégorie de produits de premier niveau qui le contient."
+
+#: inc/customizer.php:69
+msgid "Beauty catalogue category"
+msgstr "Catégorie du catalogue beauté"
+
+#: inc/customizer.php:77
+msgid "Delivery"
+msgstr "Livraison"
+
+#: inc/customizer.php:79
+msgid "Used for the free-delivery progress bar. When a WooCommerce free-shipping method has a minimum order amount, that value wins so the bar can never disagree with checkout."
+msgstr "Utilisé pour la barre de progression vers la livraison gratuite. Si une méthode de livraison gratuite WooCommerce impose un montant minimum, cette valeur a priorité : la barre ne peut donc jamais contredire la caisse."
+
+#: inc/customizer.php:88
+msgid "Free delivery from"
+msgstr "Livraison gratuite à partir de"
+
+#: inc/customizer.php:100
+msgid "Delivery radius (km)"
+msgstr "Rayon de livraison (km)"
+
+#: inc/customizer.php:108
+msgid "Home hero"
+msgstr "Bandeau d’accueil"
+
+#: inc/customizer.php:113
+msgid "Eyebrow"
+msgstr "Surtitre"
+
+#: inc/customizer.php:114
+msgid "Headline"
+msgstr "Titre"
+
+#: inc/customizer.php:115
+msgid "Subheading"
+msgstr "Sous-titre"
+
+#: inc/customizer.php:130
+msgid "Wrap a word in <em> to print it in gold."
+msgstr "Encadrez un mot avec <em> pour l’afficher en doré."
+
+#: inc/customizer.php:160
+msgid "— None —"
+msgstr "— Aucune —"
+
+#: inc/i18n.php:32
+msgid "Language"
+msgstr "Langue"
+
+#: inc/setup.php:47
+msgid "Main aisles (header)"
+msgstr "Rayons principaux (en-tête)"
+
+#: inc/setup.php:48
+msgid "Utility links (top bar)"
+msgstr "Liens utilitaires (barre supérieure)"
+
+#: inc/setup.php:49
+msgid "Footer — Shop"
+msgstr "Pied de page — Magasiner"
+
+#: inc/setup.php:50
+msgid "Footer — Services"
+msgstr "Pied de page — Services"
+
+#: inc/setup.php:51
+msgid "Footer — About"
+msgstr "Pied de page — Le magasin"
+
+#: inc/setup.php:72
+msgid "Shop sidebar (filters)"
+msgstr "Barre latérale du magasin (filtres)"
+
+#: inc/setup.php:74
+msgid "Shown in the filter rail on shop and category pages."
+msgstr "Affiché dans la colonne de filtres des pages magasin et catégorie."
+
+#: inc/template-tags.php:122
+#: inc/template-tags.php:127
+#: inc/template-tags.php:140
+msgid "Breadcrumb"
+msgstr "Fil d’Ariane"
+
+#: inc/template-tags.php:162
+#: inc/template-tags.php:529
+msgid "Home"
+msgstr "Accueil"
+
+#. translators: %s: search query.
+#: inc/template-tags.php:228
+msgid "Search: %s"
+msgstr "Recherche : %s"
+
+#: inc/template-tags.php:271
+msgid "Monday"
+msgstr "lundi"
+
+#: inc/template-tags.php:272
+msgid "Tuesday"
+msgstr "mardi"
+
+#: inc/template-tags.php:273
+msgid "Wednesday"
+msgstr "mercredi"
+
+#: inc/template-tags.php:274
+msgid "Thursday"
+msgstr "jeudi"
+
+#: inc/template-tags.php:275
+msgid "Friday"
+msgstr "vendredi"
+
+#: inc/template-tags.php:276
+msgid "Saturday"
+msgstr "samedi"
+
+#: inc/template-tags.php:277
+msgid "Sunday"
+msgstr "dimanche"
+
+#: inc/template-tags.php:363
+#: inc/woocommerce/hooks.php:175
+msgid "Aisle"
+msgstr "Rayon"
+
+#: inc/template-tags.php:365
+msgid "Whole store"
+msgstr "Tout le magasin"
+
+#: inc/template-tags.php:376
+#: inc/template-tags.php:385
+#: searchform.php:13
+#: searchform.php:20
+msgid "Search"
+msgstr "Rechercher"
+
+#: inc/template-tags.php:379
+msgid "Gari, attiéké, palm oil, wigs…"
+msgstr "Gari, attiéké, huile de palme, perruque…"
+
+#: inc/template-tags.php:457
+#: inc/woocommerce/cart-fragments.php:176
+msgid "Checkout"
+msgstr "Passer à la caisse"
+
+#: inc/template-tags.php:526
+msgid "Mobile navigation"
+msgstr "Navigation mobile"
+
+#: inc/template-tags.php:534
+msgid "Aisles"
+msgstr "Rayons"
+
+#. translators: %s: product name.
+#: inc/woocommerce/cart-fragments.php:133
+msgid "Remove %s from basket"
+msgstr "Retirer %s du panier"
+
+#: inc/woocommerce/cart-fragments.php:156
+#: inc/woocommerce/cart-fragments.php:158
+msgid "Your basket"
+msgstr "Votre panier"
+
+#: inc/woocommerce/cart-fragments.php:159
+msgid "Close basket"
+msgstr "Fermer le panier"
+
+#: inc/woocommerce/cart-fragments.php:171
+msgid "Subtotal"
+msgstr "Sous-total"
+
+#: inc/woocommerce/cart-fragments.php:179
+msgid "View basket"
+msgstr "Voir le panier"
+
+#: inc/woocommerce/delivery-zones.php:38
+msgid "Local delivery by distance"
+msgstr "Livraison locale selon la distance"
+
+#: inc/woocommerce/delivery-zones.php:39
+msgid "Prices delivery in bands by road distance from the shop, using the customer's postal code. Refuses addresses beyond the maximum radius."
+msgstr "Tarifie la livraison par paliers selon la distance routière depuis le magasin, à partir du code postal du client. Refuse les adresses au-delà du rayon maximal."
+
+#: inc/woocommerce/delivery-zones.php:52
+#: inc/woocommerce/delivery-zones.php:66
+#: template-parts/home/store.php:59
+msgid "Local delivery"
+msgstr "Livraison locale"
+
+#: inc/woocommerce/delivery-zones.php:63
+msgid "Method title"
+msgstr "Titre de la méthode"
+
+#: inc/woocommerce/delivery-zones.php:65
+msgid "Shown to the customer at checkout."
+msgstr "Affiché au client à la caisse."
+
+#: inc/woocommerce/delivery-zones.php:70
+msgid "Distance bands"
+msgstr "Paliers de distance"
+
+#: inc/woocommerce/delivery-zones.php:72
+msgid "One band per line as <code>up-to-km | price</code>. Example: <code>5 | 5.99</code>. Bands are read in order; the first whose limit the distance falls within wins."
+msgstr "Un palier par ligne, au format <code>jusqu’à-km | prix</code>. Exemple : <code>5 | 5.99</code>. Les paliers sont lus dans l’ordre; le premier dont la limite couvre la distance l’emporte."
+
+#: inc/woocommerce/delivery-zones.php:77
+msgid "Maximum radius (km)"
+msgstr "Rayon maximal (km)"
+
+#: inc/woocommerce/delivery-zones.php:79
+msgid "Addresses beyond this distance are not offered delivery."
+msgstr "Aucune livraison n’est offerte au-delà de cette distance."
+
+#: inc/woocommerce/delivery-zones.php:118
+msgid "Distance"
+msgstr "Distance"
+
+#. translators: %s: distance in kilometres.
+#: inc/woocommerce/delivery-zones.php:120
+msgid "≈ %s km from the shop"
+msgstr "≈ %s km du magasin"
+
+#. translators: %s: number of products.
+#: inc/woocommerce/hooks.php:93
+msgid "%s product"
+msgid_plural "%s products"
+msgstr[0] "%s produit"
+msgstr[1] "%s produits"
+
+#: inc/woocommerce/hooks.php:102
+#: inc/woocommerce/listing.php:78
+#: inc/woocommerce/listing.php:81
+msgid "Filters"
+msgstr "Filtres"
+
+#: inc/woocommerce/hooks.php:127
+msgid "In stock in Trois-Rivières"
+msgstr "En stock à Trois-Rivières"
+
+#. translators: %s: formatted free-delivery threshold.
+#. translators: %s: formatted amount.
+#: inc/woocommerce/hooks.php:135
+#: template-parts/home/trust.php:18
+msgid "Free delivery over %s"
+msgstr "Livraison gratuite dès %s"
+
+#: inc/woocommerce/hooks.php:142
+msgid "Free pickup at the counter"
+msgstr "Ramassage gratuit au comptoir"
+
+#: inc/woocommerce/hooks.php:170
+msgid "Item code"
+msgstr "Code article"
+
+#. translators: %s: formatted remaining amount.
+#: inc/woocommerce/hooks.php:228
+msgid "<b>%s</b> more for free delivery"
+msgstr "Plus que <b>%s</b> pour la livraison gratuite"
+
+#: inc/woocommerce/hooks.php:231
+msgid "<b>Free delivery</b> unlocked"
+msgstr "<b>Livraison gratuite</b> débloquée"
+
+#: inc/woocommerce/listing.php:48
+msgid "All"
+msgstr "Tout"
+
+#: inc/woocommerce/listing.php:82
+msgid "Close filters"
+msgstr "Fermer les filtres"
+
+#: inc/woocommerce/listing.php:101
+msgid "Availability"
+msgstr "Disponibilité"
+
+#: inc/woocommerce/listing.php:105
+msgid "In stock only"
+msgstr "En stock seulement"
+
+#: inc/woocommerce/listing.php:110
+msgid "On sale"
+msgstr "En rabais"
+
+#: inc/woocommerce/listing.php:118
+msgid "Apply"
+msgstr "Appliquer"
+
+#: inc/woocommerce/listing.php:119
+msgid "Clear"
+msgstr "Effacer"
+
+#: inc/woocommerce/listing.php:168
+msgid "Price"
+msgstr "Prix"
+
+#: inc/woocommerce/listing.php:170
+msgid "Minimum price"
+msgstr "Prix minimum"
+
+#: inc/woocommerce/listing.php:177
+msgid "Maximum price"
+msgstr "Prix maximum"
+
+#: inc/woocommerce/product-card.php:62
+msgid "SALE"
+msgstr "RABAIS"
+
+#: inc/woocommerce/product-card.php:73
+msgid "NEW"
+msgstr "NOUVEAU"
+
+#: inc/woocommerce/product-card.php:79
+msgid "LOCAL"
+msgstr "D’ICI"
+
+#: inc/woocommerce/product-card.php:159
+msgid "Out of stock"
+msgstr "Rupture de stock"
+
+#: inc/woocommerce/product-card.php:171
+msgid "Choose options"
+msgstr "Choisir les options"
+
+#. translators: %s: product name.
+#: inc/woocommerce/product-card.php:180
+msgid "Add %s to basket"
+msgstr "Ajouter %s au panier"
+
+#: index.php:37
+msgid "Previous"
+msgstr "Précédent"
+
+#: index.php:38
+msgid "Next"
+msgstr "Suivant"
+
+#: searchform.php:16
+msgid "Search the shop…"
+msgstr "Rechercher dans le magasin…"
+
+#: template-parts/content-none.php:12
+msgid "Nothing found"
+msgstr "Aucun résultat"
+
+#: template-parts/content-none.php:13
+msgid "We could not find anything matching that. Try a different spelling or browse the aisles."
+msgstr "Nous n’avons rien trouvé qui corresponde. Essayez une autre orthographe ou parcourez les rayons."
+
+#: template-parts/home/aisles.php:45
+msgid "Browse"
+msgstr "Parcourir"
+
+#: template-parts/home/aisles.php:46
+msgid "Every aisle in the shop"
+msgstr "Tous les rayons du magasin"
+
+#: template-parts/home/aisles.php:47
+msgid "From cassava flour to frozen fish and hair care — the whole shop, aisle by aisle."
+msgstr "De la farine de manioc au poisson surgelé en passant par les soins capillaires — tout le magasin, rayon par rayon."
+
+#: template-parts/home/aisles.php:51
+msgid "See everything"
+msgstr "Voir tout"
+
+#. translators: %s: number of products.
+#: template-parts/home/aisles.php:66
+msgid "%s item"
+msgid_plural "%s items"
+msgstr[0] "%s article"
+msgstr[1] "%s articles"
+
+#: template-parts/home/beaute.php:48
+msgid "Beauty & hair"
+msgstr "Beauté et cheveux"
+
+#: template-parts/home/beaute.php:55
+msgid "See the whole range"
+msgstr "Voir toute la gamme"
+
+#: template-parts/home/hero.php:10
+msgid "African & Caribbean grocery · Trois-Rivières"
+msgstr "Épicerie africaine et antillaise · Trois-Rivières"
+
+#: template-parts/home/hero.php:11
+msgid "The flavours of home, <em>two streets away</em>"
+msgstr "Les saveurs du pays, <em>à deux rues d’ici</em>"
+
+#: template-parts/home/hero.php:12
+msgid "Gari, attiéké, palm oil, fresh fish, wigs and hair care — picked in store and delivered across Trois-Rivières."
+msgstr "Gari, attiéké, huile de palme, poisson frais, perruques et soins capillaires — préparés en magasin et livrés partout à Trois-Rivières."
+
+#: template-parts/home/hero.php:35
+msgid "Shop the aisles"
+msgstr "Magasiner les rayons"
+
+#: template-parts/home/hero.php:41
+msgid "Find the shop"
+msgstr "Trouver le magasin"
+
+#: template-parts/home/promo.php:47
+msgid "See the product"
+msgstr "Voir le produit"
+
+#: template-parts/home/rail.php:16
+msgid "Picked for you"
+msgstr "Choisi pour vous"
+
+#: template-parts/home/rail.php:49
+msgid "See all"
+msgstr "Voir tout"
+
+#: template-parts/home/store.php:19
+msgid "Opening hours"
+msgstr "Heures d’ouverture"
+
+#: template-parts/home/store.php:33
+msgid "Find us"
+msgstr "Nous trouver"
+
+#: template-parts/home/store.php:47
+msgid "Open the map"
+msgstr "Ouvrir la carte"
+
+#: template-parts/home/store.php:56
+msgid "Services"
+msgstr "Services"
+
+#: template-parts/home/store.php:59
+msgid "Priced by distance, seven days a week."
+msgstr "Tarif selon la distance, sept jours sur sept."
+
+#: template-parts/home/store.php:60
+msgid "Order and collect"
+msgstr "Commander et ramasser"
+
+#: template-parts/home/store.php:60
+msgid "Ready at the counter the same day."
+msgstr "Prêt au comptoir le jour même."
+
+#: template-parts/home/store.php:61
+msgid "Special orders"
+msgstr "Commandes spéciales"
+
+#: template-parts/home/store.php:61
+msgid "Ask us for anything you cannot find."
+msgstr "Demandez-nous ce que vous ne trouvez pas."
+
+#. translators: %s: radius in kilometres.
+#: template-parts/home/trust.php:23
+msgid "Within %s km of the shop"
+msgstr "Dans un rayon de %s km du magasin"
+
+#: template-parts/home/trust.php:29
+msgid "Pickup at the counter"
+msgstr "Ramassage au comptoir"
+
+#: template-parts/home/trust.php:30
+msgid "Ready the same day, free"
+msgstr "Prêt le jour même, gratuit"
+
+#: template-parts/home/trust.php:34
+msgid "Picked by hand"
+msgstr "Préparé à la main"
+
+#: template-parts/home/trust.php:35
+msgid "Fresh and frozen packed last"
+msgstr "Frais et surgelés emballés en dernier"
+
+#: template-parts/home/trust.php:39
+msgid "Bilingual service"
+msgstr "Service bilingue"
+
+#: template-parts/home/trust.php:40
+msgid "Français · English"
+msgstr "Français · English"
+
+#: woocommerce/loop/no-products-found.php:14
+msgid "Nothing on this shelf yet"
+msgstr "Rien sur cette tablette pour l’instant"
+
+#: woocommerce/loop/no-products-found.php:15
+msgid "No products matched these filters. Try clearing one, or browse another aisle."
+msgstr "Aucun produit ne correspond à ces filtres. Essayez d’en retirer un ou explorez un autre rayon."
+
+#: woocommerce/loop/no-products-found.php:18
+msgid "Clear filters"
+msgstr "Effacer les filtres"

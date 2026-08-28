@@ -1,0 +1,19 @@
+/* ============ TOKENS ============ */
+:root{
+  --paper:#F7F3EA; --paper-2:#F0EADD; --surface:#FFFFFF; --surface-2:#FBF8F2;
+  --ink:#221A15; --ink-2:#6B5F55; --ink-3:#8F8478;
+  --line:#E4DCCC; --line-2:#D3C8B4;
+  --accent:#C5233A; --accent-ink:#FFFFFF; --accent-soft:#FBE9EA;
+  --gold:#E8A317; --gold-soft:#FBEFD3;
+  --green:#1E6B4F; --green-soft:#E2F0E9;
+  --indigo:#23304F;
+  --deep:#1E1611; --on-deep:#F7F3EA; --on-deep-2:rgba(247,243,234,.74); --on-deep-line:rgba(247,243,234,.16);
+  --shadow:0 1px 2px rgba(34,26,21,.06), 0 8px 24px -16px rgba(34,26,21,.28);
+  --shadow-lift:0 2px 4px rgba(34,26,21,.08), 0 18px 40px -20px rgba(34,26,21,.35);
+  --r:14px; --r-sm:9px; --r-lg:22px;
+  --sans:"Karla","Helvetica Neue",Arial,sans-serif;
+  --disp:"Bricolage Grotesque","Karla",Georgia,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --pad:clamp(16px,4vw,32px);
+  color-scheme:light;
+}

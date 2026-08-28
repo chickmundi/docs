@@ -1,0 +1,28 @@
+/* ============ BASE ============ */
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--sans); font-size:16px; line-height:1.55;
+  -webkit-font-smoothing:antialiased; padding-bottom:76px;
+}
+@media (min-width:900px){ body{padding-bottom:0} }
+h1,h2,h3,h4{font-family:var(--disp); font-weight:800; line-height:1.05; margin:0; text-wrap:balance; letter-spacing:-.02em}
+p{margin:0}
+a{color:inherit; text-decoration:none}
+button{font:inherit; color:inherit; background:none; border:0; cursor:pointer}
+img,svg{display:block; max-width:100%}
+:focus-visible{outline:2.5px solid var(--accent); outline-offset:2px; border-radius:4px}
+.wrap{max-width:1180px; margin:0 auto; padding-inline:var(--pad)}
+.lbl{font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3)}
+.num{font-variant-numeric:tabular-nums}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* wax-print motif */
+.motif{
+  background-image:
+    radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--gold) 55%, transparent) 0 1.5px, transparent 1.6px),
+    radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--accent) 40%, transparent) 0 1.5px, transparent 1.6px);
+  background-size:26px 26px, 26px 26px;
+  background-position:0 0, 13px 13px;
+}
+

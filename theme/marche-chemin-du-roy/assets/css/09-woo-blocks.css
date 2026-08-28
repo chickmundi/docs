@@ -1,0 +1,102 @@
+/* ============================================================
+   WOOCOMMERCE CART & CHECKOUT BLOCKS
+   WooCommerce 9.x ships block-based Cart and Checkout pages by
+   default; older stores use the [woocommerce_cart] shortcode.
+   The theme supports both — 08-woocommerce.css styles the
+   classic markup, this file styles the blocks. Whichever the
+   store uses, the page matches the rest of the design.
+   ============================================================ */
+
+/* ---- shared shell ---- */
+.wp-block-woocommerce-cart,
+.wp-block-woocommerce-checkout{max-width:1180px; margin-inline:auto; padding-inline:var(--pad)}
+.wc-block-components-title,
+.wc-block-cart__submit-container + *{font-family:var(--disp)}
+
+.wc-block-components-panel__button,
+.wc-block-components-title{color:var(--ink)}
+
+/* ---- typography inside blocks ---- */
+.wc-block-components-product-name{font-family:var(--sans); font-weight:600; font-size:14.5px; color:var(--ink)}
+.wc-block-components-product-name:hover{color:var(--accent)}
+.wc-block-components-product-metadata{font-size:12.5px; color:var(--ink-2)}
+.wc-block-components-product-price,
+.wc-block-formatted-money-amount{font-variant-numeric:tabular-nums; color:var(--ink)}
+.wc-block-components-product-price__value{font-weight:700}
+
+/* ---- cart items ---- */
+.wc-block-cart-items{border:0}
+.wc-block-cart-items__row{border-bottom:1px dashed var(--line); padding-block:16px}
+.wc-block-cart-items__row td{border:0}
+.wc-block-cart-item__image img{border-radius:var(--r-sm); border:1px solid var(--line)}
+.wc-block-cart-item__remove-link{color:var(--ink-3); font-size:12.5px; text-decoration:underline}
+.wc-block-cart-item__remove-link:hover{color:var(--accent)}
+.wc-block-cart__sidebar .wc-block-components-sidebar,
+.wc-block-checkout__sidebar .wc-block-components-sidebar{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); padding:22px}
+
+/* ---- quantity stepper ---- */
+.wc-block-components-quantity-selector{border:1.5px solid var(--line-2); border-radius:99px; background:var(--surface);
+  overflow:hidden; max-width:118px}
+.wc-block-components-quantity-selector__input{font:inherit; font-weight:700; color:var(--ink);
+  font-variant-numeric:tabular-nums; background:none}
+.wc-block-components-quantity-selector__button{color:var(--ink-2); font-weight:700}
+.wc-block-components-quantity-selector__button:hover{color:var(--accent)}
+.wc-block-components-quantity-selector::after{display:none}
+
+/* ---- totals ---- */
+.wc-block-components-totals-item{padding-block:9px; font-size:14.5px; color:var(--ink-2)}
+.wc-block-components-totals-item__label{color:var(--ink-2)}
+.wc-block-components-totals-item__value{color:var(--ink); font-weight:600}
+.wc-block-components-totals-footer-item{border-top:1px solid var(--line); padding-top:14px}
+.wc-block-components-totals-footer-item .wc-block-components-totals-item__label,
+.wc-block-components-totals-footer-item .wc-block-components-totals-item__value{
+  font-family:var(--disp); font-weight:800; font-size:19px; color:var(--ink)}
+
+/* ---- buttons ---- */
+.wc-block-components-button:not(.is-link){
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  border-radius:99px; background:var(--accent); color:#fff; font-family:var(--sans);
+  font-weight:700; font-size:15px; padding:14px 24px; border:0; transition:background .15s}
+.wc-block-components-button:not(.is-link):hover{background:#A81B30; color:#fff}
+.wc-block-components-button:not(.is-link):disabled{background:var(--paper-2); color:var(--ink-3)}
+.wc-block-cart__submit-button,
+.wc-block-checkout__actions_row .wc-block-components-checkout-place-order-button{width:100%}
+.wc-block-components-button.is-link{color:var(--accent); font-weight:700}
+
+/* ---- form fields ---- */
+.wc-block-components-text-input input[type=text],
+.wc-block-components-text-input input[type=email],
+.wc-block-components-text-input input[type=tel],
+.wc-block-components-text-input input[type=number],
+.wc-block-components-select__container select,
+.wc-block-components-textarea{
+  border:1.5px solid var(--line-2); border-radius:var(--r-sm); background:var(--surface);
+  font:inherit; font-size:15px; color:var(--ink); padding:14px}
+.wc-block-components-text-input.is-active input,
+.wc-block-components-text-input input:focus{border-color:var(--ink); box-shadow:0 0 0 3px var(--accent-soft); outline:none}
+.wc-block-components-text-input label,
+.wc-block-components-select__label{color:var(--ink-3); font-family:var(--mono); font-size:11px; letter-spacing:.08em}
+.wc-block-components-validation-error{color:var(--accent); font-size:12.5px}
+.wc-block-components-checkbox__input[type=checkbox]{accent-color:var(--accent)}
+
+/* ---- checkout structure ---- */
+.wc-block-checkout__form .wc-block-components-checkout-step{
+  border:0; border-bottom:1px solid var(--line); padding-block:22px}
+.wc-block-components-checkout-step__title{font-family:var(--disp); font-size:19px; font-weight:800; color:var(--ink)}
+.wc-block-components-checkout-step__description{color:var(--ink-2); font-size:13.5px}
+.wc-block-components-radio-control__option{border:1.5px solid var(--line-2); border-radius:var(--r);
+  padding:14px 16px; margin-bottom:10px}
+.wc-block-components-radio-control__option--checked-option-highlighted,
+.wc-block-components-radio-control__option:has(input:checked){border-color:var(--ink); background:var(--surface-2)}
+.wc-block-components-order-summary__button-text{font-family:var(--disp); font-weight:800; color:var(--ink)}
+
+/* ---- notices ---- */
+.wc-block-components-notice-banner{border-radius:var(--r); border-left-width:4px; font-size:14.5px}
+.wc-block-components-notice-banner.is-success{background:var(--green-soft); border-color:var(--green)}
+.wc-block-components-notice-banner.is-error{background:var(--accent-soft); border-color:var(--accent)}
+.wc-block-components-notice-banner.is-info{background:var(--gold-soft); border-color:var(--gold)}
+
+/* ---- free-delivery bar injected above the block cart ---- */
+.wp-block-woocommerce-cart .prog-wrap,
+.wp-block-woocommerce-checkout .prog-wrap{max-width:1180px; margin:0 auto 18px}
