@@ -405,3 +405,17 @@ Testing is not saved for Phase 8. Unit tests for domain/entitlements/RBAC, RLS t
 - fal background-removal models (Bria RMBG 2.0, BiRefNet, Pixelcut): [fal.ai background remover APIs](https://fal.ai/explore/background-remover-apis), [fal.ai best background remover APIs 2026](https://fal.ai/learn/tools/best-background-remover-apis-2026), [fal.ai BiRefNet](https://fal.ai/models/fal-ai/birefnet/llms.txt)
 - Automotive competitors: [cloudpano.com comparison](https://www.cloudpano.com/blog/best-car-image-processing-apis-dealerships), [photoroom.com Spyne alternatives](https://www.photoroom.com/blog/best-ai-automotive-photography-tools-and-spyne-alternatives), [getapp.com CarPixAI](https://www.getapp.com/all-software/a/carpixai/)
 - Claude API pricing: Anthropic model pricing table (Sonnet 5.5 $2/$10, Haiku 5.5 $0.10/$0.50 per million tokens).
+
+---
+
+## 15. Decisions recorded (2026-11-16)
+
+| Decision | Outcome |
+|---|---|
+| Repository | **New dedicated repository** (e.g. `ai-auto-studio`). `chickmundi/docs` stays the docs site. |
+| Launch market | **Quebec / Canada**: Canadian data region (Supabase `ca-central-1`; R2 with a Canadian/North American jurisdiction where available), Law 25 privacy obligations, French-language parity (Bill 96), CAD default currency, French as the default locale. |
+| Stack | **Approved as proposed**: Next.js mobile web app (Capacitor later), Supabase (Postgres + Auth), Cloudflare R2, pg-boss, Python image worker, composite-based background replacement. |
+| Quality spike | **Run alongside Phase 2**; it must finish before Phase 4 provider selection. Requires 100+ real dealer photos. |
+| Plate blurring | Open. Default: preserve plates, opt-in blur. |
+
+Quebec-specific follow-ups for Phase 2: French-first UI copy and emails, Law 25 privacy notice + consent + a named privacy officer, privacy impact assessment before sending images to AI providers outside Quebec, data-processing agreements confirming providers don't train on customer images.
