@@ -3,6 +3,7 @@ import type { GetStaticPaths } from 'astro';
 import Base from '../../layouts/Base.astro';
 import ProductCard from '../../components/ProductCard.astro';
 import { store } from '../../config';
+import { minDeliveryFee, maxDeliveryFee } from '../../lib/delivery';
 import {
   products,
   money,
@@ -134,7 +135,7 @@ const productData = {
         </form>
 
         <ul class="perks">
-          <li>🚚 Livraison gratuite dès {money(store.freeDeliveryThreshold)}, {store.deliveryArea.toLowerCase()}</li>
+          <li>🚚 Livraison de {money(minDeliveryFee())} à {money(maxDeliveryFee())} selon la distance, <strong>gratuite dès {money(store.freeDeliveryThreshold)}</strong> (jusqu’à {store.maxDeliveryKm} km) · <a href="/livraison/">Tarifs</a></li>
           <li>🏪 Retrait en magasin au {store.address.street}</li>
           <li>📞 Une question ? <a href={store.phoneHref}>{store.phone}</a></li>
         </ul>

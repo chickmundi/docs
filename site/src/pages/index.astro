@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import ProductCard from '../components/ProductCard.astro';
 import { store } from '../config';
+import { minDeliveryFee, maxDeliveryFee } from '../lib/delivery';
 import { products, topCategories, categoryBySlug, productsIn, discountPct, money } from '../lib/catalog';
 
 const inStock = products.filter((p) => p.inStock);
@@ -37,7 +38,7 @@ const groups = [
           <a class="btn btn--ghost" href="/categorie/perruques/">Beauté et cheveux</a>
         </div>
         <ul class="hero__facts">
-          <li><strong>Livraison gratuite</strong> dès {money(store.freeDeliveryThreshold)}</li>
+          <li><strong>Livraison gratuite</strong> dès {money(store.freeDeliveryThreshold)}, jusqu’à {store.maxDeliveryKm} km</li>
           <li><strong>7 jours sur 7</strong> de 9 h à 18 h</li>
         </ul>
       </div>
@@ -161,7 +162,7 @@ const groups = [
       <ul class="visit__perks">
         <li><strong>Paiement flexible</strong><span>En ligne, à la livraison ou en magasin.</span></li>
         <li><strong>Qualité garantie</strong><span>Des produits choisis avec soin.</span></li>
-        <li><strong>Livraison gratuite</strong><span>Dès {money(store.freeDeliveryThreshold)} d’achat, à Trois-Rivières.</span></li>
+        <li><strong>Livraison rapide</strong><span>De {money(minDeliveryFee())} à {money(maxDeliveryFee())} selon la distance, gratuite dès {money(store.freeDeliveryThreshold)}. <a href="/livraison/">Voir les tarifs</a></span></li>
         <li><strong>Arrivages réguliers</strong><span>De nouveaux produits chaque semaine.</span></li>
       </ul>
     </div>

@@ -1,0 +1,61 @@
+---
+import { store } from '../config';
+import { money } from '../lib/catalog';
+
+const tiers = store.deliveryTiers;
+const fmtKm = (n: number) => `${n} km`;
+---
+
+<table class="rates">
+  <caption class="sr-only">Frais de livraison selon la distance</caption>
+  <thead><tr><th scope="col">Distance (par la route)</th><th scope="col">Frais</th></tr></thead>
+  <tbody>
+    {
+      tiers.map((t, i) => (
+        <tr>
+          <td>
+            {t.fromKm === 0 ? `Moins de ${fmtKm(t.toKm)}` : i === tiers.length - 1 ? `De ${fmtKm(t.fromKm)} à ${fmtKm(t.toKm)} inclus` : `De ${fmtKm(t.fromKm)} à moins de ${fmtKm(t.toKm)}`}
+          </td>
+          <td>{money(t.fee)}</td>
+        </tr>
+      ))
+    }
+    <tr class="rates__no"><td>Plus de {fmtKm(store.maxDeliveryKm)}</td><td>Pas de livraison</td></tr>
+  </tbody>
+</table>
+<p class="rates__note">
+  <strong>Livraison gratuite</strong> dès {money(store.freeDeliveryThreshold)} d’achat, jusqu’à {store.maxDeliveryKm} km. Distance calculée par la route depuis le magasin, {store.address.street}.
+</p>
+
+<style>
+  .rates {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+  }
+  .rates th,
+  .rates td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .rates th:last-child,
+  .rates td:last-child {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .rates th {
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .rates__no td {
+    color: var(--muted);
+  }
+  .rates__note {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin: 10px 0 0;
+  }
+</style>

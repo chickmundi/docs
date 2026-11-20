@@ -45,7 +45,7 @@ const year = new Date().getFullYear();
 
     <div class="topbar">
       <div class="container topbar__inner">
-        <p>🚚 Livraison <strong>gratuite</strong> dès {money(store.freeDeliveryThreshold)} d’achat · {store.deliveryArea}</p>
+        <p>🚚 Livraison <strong>gratuite</strong> dès {money(store.freeDeliveryThreshold)} d’achat, jusqu’à {store.maxDeliveryKm} km · <a href="/livraison/" class="topbar__link">Tarifs</a></p>
         <a href={store.phoneHref} class="topbar__phone">{store.phone}</a>
       </div>
     </div>
@@ -156,6 +156,7 @@ const year = new Date().getFullYear();
           <ul>
             <li><a href="/a-propos/">À propos</a></li>
             <li><a href="/contact/">Contact</a></li>
+            <li><a href="/livraison/">Livraison</a></li>
             <li><a href="/conditions-generales/">Conditions générales</a></li>
             <li><a href="/politique-de-remboursement-et-de-retour/">Retours et remboursements</a></li>
             <li><a href="/politique-de-confidentialite/">Confidentialité</a></li>
@@ -211,6 +212,10 @@ const year = new Date().getFullYear();
       }
       .topbar p {
         margin: 0;
+      }
+      .topbar__link {
+        color: #fff;
+        font-weight: 600;
       }
       .topbar__phone {
         text-decoration: none;

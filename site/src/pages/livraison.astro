@@ -1,0 +1,36 @@
+---
+import Base from '../layouts/Base.astro';
+import DeliveryRates from '../components/DeliveryRates.astro';
+import { store } from '../config';
+import { money } from '../lib/catalog';
+---
+
+<Base title="Livraison" description={`Frais de livraison de Marché Chemin-du-Roy selon la distance, gratuite dès ${money(store.freeDeliveryThreshold)} jusqu’à ${store.maxDeliveryKm} km.`}>
+  <div class="container">
+    <nav class="breadcrumbs" aria-label="Fil d’Ariane"><a href="/">Accueil</a><span aria-hidden="true">/</span><span>Livraison</span></nav>
+    <article class="page">
+      <h1>Livraison</h1>
+      <p>Nous livrons dans un rayon de {store.maxDeliveryKm} km autour du magasin, {store.deliveryHours.toLowerCase()}. Les frais dépendent de la distance par la route entre le magasin et votre adresse ; ils sont calculés automatiquement dans votre panier.</p>
+      <DeliveryRates />
+      <p>Vous êtes à plus de {store.maxDeliveryKm} km ? Choisissez le <strong>retrait en magasin</strong> au {store.address.street}, {store.address.city}, ou appelez-nous au <a href={store.phoneHref}>{store.phone}</a>.</p>
+    </article>
+  </div>
+</Base>
+
+<style>
+  .page {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 24px;
+    max-width: 720px;
+  }
+  @media (min-width: 700px) {
+    .page {
+      padding: 40px 48px;
+    }
+  }
+  .page :global(.rates) {
+    margin: 20px 0 4px;
+  }
+</style>

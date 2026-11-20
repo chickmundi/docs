@@ -1,5 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
+import DeliveryRates from '../components/DeliveryRates.astro';
 import { store } from '../config';
 ---
 
@@ -7,7 +8,7 @@ import { store } from '../config';
   <div class="container">
     <h1 class="cart-title">Votre panier</h1>
 
-    <div class="cart" data-cart data-threshold={store.freeDeliveryThreshold} data-email={store.email} data-whatsapp={store.whatsapp}>
+    <div class="cart" data-cart data-email={store.email} data-whatsapp={store.whatsapp}>
       <div class="cart__empty" data-empty hidden>
         <p>Votre panier est vide.</p>
         <a class="btn" href="/boutique/">Continuer mes achats</a>
@@ -17,6 +18,10 @@ import { store } from '../config';
         <section aria-label="Articles">
           <div class="ship" data-ship></div>
           <ul class="lines" data-lines></ul>
+          <details class="rates-box">
+            <summary>Tarifs de livraison</summary>
+            <DeliveryRates />
+          </details>
         </section>
 
         <aside class="summary">
@@ -24,21 +29,35 @@ import { store } from '../config';
           <dl>
             <dt>Sous-total</dt><dd data-subtotal></dd>
             <dt>Livraison</dt><dd data-shipping></dd>
+            <dt class="summary__total">Total</dt><dd class="summary__total" data-total></dd>
           </dl>
           <p class="summary__note">Taxes (TPS/TVQ) applicables ajoutées à la confirmation. Les articles vendus au poids sont ajustés selon le poids réel.</p>
 
-          <form class="order" data-order>
+          <form class="order" data-order novalidate>
             <h2>Passer la commande</h2>
             <fieldset>
               <legend class="sr-only">Mode de réception</legend>
               <label class="radio"><input type="radio" name="mode" value="Livraison" checked /> Livraison</label>
               <label class="radio"><input type="radio" name="mode" value="Retrait en magasin" /> Retrait en magasin</label>
             </fieldset>
+
+            <div class="address" data-address>
+              <label class="field">Adresse (numéro et rue)<input class="input" name="street" autocomplete="address-line1" placeholder="ex. 4520 boul. des Récollets" /></label>
+              <div class="address__row">
+                <label class="field">App. (facultatif)<input class="input" name="unit" autocomplete="address-line2" /></label>
+                <label class="field">Code postal<input class="input" name="postal" autocomplete="postal-code" placeholder="ex. G8T 4B8" /></label>
+              </div>
+              <label class="field">Ville<input class="input" name="city" autocomplete="address-level2" value={store.address.city} /></label>
+              <button type="button" class="btn btn--ghost btn--block" data-calc>Calculer les frais de livraison</button>
+              <p class="quote" data-quote role="status" aria-live="polite"></p>
+            </div>
+            <p class="pickup" data-pickup hidden>Retrait gratuit au {store.address.street}, {store.address.city}. Nous vous appelons quand la commande est prête.</p>
+
             <label class="field">Nom complet<input class="input" name="name" autocomplete="name" required /></label>
             <label class="field">Téléphone<input class="input" name="phone" type="tel" autocomplete="tel" required /></label>
             <label class="field">Courriel<input class="input" name="email" type="email" autocomplete="email" /></label>
-            <label class="field" data-address>Adresse de livraison<textarea class="input" name="address" rows="2" autocomplete="street-address" required></textarea></label>
             <label class="field">Note (facultatif)<textarea class="input" name="note" rows="2" placeholder="Heure préférée, instructions…"></textarea></label>
+            <p class="form-error" data-form-error role="alert" hidden></p>
             <button class="btn btn--accent btn--block" type="submit">Envoyer ma commande par courriel</button>
             {store.whatsapp && <button class="btn btn--ghost btn--block" type="submit" data-via="whatsapp">Commander par WhatsApp</button>}
             <p class="summary__note">
@@ -53,13 +72,89 @@ import { store } from '../config';
 
 <script>
   import { getCart, setQty, clearCart, cartTotal, money, type CartItem } from '../scripts/cart';
+  import { distanceForAddress } from '../scripts/distance';
+  import { quoteDelivery, minDeliveryFee } from '../lib/delivery';
+  import { store } from '../config';
 
   const root = document.querySelector<HTMLElement>('[data-cart]')!;
-  const threshold = Number(root.dataset.threshold);
   const email = root.dataset.email!;
   const whatsapp = root.dataset.whatsapp;
   const $ = <T extends HTMLElement>(s: string) => root.querySelector<T>(s)!;
   const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const km = (n: number) => `${n.toLocaleString('fr-CA', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km`;
+
+  const form = $<HTMLFormElement>('[data-order]');
+  const field = (name: string) => form.elements.namedItem(name) as HTMLInputElement;
+  const isPickup = () => (form.elements.namedItem('mode') as RadioNodeList).value === 'Retrait en magasin';
+
+  // Distance state for the address currently typed in.
+  type Dist =
+    | { state: 'idle' }
+    | { state: 'loading' }
+    | { state: 'ok'; km: number; label: string; address: string }
+    | { state: 'notfound'; address: string }
+    | { state: 'error'; address: string };
+  let dist: Dist = { state: 'idle' };
+
+  const addressText = () => {
+    const street = field('street').value.trim();
+    const city = field('city').value.trim();
+    const postal = field('postal').value.trim();
+    return street && city ? [street, city, postal, 'QC'].filter(Boolean).join(', ') : '';
+  };
+  const fullAddress = () => {
+    const unit = field('unit').value.trim();
+    return [field('street').value.trim() + (unit ? `, app. ${unit}` : ''), field('city').value.trim(), field('postal').value.trim().toUpperCase()]
+      .filter(Boolean)
+      .join(', ');
+  };
+
+  /** True when the map found the street but not the house number typed. */
+  const approximate = (label: string) => {
+    const num = field('street').value.trim().match(/^\d+/)?.[0];
+    return Boolean(num) && !new RegExp(`(^|\\D)${num}(\\D|$)`).test(label);
+  };
+
+  /** Fee in cents, or null when unknown / not deliverable. */
+  function deliveryFee(subtotal: number): { fee: number | null; label: string; blocked: boolean } {
+    if (isPickup()) return { fee: 0, label: 'Gratuit (retrait)', blocked: false };
+    if (dist.state === 'ok') {
+      const q = quoteDelivery(dist.km, subtotal);
+      if (!q.ok) return { fee: null, label: 'Non disponible', blocked: true };
+      return { fee: q.fee, label: q.free ? 'Gratuite' : money(q.fee), blocked: false };
+    }
+    if (dist.state === 'notfound' || dist.state === 'error') return { fee: null, label: 'À confirmer', blocked: false };
+    return { fee: null, label: `Dès ${money(minDeliveryFee())}`, blocked: false };
+  }
+
+  function renderQuote(subtotal: number) {
+    const el = $('[data-quote]');
+    el.className = 'quote';
+    if (dist.state === 'idle') {
+      el.textContent = '';
+    } else if (dist.state === 'loading') {
+      el.textContent = 'Calcul de la distance…';
+    } else if (dist.state === 'ok') {
+      const q = quoteDelivery(dist.km, subtotal);
+      if (!q.ok) {
+        el.classList.add('quote--bad');
+        el.innerHTML = `Cette adresse est à <strong>${km(q.km)}</strong> du magasin. Nous ne livrons pas au-delà de ${store.maxDeliveryKm} km : choisissez le <strong>retrait en magasin</strong> ou appelez-nous au ${esc(store.phone)}.`;
+      } else {
+        el.classList.add('quote--ok');
+        el.innerHTML = `<strong>${km(q.km)}</strong> du magasin par la route : livraison <strong>${q.free ? 'gratuite' : money(q.fee)}</strong>${
+          q.free ? '' : subtotal < store.freeDeliveryThreshold ? ` (gratuite dès ${money(store.freeDeliveryThreshold)})` : ''
+        }.<span class="quote__addr">${esc(dist.label)}</span>${
+          approximate(dist.label) ? '<span class="quote__addr">Numéro civique non trouvé sur la carte : distance approximative, confirmée par téléphone.</span>' : ''
+        }`;
+      }
+    } else if (dist.state === 'notfound') {
+      el.classList.add('quote--warn');
+      el.textContent = 'Adresse introuvable sur la carte. Vérifiez le numéro, la rue et la ville, ou envoyez quand même : nous confirmerons les frais par téléphone.';
+    } else {
+      el.classList.add('quote--warn');
+      el.textContent = 'Le calcul de distance est indisponible pour le moment. Vous pouvez envoyer la commande : nous confirmerons les frais de livraison par téléphone.';
+    }
+  }
 
   function render() {
     const items = getCart();
@@ -67,17 +162,20 @@ import { store } from '../config';
     $('[data-filled]').hidden = items.length === 0;
     if (!items.length) return;
 
-    const total = cartTotal(items);
-    const pickup = (root.querySelector<HTMLInputElement>('input[name=mode]:checked')?.value ?? '') === 'Retrait en magasin';
-    const remaining = threshold - total;
+    const subtotal = cartTotal(items);
+    const pickup = isPickup();
+    const remaining = store.freeDeliveryThreshold - subtotal;
     $('[data-ship]').innerHTML = pickup
       ? '<p>Retrait gratuit en magasin.</p>'
       : remaining > 0
-        ? `<p>Plus que <strong>${money(remaining)}</strong> pour la livraison gratuite.</p><div class="bar"><span style="width:${Math.min(100, (total / threshold) * 100)}%"></span></div>`
-        : '<p>🎉 Vous profitez de la <strong>livraison gratuite</strong>.</p><div class="bar"><span style="width:100%"></span></div>';
+        ? `<p>Plus que <strong>${money(remaining)}</strong> pour la livraison gratuite (jusqu’à ${store.maxDeliveryKm} km).</p><div class="bar"><span style="width:${Math.min(100, (subtotal / store.freeDeliveryThreshold) * 100)}%"></span></div>`
+        : `<p>🎉 Livraison <strong>gratuite</strong> jusqu’à ${store.maxDeliveryKm} km du magasin.</p><div class="bar"><span style="width:100%"></span></div>`;
 
-    $('[data-subtotal]').textContent = money(total);
-    $('[data-shipping]').textContent = pickup || remaining <= 0 ? 'Gratuite' : 'Calculée à la confirmation';
+    const d = deliveryFee(subtotal);
+    $('[data-subtotal]').textContent = money(subtotal);
+    $('[data-shipping]').textContent = d.label;
+    $('[data-total]').textContent = d.fee == null ? `${money(subtotal)} + livraison` : money(subtotal + d.fee);
+    renderQuote(subtotal);
 
     $('[data-lines]').innerHTML = items
       .map(
@@ -103,6 +201,26 @@ import { store } from '../config';
       .join('');
   }
 
+  async function calculate() {
+    const address = addressText();
+    if (!address) {
+      dist = { state: 'idle' };
+      render();
+      return;
+    }
+    if ((dist.state === 'ok' || dist.state === 'notfound') && dist.address === address) return;
+    dist = { state: 'loading' };
+    render();
+    try {
+      const r = await distanceForAddress(address);
+      if (addressText() !== address) return; // address changed meanwhile
+      dist = r ? { state: 'ok', km: r.km, label: r.label, address } : { state: 'notfound', address };
+    } catch {
+      dist = { state: 'error', address };
+    }
+    render();
+  }
+
   root.addEventListener('click', (e) => {
     const t = e.target as HTMLElement;
     const q = t.closest<HTMLElement>('[data-qty]');
@@ -112,46 +230,77 @@ import { store } from '../config';
     }
     const r = t.closest<HTMLElement>('[data-remove]');
     if (r) setQty(r.dataset.remove!, 0);
+    if (t.closest('[data-calc]')) calculate();
   });
 
-  const form = $<HTMLFormElement>('[data-order]');
-  const addressField = $<HTMLElement>('[data-address]');
-  form.addEventListener('change', () => {
-    const pickup = (form.elements.namedItem('mode') as RadioNodeList).value === 'Retrait en magasin';
-    addressField.hidden = pickup;
-    (addressField.querySelector('textarea') as HTMLTextAreaElement).required = !pickup;
-    render();
+  form.addEventListener('change', (e) => {
+    const name = (e.target as HTMLInputElement).name;
+    if (name === 'mode') {
+      $('[data-address]').hidden = isPickup();
+      $('[data-pickup]').hidden = !isPickup();
+      render();
+    }
+    if (['street', 'city', 'postal'].includes(name) && field('street').value.trim()) calculate();
+  });
+  form.addEventListener('input', (e) => {
+    const name = (e.target as HTMLInputElement).name;
+    if (['street', 'city', 'postal'].includes(name) && dist.state !== 'loading' && dist.state !== 'idle') {
+      dist = { state: 'idle' };
+      render();
+    }
   });
 
-  function orderText(items: CartItem[], f: FormData) {
+  function orderText(items: CartItem[], f: FormData, fee: number | null, km?: number) {
     const lines = items.map(
       (i) => `- ${i.qty} × ${i.name}${i.variant ? ` (${i.variant})` : ''}${i.unit ? ` [${i.unit}]` : ''} : ${money(i.price * i.qty)}`,
     );
-    const pickup = f.get('mode') === 'Retrait en magasin';
+    const subtotal = cartTotal(items);
+    const pickup = isPickup();
     return [
       'Bonjour, je souhaite passer la commande suivante :',
       '',
       ...lines,
       '',
-      `Sous-total : ${money(cartTotal(items))}`,
-      `Mode : ${f.get('mode')}`,
+      `Sous-total : ${money(subtotal)}`,
+      pickup
+        ? 'Mode : Retrait en magasin'
+        : `Livraison : ${fee == null ? 'à confirmer' : fee === 0 ? 'gratuite' : money(fee)}${km != null ? ` (${km.toFixed(1).replace('.', ',')} km)` : ''}`,
+      `Total : ${fee == null ? `${money(subtotal)} + livraison` : money(subtotal + fee)} (taxes en sus s’il y a lieu)`,
       '',
       `Nom : ${f.get('name')}`,
       `Téléphone : ${f.get('phone')}`,
       f.get('email') ? `Courriel : ${f.get('email')}` : '',
-      !pickup ? `Adresse : ${f.get('address')}` : '',
+      !pickup ? `Adresse : ${fullAddress()}` : '',
       f.get('note') ? `Note : ${f.get('note')}` : '',
     ]
       .filter((l, i, a) => l !== '' || a[i - 1] !== '')
       .join('\n');
   }
 
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    const err = $('[data-form-error]');
+    const fail = (msg: string, focus?: HTMLElement) => {
+      err.textContent = msg;
+      err.hidden = false;
+      focus?.focus();
+    };
+    err.hidden = true;
     const items = getCart();
     if (!items.length) return;
+
+    if (!isPickup()) {
+      if (!field('street').value.trim() || !field('city').value.trim()) return fail('Entrez votre adresse de livraison.', field('street'));
+      if (dist.state !== 'ok' || dist.address !== addressText()) await calculate();
+    }
+    const subtotal = cartTotal(items);
+    const d = deliveryFee(subtotal);
+    if (d.blocked) return fail(`Livraison impossible au-delà de ${store.maxDeliveryKm} km. Choisissez le retrait en magasin.`);
+    if (!field('name').value.trim()) return fail('Entrez votre nom.', field('name'));
+    if (!field('phone').value.trim()) return fail('Entrez votre numéro de téléphone.', field('phone'));
+
     const f = new FormData(form);
-    const text = orderText(items, f);
+    const text = orderText(items, f, d.fee, dist.state === 'ok' ? dist.km : undefined);
     const via = (e.submitter as HTMLElement | null)?.dataset.via;
     const url =
       via === 'whatsapp' && whatsapp
@@ -297,6 +446,20 @@ import { store } from '../config';
     text-align: center;
     font-weight: 700;
   }
+  .rates-box {
+    margin-top: 12px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+  }
+  .rates-box summary {
+    cursor: pointer;
+    font-weight: 650;
+  }
+  .rates-box[open] summary {
+    margin-bottom: 8px;
+  }
   .summary {
     background: var(--surface);
     border: 1px solid var(--line);
@@ -322,6 +485,14 @@ import { store } from '../config';
     margin: 0;
     font-weight: 700;
     text-align: right;
+  }
+  .summary__total {
+    font-size: 1.15rem;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+  }
+  dt.summary__total {
+    font-weight: 700;
   }
   .summary__note {
     color: var(--muted);
@@ -349,6 +520,52 @@ import { store } from '../config';
     display: inline-flex;
     gap: 6px;
     align-items: center;
+    font-weight: 600;
+  }
+  .address {
+    display: grid;
+    gap: 12px;
+    padding: 14px;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+  }
+  .address__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .quote {
+    margin: 0;
+    font-size: 0.92rem;
+  }
+  .quote:empty {
+    display: none;
+  }
+  .quote :global(.quote__addr) {
+    display: block;
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin-top: 4px;
+  }
+  .quote--ok {
+    color: var(--ok);
+  }
+  .quote--bad {
+    color: var(--accent);
+  }
+  .quote--warn {
+    color: var(--warn);
+  }
+  .pickup {
+    margin: 0;
+    padding: 12px 14px;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    font-size: 0.92rem;
+  }
+  .form-error {
+    margin: 0;
+    color: var(--accent);
     font-weight: 600;
   }
 </style>

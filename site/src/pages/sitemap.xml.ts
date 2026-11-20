@@ -1,6 +1,6 @@
 import { products, categories } from '../lib/catalog';
 
-const STATIC = ['/', '/boutique/', '/promotions/', '/a-propos/', '/contact/', '/conditions-generales/', '/politique-de-confidentialite/', '/politique-de-remboursement-et-de-retour/'];
+const STATIC = ['/', '/boutique/', '/promotions/', '/a-propos/', '/contact/', '/livraison/', '/conditions-generales/', '/politique-de-confidentialite/', '/politique-de-remboursement-et-de-retour/'];
 
 export function GET({ site }: { site: URL }) {
   const urls = [
