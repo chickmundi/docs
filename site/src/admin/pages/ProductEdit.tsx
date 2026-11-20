@@ -619,7 +619,7 @@ export default function ProductEdit({ params }: { params: string[] }) {
                             <td>
                               {Object.entries(v.options).map(([k, val]) => (
                                 <div key={k} className="a-small">
-                                  <span className="a-muted">{k} :</span> {val}
+                                  <span className="a-muted">{k} :</span> {val || <em className="a-muted">toutes</em>}
                                 </div>
                               ))}
                             </td>

@@ -5,6 +5,7 @@ import { supabase } from './lib/supabase';
 import { useT, useLang, setLang } from './lib/i18n';
 import { Toasts, Loading, ErrorBox } from './components/ui';
 import Icon from './components/Icon';
+import { PREVIEW } from './lib/preview';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Orders = lazy(() => import('./pages/Orders'));
@@ -264,6 +265,7 @@ export default function App() {
 
   useEffect(() => setMenuOpen(false), [path]);
 
+  if (PREVIEW) return <Shell staff={{ full_name: 'Aperçu', role: 'owner' }} path={path} menuOpen={menuOpen} setMenuOpen={setMenuOpen} />;
   if (session === undefined || (session && staff === undefined)) return <Loading />;
   if (recovery && session) return <SetPassword onDone={() => setRecovery(false)} />;
   if (!session) return <Login />;
@@ -280,6 +282,12 @@ export default function App() {
       </div>
     );
 
+  return <Shell staff={staff} path={path} menuOpen={menuOpen} setMenuOpen={setMenuOpen} />;
+}
+
+function Shell({ staff, path, menuOpen, setMenuOpen }: { staff: { full_name: string; role: string }; path: string; menuOpen: boolean; setMenuOpen: React.Dispatch<React.SetStateAction<boolean>> }) {
+  const t = useT();
+  const lang = useLang();
   const m = match(path);
   const Page = m?.route.component;
   const section = path.split('/')[0];
@@ -317,14 +325,30 @@ export default function App() {
             <button className="a-btn a-btn--ghost" onClick={() => setLang(lang === 'fr' ? 'en' : 'fr')} aria-label="Langue / Language">
               {lang === 'fr' ? 'EN' : 'FR'}
             </button>
+            {PREVIEW ? (
+              <a className="a-btn a-btn--primary" href="/admin/">
+                Se connecter
+              </a>
+            ) : (
+              <>
             <span className="a-top__user">
               {staff.full_name} <small>({staff.role === 'owner' ? 'propriétaire' : staff.role === 'manager' ? 'gestionnaire' : 'employé'})</small>
             </span>
             <button className="a-btn a-btn--ghost" onClick={() => supabase.auth.signOut()}>
               {t('Se déconnecter')}
             </button>
+              </>
+            )}
           </div>
         </header>
+        {PREVIEW && (
+          <div className="a-preview">
+            <Icon name="info" size={18} />
+            <span>
+              <strong>Mode aperçu, lecture seule.</strong> Vous voyez le vrai catalogue et les vrais paramètres ; les commandes, clients et ventes ne s’affichent qu’une fois connecté, et rien n’est enregistré.
+            </span>
+          </div>
+        )}
         <main className="a-content">
           <Suspense fallback={<Loading />}>{Page ? <Page params={m!.params} /> : <p>Page introuvable.</p>}</Suspense>
         </main>

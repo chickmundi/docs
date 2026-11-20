@@ -1,5 +1,6 @@
 // Small shared UI pieces for the admin.
 import { useEffect, useState, type ReactNode } from 'react';
+import { PREVIEW } from '../lib/preview';
 
 export function Card({ title, actions, children, className = '' }: { title?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string }) {
   return (
@@ -65,7 +66,13 @@ export function ErrorBox({ error }: { error: unknown }) {
 
 // Toast notifications
 let push: ((m: { text: string; tone: 'ok' | 'bad' }) => void) | null = null;
-export const notify = (text: string, tone: 'ok' | 'bad' = 'ok') => push?.({ text, tone });
+export const notify = (text: string, tone: 'ok' | 'bad' = 'ok') => {
+  // In preview mode the database refuses every change: say so clearly.
+  if (PREVIEW && (tone === 'bad' || /enregistr|créée|ajouté|mis à jour|confirm/i.test(text)) && !/requis|invalide|choisissez|indiquez|vérifiez|ajoutez|entrez/i.test(text)) {
+    return push?.({ text: 'Mode aperçu : rien n’est enregistré. Connectez-vous pour modifier.', tone: 'bad' });
+  }
+  push?.({ text, tone });
+};
 
 export function Toasts() {
   const [items, setItems] = useState<{ id: number; text: string; tone: 'ok' | 'bad' }[]>([]);

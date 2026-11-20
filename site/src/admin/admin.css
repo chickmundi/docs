@@ -215,6 +215,25 @@
   }
 }
 
+/* Preview banner */
+.a-preview {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 16px 24px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--a-warn-soft);
+  color: #6b3d00;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 900px) {
+  .a-preview {
+    margin: 12px 12px 0;
+  }
+}
+
 /* Page head */
 .a-pagehead {
   display: flex;
