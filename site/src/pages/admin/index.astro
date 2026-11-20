@@ -1,0 +1,23 @@
+---
+// Back office (single-page app). Static shell; all data comes from the database after sign-in.
+import App from '../../admin/App';
+import '../../admin/admin.css';
+---
+
+<!doctype html>
+<html lang="fr-CA">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Gestion | Marché Chemin-du-Roy</title>
+    <link rel="icon" type="image/png" href="/images/brand/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  </head>
+  <body class="a-body">
+    <App client:only="react" />
+    <noscript>La gestion nécessite JavaScript.</noscript>
+  </body>
+</html>

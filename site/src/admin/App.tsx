@@ -4,6 +4,7 @@ import type { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
 import { useT, useLang, setLang } from './lib/i18n';
 import { Toasts, Loading, ErrorBox } from './components/ui';
+import Icon from './components/Icon';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Orders = lazy(() => import('./pages/Orders'));
@@ -47,45 +48,45 @@ const ROUTES: Route[] = [
 ];
 
 const NAV: { group: string; items: { path: string; label: string; icon: string }[] }[] = [
-  { group: '', items: [{ path: '', label: 'Tableau de bord', icon: '◧' }] },
+  { group: '', items: [{ path: '', label: 'Tableau de bord', icon: 'layout-dashboard' }] },
   {
     group: 'Ventes',
     items: [
-      { path: 'commandes', label: 'Commandes', icon: '🧾' },
-      { path: 'clients', label: 'Clients', icon: '👥' },
+      { path: 'commandes', label: 'Commandes', icon: 'receipt' },
+      { path: 'clients', label: 'Clients', icon: 'users' },
     ],
   },
   {
     group: 'Catalogue',
     items: [
-      { path: 'produits', label: 'Produits', icon: '📦' },
-      { path: 'categories', label: 'Catégories', icon: '🗂' },
-      { path: 'marques', label: 'Marques', icon: '🏷' },
-      { path: 'inventaire', label: 'Inventaire', icon: '📊' },
+      { path: 'produits', label: 'Produits', icon: 'package' },
+      { path: 'categories', label: 'Catégories', icon: 'folder-tree' },
+      { path: 'marques', label: 'Marques', icon: 'tag' },
+      { path: 'inventaire', label: 'Inventaire', icon: 'boxes' },
     ],
   },
   {
     group: 'Marketing',
     items: [
-      { path: 'promotions', label: 'Promotions', icon: '％' },
-      { path: 'coupons', label: 'Coupons', icon: '🎟' },
-      { path: 'accueil', label: "Page d'accueil", icon: '🏠' },
+      { path: 'promotions', label: 'Promotions', icon: 'badge-percent' },
+      { path: 'coupons', label: 'Coupons', icon: 'ticket' },
+      { path: 'accueil', label: "Page d'accueil", icon: 'house' },
     ],
   },
   {
     group: 'Opérations',
     items: [
-      { path: 'livraison', label: 'Livraison', icon: '🚚' },
-      { path: 'retrait', label: 'Retrait en magasin', icon: '🏪' },
-      { path: 'paiements', label: 'Paiements', icon: '💳' },
-      { path: 'rapports', label: 'Rapports', icon: '📈' },
+      { path: 'livraison', label: 'Livraison', icon: 'truck' },
+      { path: 'retrait', label: 'Retrait en magasin', icon: 'store' },
+      { path: 'paiements', label: 'Paiements', icon: 'credit-card' },
+      { path: 'rapports', label: 'Rapports', icon: 'chart-line' },
     ],
   },
   {
     group: 'Administration',
     items: [
-      { path: 'parametres', label: 'Paramètres', icon: '⚙' },
-      { path: 'equipe', label: 'Équipe', icon: '🔑' },
+      { path: 'parametres', label: 'Paramètres', icon: 'settings' },
+      { path: 'equipe', label: 'Équipe', icon: 'key-round' },
     ],
   },
 ];
@@ -117,19 +118,47 @@ function match(path: string): { route: Route; params: string[] } | null {
 
 function Login() {
   const t = useT();
+  const [mode, setMode] = useState<'in' | 'up'>('in');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const [created, setCreated] = useState(false);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     setError(null);
+    if (mode === 'up') {
+      if (password.length < 10) {
+        setBusy(false);
+        return setError('Le mot de passe doit contenir au moins 10 caractères.');
+      }
+      const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: name }, emailRedirectTo: `${location.origin}/admin/` } });
+      setBusy(false);
+      if (error) return setError(error);
+      if (data.session) return; // email confirmation disabled: already signed in
+      return setCreated(true);
+    }
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
-    if (error) setError(error.message === 'Invalid login credentials' ? 'Courriel ou mot de passe incorrect.' : error);
+    if (error) setError(error.message === 'Invalid login credentials' ? 'Courriel ou mot de passe incorrect.' : error.message === 'Email not confirmed' ? 'Confirmez d’abord votre courriel (lien reçu par courriel).' : error);
   };
+  if (created)
+    return (
+      <div className="a-login">
+        <div className="a-login__card">
+          <img src="/images/brand/MRC-logo.png" alt="Marché Chemin-du-Roy" width="200" height="62" />
+          <h1>Vérifiez vos courriels</h1>
+          <p>Un lien de confirmation a été envoyé à <strong>{email}</strong>. Cliquez dessus, puis revenez ici pour vous connecter.</p>
+          <p className="a-muted a-small">Après la connexion, votre accès doit être approuvé par le propriétaire ou un gestionnaire (sauf pour le compte du commerce, sc@marchecheminduroy.com, qui devient propriétaire).</p>
+          <button className="a-btn a-btn--block" onClick={() => (setCreated(false), setMode('in'))}>
+            Retour à la connexion
+          </button>
+        </div>
+      </div>
+    );
   const reset = async () => {
     if (!email) return setError('Entrez votre courriel d’abord.');
     const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${location.origin}/admin/` });
@@ -140,23 +169,34 @@ function Login() {
     <div className="a-login">
       <form className="a-login__card" onSubmit={submit}>
         <img src="/images/brand/MRC-logo.png" alt="Marché Chemin-du-Roy" width="200" height="62" />
-        <h1>Gestion de la boutique</h1>
+        <h1>{mode === 'in' ? 'Gestion de la boutique' : 'Créer un accès'}</h1>
         <p className="a-muted">Accès réservé à l’équipe du Marché Chemin-du-Roy.</p>
+        {mode === 'up' && (
+          <label className="a-field">
+            <span className="a-field__label">Nom complet</span>
+            <input className="a-input" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} required />
+          </label>
+        )}
         <label className="a-field">
           <span className="a-field__label">Courriel</span>
           <input className="a-input" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </label>
         <label className="a-field">
           <span className="a-field__label">Mot de passe</span>
-          <input className="a-input" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <input className="a-input" type="password" autoComplete={mode === 'in' ? 'current-password' : 'new-password'} value={password} onChange={(e) => setPassword(e.target.value)} required />
         </label>
         <ErrorBox error={error} />
         {sent && <p className="a-ok">Un lien de réinitialisation a été envoyé à {email}.</p>}
         <button className="a-btn a-btn--primary a-btn--block" disabled={busy}>
-          {busy ? 'Connexion…' : 'Se connecter'}
+          {busy ? 'Un instant…' : mode === 'in' ? 'Se connecter' : 'Créer mon accès'}
         </button>
-        <button type="button" className="a-link" onClick={reset}>
-          Mot de passe oublié ?
+        {mode === 'in' && (
+          <button type="button" className="a-link" onClick={reset}>
+            Mot de passe oublié ?
+          </button>
+        )}
+        <button type="button" className="a-link" onClick={() => (setMode(mode === 'in' ? 'up' : 'in'), setError(null))}>
+          {mode === 'in' ? 'Nouveau membre de l’équipe ? Créer un accès' : 'J’ai déjà un accès : se connecter'}
         </button>
         <p className="a-muted a-small">{t('Voir le site')} : <a href="/">nouveau.marchecheminduroy.com</a></p>
       </form>
@@ -214,12 +254,12 @@ export default function App() {
       setStaff(session === null ? null : undefined);
       return;
     }
-    supabase
-      .from('staff')
-      .select('full_name, role, active')
-      .eq('user_id', session.user.id)
-      .maybeSingle()
-      .then(({ data }) => setStaff(data && data.active ? data : null));
+    (async () => {
+      const name = (session.user.user_metadata?.full_name as string) || '';
+      await supabase.rpc('request_staff_access', { full_name: name });
+      const { data } = await supabase.from('staff').select('full_name, role, active').eq('user_id', session.user.id).maybeSingle();
+      setStaff(data && data.active ? data : null);
+    })();
   }, [session]);
 
   useEffect(() => setMenuOpen(false), [path]);
@@ -231,8 +271,8 @@ export default function App() {
     return (
       <div className="a-login">
         <div className="a-login__card">
-          <h1>Accès refusé</h1>
-          <p>Le compte {session.user.email} n’a pas accès à la gestion. Demandez au propriétaire de vous ajouter à l’équipe.</p>
+          <h1>Accès en attente</h1>
+          <p>Votre demande d’accès ({session.user.email}) a été transmise. Le propriétaire ou un gestionnaire doit l’approuver dans Équipe.</p>
           <button className="a-btn" onClick={() => supabase.auth.signOut()}>
             Se déconnecter
           </button>
@@ -257,9 +297,7 @@ export default function App() {
               {g.group && <p className="a-side__title">{g.group}</p>}
               {g.items.map((i) => (
                 <a key={i.path} href={`#/${i.path}`} aria-current={section === i.path ? 'page' : undefined}>
-                  <span className="a-side__ic" aria-hidden="true">
-                    {i.icon}
-                  </span>
+                  <Icon name={i.icon} size={18} className="a-side__ic" />
                   {t(i.label)}
                 </a>
               ))}
@@ -270,7 +308,7 @@ export default function App() {
       <div className="a-main">
         <header className="a-top">
           <button className="a-btn a-btn--ghost a-top__menu" onClick={() => setMenuOpen((o) => !o)} aria-label="Menu">
-            ☰
+            <Icon name="menu" size={20} />
           </button>
           <div className="a-top__right">
             <a className="a-btn a-btn--ghost" href="/" target="_blank" rel="noopener">

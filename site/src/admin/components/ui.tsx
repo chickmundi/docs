@@ -149,7 +149,7 @@ export function useLoad<T>(load: () => Promise<T>, deps: unknown[] = []) {
 }
 
 /** Throws Supabase errors so callers can use try/catch. */
-export function must<T>(res: { data: T; error: unknown }): T {
+export function must<T>(res: { data: T; error: unknown }): NonNullable<T> {
   if (res.error) throw res.error;
-  return res.data;
+  return (res.data ?? []) as NonNullable<T>;
 }
