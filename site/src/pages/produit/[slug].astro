@@ -3,6 +3,7 @@ import type { GetStaticPaths } from 'astro';
 import Base from '../../layouts/Base.astro';
 import ProductCard from '../../components/ProductCard.astro';
 import Icon from '../../components/Icon.astro';
+import { store as storeCfg } from '../../config';
 import { store } from '../../config';
 import { minDeliveryFee, maxDeliveryFee } from '../../lib/delivery';
 import {
@@ -143,6 +144,14 @@ const productData = {
             </button>
           </div>
           <p class="buy__error" data-error hidden></p>
+          {
+            storeCfg.whatsapp && p.inStock && (
+              <button type="button" class="btn buy__wa" data-wa-order data-wa-number={storeCfg.whatsapp}>
+                <Icon name="whatsapp" size={20} />
+                Commander via WhatsApp
+              </button>
+            )
+          }
           {p.unit === 'par kg' && <p class="buy__note">Prix au kilo : le montant final est ajusté selon le poids réel à la préparation.</p>}
         </form>
 
@@ -260,6 +269,37 @@ const productData = {
       addToCart(item, n);
       toast(`${n} × « ${data.name} » ajouté au panier`);
     });
+
+    // Order this product directly on WhatsApp, with the chosen options and quantity.
+    const waBtn = form.querySelector<HTMLButtonElement>('[data-wa-order]');
+    waBtn?.addEventListener('click', () => {
+      const n = Math.max(1, Math.min(99, Number(qty.value) || 1));
+      let price = data.price as number | null;
+      let options = '';
+      if (data.attrs.length) {
+        const sel = selected();
+        if (Object.values(sel).some((v) => !v)) {
+          err.textContent = 'Choisissez une option avant de commander.';
+          err.hidden = false;
+          return;
+        }
+        const v = findVariation();
+        if (v?.price != null) price = v.price;
+        options = Object.entries(sel).map(([k, val]) => `${k} : ${val}`).join(', ');
+      }
+      err.hidden = true;
+      const lines = [
+        'Bonjour, je souhaite commander :',
+        '',
+        `${n} × ${data.name}${options ? ` (${options})` : ''}`,
+        price != null ? `Prix : ${money(price)}${data.unit ? ` ${data.unit}` : ''} l’unité, soit ${money(price * n)}` : '',
+        location.href.split('?')[0],
+        '',
+        'Livraison ou retrait en magasin : ',
+        'Mon adresse : ',
+      ].filter((l, i, a) => l !== '' || a[i - 1] !== '');
+      window.open(`https://wa.me/${waBtn.dataset.waNumber}?text=${encodeURIComponent(lines.join('\n'))}`, '_blank', 'noopener');
+    });
   }
 </script>
 
@@ -370,6 +410,16 @@ const productData = {
     color: var(--accent);
     font-weight: 600;
     margin: 0;
+  }
+  .buy__wa {
+    width: 100%;
+    min-height: 50px;
+    background: #25d366;
+    color: #fff;
+    font-size: 1.02rem;
+  }
+  .buy__wa:hover {
+    background: #1ebe5b;
   }
   .buy__note {
     color: var(--muted);

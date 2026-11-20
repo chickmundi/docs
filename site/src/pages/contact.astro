@@ -1,6 +1,8 @@
 ---
 import Base from '../layouts/Base.astro';
 import { store } from '../config';
+import { whatsappLink } from '../lib/whatsapp';
+const wa = whatsappLink(`Bonjour ${store.name}, j’ai une question :`);
 ---
 
 <Base title="Contact" description={`Joindre ${store.name} : ${store.phone}, ${store.email}, ${store.address.street}, ${store.address.city}.`}>
@@ -15,6 +17,13 @@ import { store } from '../config';
         <strong>{store.phone}</strong>
         <span>Appelez-nous entre 9 h et 18 h.</span>
       </a>
+      {wa && (
+        <a class="tile tile--wa" href={wa} target="_blank" rel="noopener">
+          <span class="eyebrow">WhatsApp</span>
+          <strong>{store.whatsappDisplay}</strong>
+          <span>Commandes et service client, réponse rapide.</span>
+        </a>
+      )}
       <a class="tile" href={`mailto:${store.email}`}>
         <span class="eyebrow">Courriel</span>
         <strong>{store.email}</strong>
@@ -62,6 +71,10 @@ import { store } from '../config';
     padding: 20px;
     text-decoration: none;
     overflow-wrap: anywhere;
+  }
+  .tile--wa {
+    border-color: #25d366;
+    background: #eafaf0;
   }
   a.tile:hover {
     border-color: var(--brand);

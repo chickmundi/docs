@@ -37,8 +37,9 @@ export const store = {
     facebook: 'https://www.facebook.com/MarcheCheminduRoy',
     instagram: 'https://www.instagram.com/marchechemindu/',
   },
-  // Orders are sent by email. Add a WhatsApp number (digits only, e.g. '18193729966')
-  // to also offer "Commander par WhatsApp" in the cart.
-  whatsapp: '',
+  // WhatsApp number for orders and customer service: digits only, with country code (1 for Canada).
+  // Leave empty ('') to hide every WhatsApp button.
+  whatsapp: '15145787442',
+  whatsappDisplay: '+1 514-578-7442',
   services: ['Transfert d’argent Ria'],
 };

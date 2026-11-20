@@ -1,0 +1,100 @@
+---
+// Floating "Service client" WhatsApp button (not shown on product or cart pages).
+import Icon from './Icon.astro';
+import { store } from '../config';
+import { whatsappLink } from '../lib/whatsapp';
+
+const href = whatsappLink(`Bonjour ${store.name}, j’ai une question :`);
+---
+
+{
+  href && (
+    <a class="wa-fab" href={href} target="_blank" rel="noopener" aria-label="Service client sur WhatsApp">
+      <span class="wa-fab__icon"><Icon name="whatsapp" size={28} /></span>
+      <span class="wa-fab__text">
+        <strong>Service client</strong>
+        <small>Écrivez-nous sur WhatsApp</small>
+      </span>
+    </a>
+  )
+}
+
+<style>
+  .wa-fab {
+    position: fixed;
+    right: 16px;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    z-index: 55;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px;
+    border-radius: 999px;
+    background: #25d366;
+    color: #fff;
+    text-decoration: none;
+    box-shadow: 0 10px 24px -8px rgb(18 140 70 / 55%);
+    animation: wa-in 0.5s 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .wa-fab:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 28px -8px rgb(18 140 70 / 65%);
+  }
+  .wa-fab__icon {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+  }
+  /* Gentle pulse ring */
+  .wa-fab__icon::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid #25d366;
+    animation: wa-pulse 2.6s ease-out infinite;
+  }
+  .wa-fab__text {
+    display: none;
+    line-height: 1.15;
+    padding-right: 14px;
+  }
+  .wa-fab__text small {
+    display: block;
+    font-size: 0.75rem;
+    opacity: 0.9;
+  }
+  @media (min-width: 900px) {
+    .wa-fab {
+      right: 24px;
+      bottom: 24px;
+    }
+    .wa-fab__text {
+      display: block;
+    }
+  }
+  @keyframes wa-in {
+    from {
+      opacity: 0;
+      transform: translateY(16px) scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes wa-pulse {
+    0% {
+      transform: scale(1);
+      opacity: 0.8;
+    }
+    100% {
+      transform: scale(1.6);
+      opacity: 0;
+    }
+  }
+</style>

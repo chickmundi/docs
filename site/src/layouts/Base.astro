@@ -4,6 +4,8 @@ import Icon from '../components/Icon.astro';
 import { store } from '../config';
 import { topCategories, childrenOf, categoryBySlug, money, type Category } from '../lib/catalog';
 import { categoryIcon } from '../lib/icons';
+import WhatsAppFab from '../components/WhatsAppFab.astro';
+import { whatsappLink } from '../lib/whatsapp';
 
 interface Props {
   title?: string;
@@ -29,6 +31,9 @@ const navGroups: { top: Category; items: Category[] }[] = [
 ];
 const inGroup = (g: (typeof navGroups)[number]) =>
   [g.top, ...g.items].some((c) => path.startsWith(`/categorie/${c.slug}/`));
+// Product and cart pages have their own WhatsApp order buttons.
+const showFab = !path.startsWith('/produit/') && !path.startsWith('/panier');
+const waService = whatsappLink(`Bonjour ${store.name}, j’ai une question :`);
 const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWith(href));
 ---
 
@@ -79,6 +84,7 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
           <li><a href="/a-propos/">À propos</a></li>
           <li><a href="/livraison/">Livraison</a></li>
           <li><a href="/contact/">Contact</a></li>
+          {waService && <li><a href={waService} target="_blank" rel="noopener"><Icon name="whatsapp" size={15} /> WhatsApp</a></li>}
           <li><a href={store.phoneHref}><Icon name="phone" size={14} /> {store.phone}</a></li>
         </ul>
       </div>
@@ -245,6 +251,7 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
           <ul>
             <li><Icon name="phone" size={16} /><a href={store.phoneHref}>{store.phone}</a></li>
             <li><Icon name="mail" size={16} /><a href={`mailto:${store.email}`}>{store.email}</a></li>
+            {waService && <li><Icon name="whatsapp" size={16} /><a href={waService} target="_blank" rel="noopener">WhatsApp : {store.whatsappDisplay}</a></li>}
             <li><Icon name="truck" size={16} /><span>{store.deliveryHours}</span></li>
             <li><Icon name="banknote" size={16} /><span>Transfert d’argent Ria en magasin</span></li>
           </ul>
@@ -266,6 +273,8 @@ const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWit
         <p>Prix en dollars canadiens, taxes en sus s’il y a lieu.</p>
       </div>
     </footer>
+
+    {showFab && <WhatsAppFab />}
 
     <!-- Mobile bottom bar -->
     <nav class="tabbar" aria-label="Navigation mobile">

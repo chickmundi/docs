@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import DeliveryRates from '../components/DeliveryRates.astro';
+import Icon from '../components/Icon.astro';
 import { store } from '../config';
 ---
 
@@ -73,8 +74,8 @@ import { store } from '../config';
             <label class="field">Courriel<input class="input" name="email" type="email" autocomplete="email" /></label>
             <label class="field">Note (facultatif)<textarea class="input" name="note" rows="2" placeholder="Heure préférée, instructions…"></textarea></label>
             <p class="form-error" data-form-error role="alert" hidden></p>
-            <button class="btn btn--accent btn--block" type="submit">Envoyer ma commande par courriel</button>
-            {store.whatsapp && <button class="btn btn--ghost btn--block" type="submit" data-via="whatsapp">Commander par WhatsApp</button>}
+            <button class="btn btn--accent btn--block" type="submit"><Icon name="mail" size={19} /> Envoyer ma commande par courriel</button>
+            {store.whatsapp && <button class="btn btn--block btn--wa" type="submit" data-via="whatsapp"><Icon name="whatsapp" size={20} /> Commander via WhatsApp</button>}
             <p class="summary__note">
               Votre commande s’ouvre dans votre application de courriel{store.whatsapp && ' ou WhatsApp'}, prête à envoyer. Nous vous rappelons pour confirmer et convenir du paiement (à la livraison, en magasin ou par lien sécurisé).
             </p>
@@ -763,6 +764,12 @@ import { store } from '../config';
     background: var(--bg);
     border-radius: var(--radius-sm);
     font-size: 0.92rem;
+  }
+  .btn--wa {
+    background: #25d366;
+  }
+  .btn--wa:hover {
+    background: #1ebe5b;
   }
   .form-error {
     margin: 0;

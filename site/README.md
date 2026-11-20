@@ -41,9 +41,14 @@ npm run import    # re-import products, categories and images from the live stor
 
 The cart is kept in the shopper's browser. At checkout the customer fills in name, phone and
 address (or picks in-store pickup), and the order opens as a ready-to-send email to
-`sc@marchecheminduroy.com`. Set `whatsapp` in `src/config.ts` to also offer "Commander par
-WhatsApp". There is **no online card payment yet**. Adding one needs a payment provider
-(for example Stripe Checkout).
+`sc@marchecheminduroy.com` or as a WhatsApp message.
+
+WhatsApp (number in `src/config.ts`, `whatsapp`; set it to `''` to hide every WhatsApp button):
+- product pages: "Commander via WhatsApp" with the product, options, quantity and price
+- cart: "Commander via WhatsApp" with the full order, delivery fee and address
+- every other page: a floating "Service client" button
+
+There is **no online card payment yet**. Adding one needs a payment provider (for example Stripe Checkout).
 
 ## Deploying to Hostinger
 
