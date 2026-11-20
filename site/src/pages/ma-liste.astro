@@ -1,0 +1,135 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+---
+
+<Base title="Ma liste" description="Les produits que vous avez gardés pour plus tard.">
+  <div class="container">
+    <div class="head">
+      <span class="head__ic"><Icon name="heart" size={26} /></span>
+      <div>
+        <h1>Ma liste</h1>
+        <p class="muted">Les produits que vous gardez pour plus tard, sur cet appareil.</p>
+      </div>
+    </div>
+    <p class="empty" data-empty hidden>
+      Votre liste est vide. Touchez le cœur sur un produit pour l’ajouter ici.
+      <a class="btn" href="/boutique/">Parcourir la boutique</a>
+    </p>
+    <div class="grid" data-list></div>
+  </div>
+</Base>
+
+<script>
+  import { getWishlist, removeFromWishlist } from '../scripts/wishlist';
+  import { addToCart, toast, money } from '../scripts/cart';
+
+  const list = document.querySelector<HTMLElement>('[data-list]')!;
+  const empty = document.querySelector<HTMLElement>('[data-empty]')!;
+  const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+
+  function render() {
+    const items = getWishlist();
+    empty.hidden = items.length > 0;
+    list.innerHTML = items
+      .map(
+        (i) => `<article class="wcard">
+          <a href="/produit/${i.slug}/" class="wcard__img">${i.image ? `<img src="${i.image}" alt="" loading="lazy" width="300" height="300">` : ''}</a>
+          <a href="/produit/${i.slug}/" class="wcard__name">${esc(i.name)}</a>
+          <span class="price">${i.price != null ? money(i.price) : ''}${i.unit ? ` <small>${esc(i.unit)}</small>` : ''}</span>
+          <div class="wcard__actions">
+            <button class="btn" data-add="${i.id}">Ajouter au panier</button>
+            <button class="btn btn--ghost" data-remove="${i.id}" aria-label="Retirer de ma liste">Retirer</button>
+          </div>
+        </article>`,
+      )
+      .join('');
+  }
+
+  list.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+    const add = t.closest<HTMLElement>('[data-add]');
+    const rem = t.closest<HTMLElement>('[data-remove]');
+    if (add) {
+      const i = getWishlist().find((x) => x.id === Number(add.dataset.add));
+      if (!i || i.price == null) return;
+      addToCart({ key: String(i.id), id: i.id, name: i.name, price: i.price, unit: i.unit, image: i.image, slug: i.slug });
+      toast(`« ${i.name} » ajouté au panier`);
+    }
+    if (rem) removeFromWishlist(Number(rem.dataset.remove));
+  });
+  document.addEventListener('wishlist:change', render);
+  render();
+</script>
+
+<style>
+  .head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 28px 0 20px;
+  }
+  .head h1 {
+    margin: 0;
+  }
+  .head__ic {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  .muted {
+    color: var(--muted);
+    margin: 2px 0 0;
+  }
+  .empty {
+    display: grid;
+    justify-items: center;
+    gap: 16px;
+    padding: 40px 20px;
+    text-align: center;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  .empty[hidden] {
+    display: none;
+  }
+  :global(.wcard) {
+    display: grid;
+    gap: 8px;
+    align-content: start;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 12px;
+    animation: fade-up 0.4s ease both;
+  }
+  :global(.wcard__img) {
+    position: relative;
+    aspect-ratio: 1;
+  }
+  :global(.wcard__img img) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  :global(.wcard__name) {
+    font-weight: 600;
+    font-size: 0.92rem;
+    text-decoration: none;
+  }
+  :global(.wcard__actions) {
+    display: grid;
+    gap: 6px;
+  }
+  :global(.wcard .btn) {
+    min-height: 40px;
+    font-size: 0.88rem;
+  }
+</style>

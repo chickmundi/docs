@@ -37,7 +37,12 @@ export const categoryById = (id: number) => categories.find((c) => c.id === id);
 
 export function productsIn(c: Category): Product[] {
   const ids = new Set([c.id, ...childrenOf(c).map((x) => x.id)]);
-  return sortDefault(products.filter((p) => p.categories.some((id) => ids.has(id))));
+  const list = sortDefault(products.filter((p) => p.categories.some((id) => ids.has(id))));
+  // On a parent page, "Autres" (pet food, household items) comes after the real groceries.
+  const autres = categoriesData.find((x) => x.slug === 'autres');
+  if (!autres || c.id === autres.id || !childrenOf(c).some((k) => k.id === autres.id)) return list;
+  const isAutre = (p: Product) => p.categories.includes(autres.id);
+  return [...list.filter((p) => !isAutre(p)), ...list.filter(isAutre)];
 }
 
 // In stock first, then newest.

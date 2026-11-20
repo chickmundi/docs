@@ -7,5 +7,5 @@ const items = products.filter((p) => p.onSale && p.inStock).sort((a, b) => disco
 ---
 
 <Base title="Promotions" description="Les meilleures offres du moment chez Marché Chemin-du-Roy, dans la limite des stocks disponibles.">
-  <Listing title="Promotions" intro="Les meilleures offres du moment, dans la limite des stocks disponibles." items={items} total={items.length} current={1} last={1} base="/promotions" />
+  <Listing title="Promotions" intro="Les meilleures offres du moment, dans la limite des stocks disponibles." items={items} total={items.length} current={1} last={1} base="/promotions" icon="badge-percent" />
 </Base>

@@ -32,5 +32,6 @@ const title = category.name;
     subcategories={siblings}
     activeSlug={parent ? category.slug : undefined}
     parentHref={`/categorie/${(parent ?? category).slug}/`}
+    sideSlug={category.slug}
   />
 </Base>

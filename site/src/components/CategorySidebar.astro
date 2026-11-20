@@ -1,0 +1,235 @@
+---
+// Shop sidebar: category tree with icons and counts. On phones it folds into a button.
+import Icon from './Icon.astro';
+import { topCategories, childrenOf, productsIn, products } from '../lib/catalog';
+import { categoryIcon } from '../lib/icons';
+
+interface Props {
+  activeSlug?: string; // current category (or sub-category)
+  activePath?: string; // for /boutique, /promotions, /nouveautes
+}
+const { activeSlug, activePath = '' } = Astro.props;
+const tree = topCategories.map((c) => {
+  const kids = childrenOf(c).map((k) => ({ ...k, total: productsIn(k).length }));
+  return { ...c, total: productsIn(c).length, kids, open: c.slug === activeSlug || kids.some((k) => k.slug === activeSlug) };
+});
+const promoCount = products.filter((p) => p.onSale && p.inStock).length;
+---
+
+<details class="side" open data-side>
+  <summary class="side__toggle">
+    <Icon name="sliders-horizontal" size={18} />
+    <span>Catégories</span>
+    <Icon name="chevron-down" size={18} class="side__chev" />
+  </summary>
+  <nav class="side__body" aria-label="Catégories de la boutique">
+    <h2 class="side__title">Catégories</h2>
+    <ul class="side__quick">
+      <li><a href="/boutique/" aria-current={activePath.startsWith('/boutique') ? 'page' : undefined}><Icon name="store" size={18} /> Tous les produits <span>{products.length}</span></a></li>
+      <li><a href="/promotions/" aria-current={activePath.startsWith('/promotions') ? 'page' : undefined}><Icon name="badge-percent" size={18} /> Promotions <span>{promoCount}</span></a></li>
+      <li><a href="/nouveautes/" aria-current={activePath.startsWith('/nouveautes') ? 'page' : undefined}><Icon name="sparkles" size={18} /> Nouveautés</a></li>
+    </ul>
+    <ul class="side__tree">
+      {
+        tree.map((c) => (
+          <li class={c.open ? 'is-open' : ''}>
+            <div class="side__row">
+              <a href={`/categorie/${c.slug}/`} aria-current={c.slug === activeSlug ? 'page' : undefined}>
+                <span class="side__ic"><Icon name={categoryIcon(c.slug)} size={17} /></span>
+                <span class="side__name">{c.name}</span>
+                <span class="side__n">{c.total}</span>
+              </a>
+              {c.kids.length > 0 && (
+                <button type="button" class="side__exp" aria-expanded={c.open ? 'true' : 'false'} aria-label={`Sous-catégories : ${c.name}`} data-side-exp>
+                  <Icon name="chevron-down" size={16} />
+                </button>
+              )}
+            </div>
+            {c.kids.length > 0 && (
+              <ul class="side__kids" hidden={!c.open}>
+                {c.kids.map((k) => (
+                  <li>
+                    <a href={`/categorie/${k.slug}/`} aria-current={k.slug === activeSlug ? 'page' : undefined}>
+                      {k.name} <span class="side__n">{k.total}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+</details>
+
+<script>
+  // Collapsed by default on phones, always open on desktop.
+  const side = document.querySelector<HTMLDetailsElement>('[data-side]');
+  const mq = window.matchMedia('(min-width: 1000px)');
+  const sync = () => side && (side.open = mq.matches);
+  sync();
+  mq.addEventListener('change', sync);
+  document.querySelectorAll<HTMLButtonElement>('[data-side-exp]').forEach((b) =>
+    b.addEventListener('click', () => {
+      const li = b.closest('li')!;
+      const open = b.getAttribute('aria-expanded') !== 'true';
+      b.setAttribute('aria-expanded', String(open));
+      li.classList.toggle('is-open', open);
+      (li.querySelector('.side__kids') as HTMLElement).hidden = !open;
+    }),
+  );
+</script>
+
+<style>
+  .side {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    align-self: start;
+  }
+  @media (min-width: 1000px) {
+    .side {
+      position: sticky;
+      top: 150px;
+      max-height: calc(100vh - 170px);
+      overflow-y: auto;
+    }
+  }
+  .side__toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 16px;
+    min-height: 50px;
+    font-weight: 700;
+    cursor: pointer;
+    list-style: none;
+  }
+  .side__toggle::-webkit-details-marker {
+    display: none;
+  }
+  .side__toggle span {
+    flex: 1;
+  }
+  .side :global(.side__chev) {
+    transition: transform 0.2s;
+  }
+  .side[open] :global(.side__chev) {
+    transform: rotate(180deg);
+  }
+  @media (min-width: 1000px) {
+    .side__toggle {
+      display: none;
+    }
+  }
+  .side__body {
+    padding: 4px 12px 14px;
+  }
+  .side__title {
+    display: none;
+    font-size: 1.05rem;
+    margin: 12px 6px 10px;
+  }
+  @media (min-width: 1000px) {
+    .side__title {
+      display: block;
+    }
+  }
+  .side ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .side__quick {
+    display: grid;
+    gap: 2px;
+    padding-bottom: 10px;
+    margin-bottom: 8px !important;
+    border-bottom: 1px solid var(--line);
+  }
+  .side__quick a,
+  .side__row > a,
+  .side__kids a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 8px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 0.92rem;
+    transition: background 0.15s, color 0.15s;
+  }
+  .side__quick a {
+    font-weight: 600;
+  }
+  .side__quick a span {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+  .side a:hover {
+    background: var(--bg);
+  }
+  .side a[aria-current='page'] {
+    background: var(--brand-soft);
+    color: var(--brand-ink);
+    font-weight: 700;
+  }
+  .side__row {
+    display: flex;
+    align-items: center;
+  }
+  .side__row > a {
+    flex: 1;
+    font-weight: 600;
+    min-width: 0;
+  }
+  .side__ic {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: var(--ochre-soft);
+    color: var(--terracotta);
+    flex-shrink: 0;
+  }
+  .side__name {
+    flex: 1;
+    min-width: 0;
+  }
+  .side__n {
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 500;
+    margin-left: auto;
+  }
+  .side__exp {
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 8px;
+    background: none;
+    color: var(--muted);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: transform 0.2s, background 0.15s;
+  }
+  .side__exp:hover {
+    background: var(--bg);
+  }
+  .side__exp[aria-expanded='true'] {
+    transform: rotate(180deg);
+  }
+  .side__kids {
+    margin: 2px 0 6px 40px !important;
+    border-left: 2px solid var(--line);
+    padding-left: 6px !important;
+  }
+  .side__kids a {
+    font-size: 0.88rem;
+    color: var(--muted);
+  }
+</style>

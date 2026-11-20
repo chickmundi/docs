@@ -6,7 +6,7 @@
   --accent-soft: #ffe8f1;
   --ink: #17142b;
   --muted: #625d75;
-  --bg: #faf8f4;
+  --bg: #fbf8f2;
   --surface: #ffffff;
   --line: #e9e4dc;
   --ok: #12804a;
@@ -15,6 +15,19 @@
   --radius-sm: 10px;
   --shadow: 0 1px 2px rgb(23 20 43 / 6%), 0 8px 24px -12px rgb(23 20 43 / 18%);
   --max: 1320px;
+  /* Warm accents inspired by West and Central African textiles and markets */
+  --navy: #1c1466;
+  --ochre: #f2a516;
+  --ochre-soft: #fff3d6;
+  --terracotta: #c8512b;
+  --terracotta-soft: #fde9e1;
+  --leaf: #17784a;
+  --leaf-soft: #e3f4ea;
+  --cream: #fbf6ec;
+  /* Thin kente-style stripe used as a divider */
+  --kente: repeating-linear-gradient(90deg, var(--ochre) 0 28px, var(--terracotta) 28px 40px, var(--leaf) 40px 64px, var(--navy) 64px 72px, var(--ochre) 72px 84px, var(--brand) 84px 104px);
+  /* Wax-print inspired motif (concentric rings and diamonds) */
+  --wax: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cg fill='none' stroke='%23000' stroke-width='1.6'%3E%3Ccircle cx='16' cy='16' r='10'/%3E%3Ccircle cx='16' cy='16' r='5'/%3E%3Ccircle cx='48' cy='48' r='10'/%3E%3Ccircle cx='48' cy='48' r='5'/%3E%3Cpath d='M48 6l10 10-10 10-10-10zM16 38l10 10-10 10-10-10z'/%3E%3C/g%3E%3C/svg%3E");
   --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
   --font-body: 'Figtree', system-ui, sans-serif;
 }
@@ -310,4 +323,102 @@ label.field {
   gap: 6px;
   font-weight: 600;
   font-size: 0.92rem;
+}
+
+
+/* ---------- Icons ---------- */
+.icon {
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+/* ---------- Decorative ---------- */
+.kente {
+  height: 6px;
+  background: var(--kente);
+}
+
+.wax-bg {
+  position: relative;
+  isolation: isolate;
+}
+
+.wax-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--wax);
+  opacity: 0.035;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* ---------- Soft animations ---------- */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes bump {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.35);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.js [data-reveal] {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: var(--delay, 0s);
+}
+
+.js [data-reveal].is-in {
+  opacity: 1;
+  transform: none;
+}
+
+.bump {
+  animation: bump 0.45s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .js [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- Mobile bottom navigation spacing ---------- */
+@media (max-width: 899px) {
+  body {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  }
 }

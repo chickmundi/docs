@@ -1,8 +1,11 @@
 ---
-// Shared layout for the shop, category and promotions pages.
+// Shared layout for the shop, category, promotions and new-arrivals pages.
 import ProductCard from './ProductCard.astro';
 import Pagination from './Pagination.astro';
+import CategorySidebar from './CategorySidebar.astro';
+import Icon from './Icon.astro';
 import type { Product, Category } from '../lib/catalog';
+import { categoryIcon } from '../lib/icons';
 
 interface Props {
   title: string;
@@ -14,83 +17,154 @@ interface Props {
   base: string;
   crumbs?: { label: string; href: string }[];
   subcategories?: Category[];
-  activeSlug?: string;
+  activeSlug?: string; // sub-category currently shown (for chips)
   parentHref?: string;
+  sideSlug?: string; // category to highlight in the sidebar
+  icon?: string;
 }
-const { title, intro, items, total, current, last, base, crumbs = [], subcategories = [], activeSlug, parentHref } = Astro.props;
+const { title, intro, items, total, current, last, base, crumbs = [], subcategories = [], activeSlug, parentHref, sideSlug, icon } = Astro.props;
+const iconName = icon ?? (sideSlug ? categoryIcon(sideSlug) : 'store');
 ---
 
-<div class="container">
-  <nav class="breadcrumbs" aria-label="Fil d’Ariane">
-    <a href="/">Accueil</a>
-    {
-      crumbs.map((c) => (
-        <>
-          <span aria-hidden="true">/</span>
-          <a href={c.href}>{c.label}</a>
-        </>
-      ))
-    }
-    <span aria-hidden="true">/</span>
-    <span aria-current="page">{title}</span>
-  </nav>
-
-  <header class="listing__head">
-    <h1>{title}</h1>
-    <p class="listing__count">{total} produit{total > 1 ? 's' : ''}{last > 1 && ` · page ${current} sur ${last}`}</p>
-    {intro && <p class="listing__intro">{intro}</p>}
-  </header>
-
-  {
-    subcategories.length > 0 && (
-      <ul class="chips" aria-label="Sous-catégories">
-        {parentHref && (
-          <li>
-            <a href={parentHref} aria-current={!activeSlug ? 'page' : undefined}>
-              Tout voir
-            </a>
-          </li>
-        )}
-        {subcategories.map((s) => (
-          <li>
-            <a href={`/categorie/${s.slug}/`} aria-current={activeSlug === s.slug ? 'page' : undefined}>
-              {s.name} <span>{s.count}</span>
-            </a>
-          </li>
-        ))}
-      </ul>
-    )
-  }
-
-  <div class="grid">
-    {items.map((p, i) => <ProductCard product={p} eager={i < 4} />)}
+<section class="banner wax-bg">
+  <div class="container">
+    <nav class="breadcrumbs" aria-label="Fil d’Ariane">
+      <a href="/">Accueil</a>
+      {
+        crumbs.map((c) => (
+          <>
+            <Icon name="chevron-right" size={14} />
+            <a href={c.href}>{c.label}</a>
+          </>
+        ))
+      }
+      <Icon name="chevron-right" size={14} />
+      <span aria-current="page">{title}</span>
+    </nav>
+    <div class="banner__row">
+      <span class="banner__ic"><Icon name={iconName} size={28} /></span>
+      <div>
+        <h1>{title}</h1>
+        <p class="banner__count">{total} produit{total > 1 ? 's' : ''}{last > 1 && ` · page ${current} sur ${last}`}</p>
+      </div>
+    </div>
+    {intro && <p class="banner__intro">{intro}</p>}
   </div>
+</section>
 
-  <Pagination current={current} last={last} base={base} />
+<div class="container shop">
+  <CategorySidebar activeSlug={sideSlug} activePath={base} />
+
+  <div class="shop__main">
+    {
+      subcategories.length > 0 && (
+        <ul class="chips" aria-label="Sous-catégories">
+          {parentHref && (
+            <li>
+              <a href={parentHref} aria-current={!activeSlug ? 'page' : undefined}>
+                Tout voir
+              </a>
+            </li>
+          )}
+          {subcategories.map((s) => (
+            <li>
+              <a href={`/categorie/${s.slug}/`} aria-current={activeSlug === s.slug ? 'page' : undefined}>
+                <Icon name={categoryIcon(s.slug)} size={16} /> {s.name}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+
+    {
+      items.length ? (
+        <div class="grid shop__grid">
+          {items.map((p, i) => (
+            <ProductCard product={p} eager={i < 4} />
+          ))}
+        </div>
+      ) : (
+        <p class="empty">Aucun produit pour le moment.</p>
+      )
+    }
+
+    <Pagination current={current} last={last} base={base} />
+  </div>
 </div>
 
 <style>
-  .listing__head {
-    margin-bottom: 18px;
+  .banner {
+    background: linear-gradient(120deg, var(--ochre-soft), var(--cream) 55%, var(--terracotta-soft));
+    border-bottom: 1px solid var(--line);
+    padding: 4px 0 22px;
+    margin-bottom: 24px;
   }
-  .listing__head h1 {
-    margin-bottom: 4px;
+  .banner .breadcrumbs {
+    align-items: center;
   }
-  .listing__count {
-    color: var(--muted);
+  .banner__row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .banner__ic {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: #fff;
+    color: var(--terracotta);
+    box-shadow: var(--shadow);
+    flex-shrink: 0;
+    animation: fade-up 0.5s ease both;
+  }
+  .banner h1 {
     margin: 0;
+    animation: fade-up 0.5s 0.05s ease both;
   }
-  .listing__intro {
+  .banner__count {
+    margin: 2px 0 0;
+    color: var(--muted);
+  }
+  .banner__intro {
     max-width: 70ch;
-    margin: 10px 0 0;
+    margin: 12px 0 0;
+  }
+  .shop {
+    display: grid;
+    gap: 20px;
+  }
+  /* Let wide children (chip row, grid) shrink to the column instead of stretching it. */
+  .shop > :global(*) {
+    min-width: 0;
+  }
+  @media (min-width: 1000px) {
+    .shop {
+      grid-template-columns: 270px minmax(0, 1fr);
+      gap: 28px;
+      align-items: start;
+    }
+  }
+  @media (min-width: 1000px) {
+    .shop__grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1250px) {
+    .shop__grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
   }
   .chips {
     display: flex;
     gap: 8px;
     list-style: none;
     padding: 0 0 4px;
-    margin: 0 0 20px;
+    margin: 0 0 18px;
     overflow-x: auto;
+    scrollbar-width: thin;
   }
   .chips a {
     display: inline-flex;
@@ -105,11 +179,7 @@ const { title, intro, items, total, current, last, base, crumbs = [], subcategor
     font-weight: 600;
     font-size: 0.9rem;
     white-space: nowrap;
-  }
-  .chips a span {
-    color: var(--muted);
-    font-weight: 500;
-    font-size: 0.8rem;
+    transition: border-color 0.2s, background 0.2s, color 0.2s;
   }
   .chips a:hover {
     border-color: var(--brand);
@@ -119,7 +189,11 @@ const { title, intro, items, total, current, last, base, crumbs = [], subcategor
     border-color: var(--brand);
     color: #fff;
   }
-  .chips a[aria-current='page'] span {
-    color: #dcd6ff;
+  .empty {
+    padding: 40px;
+    text-align: center;
+    background: var(--surface);
+    border-radius: var(--radius);
+    color: var(--muted);
   }
 </style>

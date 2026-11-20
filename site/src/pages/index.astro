@@ -1,14 +1,16 @@
 ---
 import Base from '../layouts/Base.astro';
 import ProductCard from '../components/ProductCard.astro';
+import Icon from '../components/Icon.astro';
 import { store } from '../config';
 import { minDeliveryFee, maxDeliveryFee } from '../lib/delivery';
 import { products, topCategories, categoryBySlug, productsIn, discountPct, money } from '../lib/catalog';
+import { categoryIcon } from '../lib/icons';
 
 const inStock = products.filter((p) => p.inStock);
 const deals = inStock.filter((p) => p.onSale).sort((a, b) => discountPct(b) - discountPct(a)).slice(0, 12);
 const newest = [...inStock].sort((a, b) => b.id - a.id).slice(0, 12);
-// Pet food and household items live in "Autres"; keep them out of the homepage rails.
+// Pet food and household items live in "Autres"; keep them out of the homepage rows.
 const autres = categoryBySlug('autres');
 const rail = (slug: string, n = 12) => {
   const c = categoryBySlug(slug);
@@ -21,49 +23,59 @@ const groups = [
   { slug: 'extensions-capillaires', title: 'Extensions et tresses', eyebrow: 'Crochets, mèches, tissages' },
   { slug: 'soins-capillaires', title: 'Soins capillaires', eyebrow: 'Votre routine beauté' },
 ].map((g) => ({ ...g, items: rail(g.slug) }));
+
+// Tile colours cycle through the warm palette.
+const TONES = ['ochre', 'terracotta', 'leaf', 'brand'];
 ---
 
 <Base>
-  <section class="hero">
+  <section class="hero wax-bg">
     <div class="container hero__grid">
       <div class="hero__copy">
-        <p class="eyebrow">Trois-Rivières · depuis le Chemin du Roy</p>
+        <p class="hero__eyebrow"><Icon name="map-pin" size={16} /> Trois-Rivières, sur le Chemin du Roy</p>
         <h1>Les saveurs d’Afrique et d’ici, <span>livrées chez vous.</span></h1>
         <p class="hero__lead">
           Épicerie africaine et québécoise, viandes et poissons surgelés, perruques, extensions et soins capillaires.
           Plus de {Math.floor(products.length / 100) * 100} produits, en magasin et en ligne.
         </p>
         <div class="hero__cta">
-          <a class="btn btn--accent" href="/categorie/epicerie/">Faire l’épicerie</a>
-          <a class="btn btn--ghost" href="/categorie/perruques/">Beauté et cheveux</a>
+          <a class="btn btn--accent" href="/categorie/epicerie/"><Icon name="shopping-basket" size={18} /> Faire l’épicerie</a>
+          <a class="btn btn--ghost hero__ghost" href="/categorie/perruques/"><Icon name="sparkles" size={18} /> Beauté et cheveux</a>
         </div>
         <ul class="hero__facts">
-          <li><strong>Livraison gratuite</strong> dès {money(store.freeDeliveryThreshold)}, jusqu’à {store.maxDeliveryKm} km</li>
-          <li><strong>7 jours sur 7</strong> de 9 h à 18 h</li>
+          <li><span><Icon name="truck" size={18} /></span>Livraison 7 jours sur 7, gratuite dès {money(store.freeDeliveryThreshold)}</li>
+          <li><span><Icon name="store" size={18} /></span>Retrait gratuit en magasin</li>
+          <li><span><Icon name="banknote" size={18} /></span>Transfert d’argent Ria</li>
         </ul>
       </div>
       <div class="hero__art" aria-hidden="true">
+        <div class="hero__ring"></div>
         <div class="hero__blob hero__blob--a"><img src="/images/brand/MRC_0008_Layer-1.png" alt="" width="447" height="347" /></div>
         <div class="hero__blob hero__blob--b"><img src="/images/brand/0005_Layer.png" alt="" width="485" height="485" /></div>
+        <div class="hero__chip hero__chip--a"><Icon name="leaf" size={18} /> Produits authentiques</div>
+        <div class="hero__chip hero__chip--b"><Icon name="clock" size={18} /> Livré de 9 h à 18 h</div>
       </div>
     </div>
   </section>
 
   <section class="section">
     <div class="container">
-      <div class="section__head">
-        <h2>Magasiner par catégorie</h2>
-        <a href="/boutique/">Tous les produits →</a>
+      <div class="section__head" data-reveal>
+        <div>
+          <p class="eyebrow">Une épicerie pas comme les autres</p>
+          <h2>Magasiner par catégorie</h2>
+        </div>
+        <a href="/boutique/">Tous les produits <Icon name="arrow-right" size={16} /></a>
       </div>
-      <ul class="cats">
+      <ul class="tiles">
         {
-          topCategories.map((c) => (
-            <li>
-              <a href={`/categorie/${c.slug}/`}>
-                <span class="cats__img">
-                  {c.image ? <img src={c.image} alt="" loading="lazy" width="120" height="120" /> : <span class="cats__letter">{c.name[0]}</span>}
-                </span>
-                <span class="cats__name">{c.name}</span>
+          topCategories.map((c, i) => (
+            <li data-reveal style={`--delay:${(i % 6) * 0.05}s`}>
+              <a href={`/categorie/${c.slug}/`} class={`tile tile--${TONES[i % TONES.length]}`}>
+                <span class="tile__ic"><Icon name={categoryIcon(c.slug)} size={20} /></span>
+                <span class="tile__name">{c.name}</span>
+                <span class="tile__n">{productsIn(c).length} produits</span>
+                {c.image && <img src={c.image} alt="" loading="lazy" width="140" height="140" />}
               </a>
             </li>
           ))
@@ -74,14 +86,14 @@ const groups = [
 
   {
     deals.length > 0 && (
-      <section class="section section--tint">
+      <section class="section section--deals">
         <div class="container">
-          <div class="section__head">
+          <div class="section__head" data-reveal>
             <div>
               <p class="eyebrow">Dans la limite des stocks</p>
-              <h2>Promotions</h2>
+              <h2 class="with-ic"><span class="h-ic h-ic--accent"><Icon name="badge-percent" size={22} /></span>Promotions</h2>
             </div>
-            <a href="/promotions/">Voir tout →</a>
+            <a href="/promotions/">Voir tout <Icon name="arrow-right" size={16} /></a>
           </div>
           <div class="grid grid--rail">
             {deals.map((p) => <ProductCard product={p} />)}
@@ -93,12 +105,12 @@ const groups = [
 
   <section class="section">
     <div class="container">
-      <div class="section__head">
+      <div class="section__head" data-reveal>
         <div>
           <p class="eyebrow">Cette semaine</p>
-          <h2>Nouveautés</h2>
+          <h2 class="with-ic"><span class="h-ic"><Icon name="sparkles" size={22} /></span>Nouveautés</h2>
         </div>
-        <a href="/boutique/">Voir tout →</a>
+        <a href="/nouveautes/">Voir tout <Icon name="arrow-right" size={16} /></a>
       </div>
       <div class="grid grid--rail">
         {newest.map((p) => <ProductCard product={p} />)}
@@ -108,16 +120,16 @@ const groups = [
 
   <section class="container">
     <div class="split">
-      <a class="split__card split__card--food" href="/categorie/epices-et-condiments/">
-        <p class="eyebrow">Une épicerie pas comme les autres</p>
-        <h2>Épices, farines et condiments authentiques</h2>
-        <span class="btn btn--ghost">Découvrir</span>
+      <a class="split__card split__card--food wax-bg" href="/categorie/epices-et-condiments/" data-reveal>
+        <p class="eyebrow">Saveurs authentiques</p>
+        <h2>Épices, farines et condiments d’Afrique</h2>
+        <span class="btn split__btn">Découvrir <Icon name="arrow-right" size={16} /></span>
         <img src="/images/categories/epices-et-condiments.webp" alt="" loading="lazy" />
       </a>
-      <a class="split__card split__card--hair" href="/categorie/soins-capillaires/">
+      <a class="split__card split__card--hair wax-bg" href="/categorie/soins-capillaires/" data-reveal style="--delay:.08s">
         <p class="eyebrow">Les meilleures offres</p>
         <h2>Transformez votre routine de soins capillaires</h2>
-        <span class="btn btn--ghost">Découvrir</span>
+        <span class="btn split__btn">Découvrir <Icon name="arrow-right" size={16} /></span>
         <img src="/images/categories/soins-capillaires.webp" alt="" loading="lazy" />
       </a>
     </div>
@@ -129,12 +141,12 @@ const groups = [
         g.items.length > 0 && (
           <section class="section">
             <div class="container">
-              <div class="section__head">
+              <div class="section__head" data-reveal>
                 <div>
                   <p class="eyebrow">{g.eyebrow}</p>
-                  <h2>{g.title}</h2>
+                  <h2 class="with-ic"><span class="h-ic"><Icon name={categoryIcon(g.slug)} size={22} /></span>{g.title}</h2>
                 </div>
-                <a href={`/categorie/${g.slug}/`}>Voir tout →</a>
+                <a href={`/categorie/${g.slug}/`}>Voir tout <Icon name="arrow-right" size={16} /></a>
               </div>
               <div class="grid grid--rail">
                 {g.items.map((p) => <ProductCard product={p} />)}
@@ -146,24 +158,24 @@ const groups = [
   }
 
   <section class="container">
-    <div class="visit">
+    <div class="visit wax-bg" data-reveal>
       <div>
         <p class="eyebrow">Venez nous voir</p>
         <h2>{store.address.street}, {store.address.city}</h2>
-        <ul>
-          {store.hours.map((h) => <li><strong>{h.days}</strong> {h.time}</li>)}
+        <ul class="visit__info">
+          {store.hours.map((h) => <li><Icon name="clock" size={18} /><span><strong>{h.days}</strong> {h.time}</span></li>)}
+          <li><Icon name="shopping-basket" size={18} /><span>Dépanneur et marché : produits frais, bières, produits laitiers, articles de maison</span></li>
         </ul>
-        <p>Dépanneur et marché : produits frais, bières, produits laitiers, articles de maison, et service de transfert d’argent Ria.</p>
         <div class="hero__cta">
-          <a class="btn" href={store.mapUrl} target="_blank" rel="noopener">Itinéraire</a>
-          <a class="btn btn--ghost" href={store.phoneHref}>{store.phone}</a>
+          <a class="btn" href={store.mapUrl} target="_blank" rel="noopener"><Icon name="navigation" size={18} /> Itinéraire</a>
+          <a class="btn btn--ghost" href={store.phoneHref}><Icon name="phone" size={18} /> {store.phone}</a>
         </div>
       </div>
       <ul class="visit__perks">
-        <li><strong>Paiement flexible</strong><span>En ligne, à la livraison ou en magasin.</span></li>
-        <li><strong>Qualité garantie</strong><span>Des produits choisis avec soin.</span></li>
-        <li><strong>Livraison rapide</strong><span>De {money(minDeliveryFee())} à {money(maxDeliveryFee())} selon la distance, gratuite dès {money(store.freeDeliveryThreshold)}. <a href="/livraison/">Voir les tarifs</a></span></li>
-        <li><strong>Arrivages réguliers</strong><span>De nouveaux produits chaque semaine.</span></li>
+        <li><span class="perk-ic perk-ic--ochre"><Icon name="truck" size={22} /></span><strong>Livraison rapide</strong><span>De {money(minDeliveryFee())} à {money(maxDeliveryFee())} selon la distance, gratuite dès {money(store.freeDeliveryThreshold)}. <a href="/livraison/">Tarifs</a></span></li>
+        <li><span class="perk-ic perk-ic--leaf"><Icon name="store" size={22} /></span><strong>Retrait en magasin</strong><span>Gratuit, prêt quand vous l’êtes.</span></li>
+        <li><span class="perk-ic perk-ic--terracotta"><Icon name="credit-card" size={22} /></span><strong>Paiement flexible</strong><span>En ligne, à la livraison ou en magasin.</span></li>
+        <li><span class="perk-ic perk-ic--brand"><Icon name="banknote" size={22} /></span><strong>Transfert Ria</strong><span>Envoyez de l’argent depuis le magasin.</span></li>
       </ul>
     </div>
   </section>
@@ -172,36 +184,65 @@ const groups = [
 <style>
   .hero {
     background:
-      radial-gradient(60% 80% at 100% 0%, #e7e2ff 0%, transparent 60%),
-      radial-gradient(50% 70% at 0% 100%, #ffe6f0 0%, transparent 60%),
-      var(--bg);
+      radial-gradient(55% 70% at 100% 0%, #ffe4c2 0%, transparent 62%),
+      radial-gradient(45% 60% at 0% 100%, #f9dccf 0%, transparent 60%),
+      var(--cream);
     border-bottom: 1px solid var(--line);
     overflow: hidden;
   }
   .hero__grid {
     display: grid;
-    gap: 24px;
-    padding-top: 40px;
+    gap: 28px;
+    padding-top: 36px;
     padding-bottom: 40px;
     align-items: center;
   }
   @media (min-width: 900px) {
     .hero__grid {
-      grid-template-columns: 1.15fr 1fr;
-      padding-top: 64px;
+      grid-template-columns: 1.1fr 1fr;
+      padding-top: 60px;
       padding-bottom: 64px;
     }
   }
+  .hero__copy > * {
+    animation: fade-up 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .hero__copy > :nth-child(2) {
+    animation-delay: 0.06s;
+  }
+  .hero__copy > :nth-child(3) {
+    animation-delay: 0.12s;
+  }
+  .hero__copy > :nth-child(4) {
+    animation-delay: 0.18s;
+  }
+  .hero__copy > :nth-child(5) {
+    animation-delay: 0.24s;
+  }
+  .hero__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--terracotta);
+    font-weight: 700;
+    font-size: 0.82rem;
+    box-shadow: 0 1px 2px rgb(23 20 43 / 8%);
+    margin: 0 0 16px;
+  }
   .hero h1 {
-    font-size: clamp(2.1rem, 5.2vw, 3.7rem);
+    font-size: clamp(2.1rem, 5.2vw, 3.8rem);
     font-weight: 800;
     margin-bottom: 16px;
   }
   .hero h1 span {
     color: var(--brand);
+    background: linear-gradient(transparent 70%, rgb(242 165 22 / 35%) 70%);
   }
   .hero__lead {
-    font-size: 1.1rem;
+    font-size: 1.08rem;
     color: var(--muted);
     max-width: 52ch;
   }
@@ -211,26 +252,52 @@ const groups = [
     gap: 10px;
     margin: 22px 0;
   }
+  .hero__ghost {
+    background: #fff;
+  }
   .hero__facts {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 24px;
+    display: grid;
+    gap: 10px;
     list-style: none;
     padding: 0;
     margin: 0;
-    color: var(--muted);
     font-size: 0.94rem;
+    font-weight: 600;
   }
-  .hero__facts strong {
-    color: var(--ink);
+  .hero__facts li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .hero__facts li > span {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #fff;
+    color: var(--leaf);
+    box-shadow: 0 1px 2px rgb(23 20 43 / 8%);
   }
   .hero__art {
     position: relative;
-    min-height: 260px;
+    min-height: 300px;
   }
   @media (min-width: 900px) {
     .hero__art {
-      min-height: 400px;
+      min-height: 420px;
+    }
+  }
+  .hero__ring {
+    position: absolute;
+    inset: 8% 10%;
+    border-radius: 50%;
+    border: 2px dashed rgb(200 81 43 / 30%);
+    animation: spin 60s linear infinite;
+  }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
     }
   }
   .hero__blob {
@@ -238,7 +305,8 @@ const groups = [
     border-radius: 44% 56% 52% 48% / 48% 44% 56% 52%;
     display: grid;
     place-items: center;
-    box-shadow: var(--shadow);
+    box-shadow: 0 30px 60px -30px rgb(23 20 43 / 40%);
+    animation: float 7s ease-in-out infinite;
   }
   .hero__blob img {
     width: 78%;
@@ -246,70 +314,170 @@ const groups = [
   }
   .hero__blob--a {
     background: #fff;
-    width: 62%;
+    width: 58%;
     aspect-ratio: 1;
     left: 0;
-    top: 6%;
+    top: 4%;
   }
   .hero__blob--b {
     background: var(--brand);
-    width: 52%;
+    width: 50%;
     aspect-ratio: 1;
     right: 0;
     bottom: 0;
+    animation-delay: -3.5s;
+  }
+  .hero__chip {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: #fff;
+    font-weight: 700;
+    font-size: 0.85rem;
+    box-shadow: var(--shadow);
+    animation: float 6s ease-in-out infinite;
+  }
+  .hero__chip--a {
+    color: var(--leaf);
+    right: 4%;
+    top: 6%;
+    animation-delay: -2s;
+  }
+  .hero__chip--b {
+    color: var(--terracotta);
+    left: 4%;
+    bottom: 6%;
   }
 
-  .section--tint {
-    background: var(--accent-soft);
+  .section__head a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .with-ic {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .h-ic {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: var(--ochre-soft);
+    color: var(--terracotta);
+    flex-shrink: 0;
+  }
+  .h-ic--accent {
+    background: #fff;
+    color: var(--accent);
+  }
+
+  .section--deals {
+    background: var(--terracotta-soft);
     margin: 16px 0;
   }
 
-  .cats {
+  .tiles {
     list-style: none;
     padding: 0;
     margin: 0;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
   }
-  @media (min-width: 900px) {
-    .cats {
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  @media (min-width: 640px) {
+    .tiles {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
-  .cats a {
-    display: grid;
-    justify-items: center;
-    gap: 8px;
-    text-align: center;
-    text-decoration: none;
-    font-weight: 650;
-    font-size: 0.9rem;
-    line-height: 1.25;
+  @media (min-width: 1000px) {
+    .tiles {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+    }
   }
-  .cats__img {
-    width: 100%;
-    aspect-ratio: 1;
-    border-radius: 50%;
-    background: var(--surface);
-    border: 1px solid var(--line);
+  @media (min-width: 1200px) {
+    .tiles {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+  }
+  .tile {
+    position: relative;
+    display: grid;
+    align-content: start;
+    gap: 2px;
+    min-height: 150px;
+    padding: 14px;
+    border-radius: 18px;
+    overflow: hidden;
+    text-decoration: none;
+    transition: transform 0.25s, box-shadow 0.25s;
+  }
+  .tile:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 30px -18px rgb(23 20 43 / 40%);
+  }
+  .tile__ic {
     display: grid;
     place-items: center;
-    overflow: hidden;
-    transition: border-color 0.15s, transform 0.15s;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    background: #fff;
+    margin-bottom: 8px;
   }
-  .cats__img img {
-    width: 72%;
-    height: 72%;
-    object-fit: contain;
+  .tile__name {
+    font-weight: 750;
+    line-height: 1.2;
+    max-width: 70%;
+    position: relative;
+    z-index: 1;
   }
-  .cats__letter {
-    font: 800 2.2rem var(--font-display);
+  .tile__n {
+    font-size: 0.78rem;
+    opacity: 0.75;
+    position: relative;
+    z-index: 1;
+  }
+  .tile img {
+    position: absolute;
+    right: -8px;
+    bottom: -8px;
+    width: 62%;
+    max-width: 120px;
+    transition: transform 0.35s ease;
+  }
+  .tile:hover img {
+    transform: scale(1.08) rotate(-3deg);
+  }
+  .tile--ochre {
+    background: var(--ochre-soft);
+  }
+  .tile--ochre .tile__ic {
+    color: #b67600;
+  }
+  .tile--terracotta {
+    background: var(--terracotta-soft);
+  }
+  .tile--terracotta .tile__ic {
+    color: var(--terracotta);
+  }
+  .tile--leaf {
+    background: var(--leaf-soft);
+  }
+  .tile--leaf .tile__ic {
+    color: var(--leaf);
+  }
+  .tile--brand {
+    background: var(--brand-soft);
+  }
+  .tile--brand .tile__ic {
     color: var(--brand);
-  }
-  .cats a:hover .cats__img {
-    border-color: var(--brand);
-    transform: translateY(-2px);
   }
 
   .split {
@@ -325,20 +493,24 @@ const groups = [
   .split__card {
     position: relative;
     overflow: hidden;
-    border-radius: 20px;
+    border-radius: 22px;
     padding: 28px;
-    min-height: 240px;
+    min-height: 250px;
     text-decoration: none;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    transition: transform 0.25s, box-shadow 0.25s;
+  }
+  .split__card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 24px 40px -24px rgb(23 20 43 / 45%);
   }
   .split__card h2 {
-    max-width: 15ch;
+    max-width: 14ch;
   }
-  .split__card .btn {
+  .split__btn {
     margin-top: auto;
-    background: #fff;
   }
   .split__card img {
     position: absolute;
@@ -347,51 +519,97 @@ const groups = [
     width: 46%;
     max-width: 230px;
     pointer-events: none;
+    transition: transform 0.4s ease;
+  }
+  .split__card:hover img {
+    transform: scale(1.06) rotate(-2deg);
   }
   .split__card--food {
-    background: #fff1dc;
+    background: linear-gradient(135deg, #ffe7b8, #ffd38a);
+  }
+  .split__card--food .split__btn {
+    background: var(--terracotta);
   }
   .split__card--hair {
-    background: var(--brand-soft);
+    background: linear-gradient(135deg, #e5e0ff, #cfc6ff);
   }
 
   .visit {
     display: grid;
     gap: 28px;
-    background: var(--surface);
+    background: var(--cream);
     border: 1px solid var(--line);
-    border-radius: 20px;
+    border-radius: 22px;
     padding: 28px;
     margin-top: 24px;
   }
   @media (min-width: 900px) {
     .visit {
-      grid-template-columns: 1.1fr 1fr;
+      grid-template-columns: 1.05fr 1fr;
       padding: 40px;
     }
   }
-  .visit ul {
+  .visit__info {
     list-style: none;
     padding: 0;
+    display: grid;
+    gap: 8px;
   }
-  .visit > div li {
-    margin-bottom: 4px;
+  .visit__info li {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .visit__info :global(.icon) {
+    color: var(--terracotta);
+    margin-top: 2px;
   }
   .visit__perks {
     display: grid;
     gap: 12px;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    list-style: none;
+    padding: 0;
     margin: 0;
   }
   .visit__perks li {
-    background: var(--bg);
+    background: #fff;
     border-radius: var(--radius);
     padding: 18px;
     display: grid;
     gap: 4px;
+    align-content: start;
+    transition: transform 0.25s;
   }
-  .visit__perks span {
+  .visit__perks li:hover {
+    transform: translateY(-3px);
+  }
+  .visit__perks span:not(.perk-ic) {
     color: var(--muted);
     font-size: 0.92rem;
+  }
+  .perk-ic {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    margin-bottom: 6px;
+  }
+  .perk-ic--ochre {
+    background: var(--ochre-soft);
+    color: #b67600;
+  }
+  .perk-ic--leaf {
+    background: var(--leaf-soft);
+    color: var(--leaf);
+  }
+  .perk-ic--terracotta {
+    background: var(--terracotta-soft);
+    color: var(--terracotta);
+  }
+  .perk-ic--brand {
+    background: var(--brand-soft);
+    color: var(--brand);
   }
 </style>

@@ -2,6 +2,7 @@
 import type { GetStaticPaths } from 'astro';
 import Base from '../../layouts/Base.astro';
 import ProductCard from '../../components/ProductCard.astro';
+import Icon from '../../components/Icon.astro';
 import { store } from '../../config';
 import { minDeliveryFee, maxDeliveryFee } from '../../lib/delivery';
 import {
@@ -99,6 +100,7 @@ const productData = {
         </p>
 
         <p class={`stock ${p.inStock ? 'stock--ok' : 'stock--out'}`}>
+          <Icon name={p.inStock ? 'package-check' : 'circle-x'} size={18} />
           {p.inStock ? (p.lowStock ? `En stock, plus que ${p.lowStock} disponibles` : 'En stock') : 'Rupture de stock'}
         </p>
 
@@ -127,7 +129,17 @@ const productData = {
               <button type="button" data-step="1" aria-label="Plus">+</button>
             </div>
             <button class="btn btn--accent buy__submit" type="submit" disabled={!p.inStock}>
+              <Icon name="shopping-cart" size={19} />
               {p.inStock ? 'Ajouter au panier' : 'Indisponible'}
+            </button>
+            <button
+              class="buy__wish"
+              type="button"
+              aria-pressed="false"
+              aria-label="Ajouter à ma liste"
+              data-wish={JSON.stringify({ id: p.id, slug: p.slug, name: p.name, price: p.price, unit: p.unit, image: p.images[0]?.src })}
+            >
+              <Icon name="heart" size={22} />
             </button>
           </div>
           <p class="buy__error" data-error hidden></p>
@@ -135,9 +147,9 @@ const productData = {
         </form>
 
         <ul class="perks">
-          <li>🚚 Livraison de {money(minDeliveryFee())} à {money(maxDeliveryFee())} selon la distance, <strong>gratuite dès {money(store.freeDeliveryThreshold)}</strong> (jusqu’à {store.maxDeliveryKm} km) · <a href="/livraison/">Tarifs</a></li>
-          <li>🏪 Retrait en magasin au {store.address.street}</li>
-          <li>📞 Une question ? <a href={store.phoneHref}>{store.phone}</a></li>
+          <li><span class="perk-ic"><Icon name="truck" size={18} /></span><span>Livraison de {money(minDeliveryFee())} à {money(maxDeliveryFee())} selon la distance, <strong>gratuite dès {money(store.freeDeliveryThreshold)}</strong> (jusqu’à {store.maxDeliveryKm} km) · <a href="/livraison/">Tarifs</a></span></li>
+          <li><span class="perk-ic"><Icon name="store" size={18} /></span><span>Retrait gratuit en magasin au {store.address.street}</span></li>
+          <li><span class="perk-ic"><Icon name="phone" size={18} /></span><span>Une question ? <a href={store.phoneHref}>{store.phone}</a></span></li>
         </ul>
       </div>
     </div>
@@ -398,8 +410,55 @@ const productData = {
     padding: 0;
     margin: 0;
     display: grid;
-    gap: 8px;
+    gap: 10px;
     font-size: 0.94rem;
+  }
+  .perks li {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .perk-ic {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--ochre-soft);
+    color: var(--terracotta);
+    flex-shrink: 0;
+  }
+  .stock {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .buy__wish {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 1.5px solid var(--line);
+    background: #fff;
+    color: var(--muted);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: color 0.2s, background 0.2s, border-color 0.2s;
+  }
+  .buy__wish:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  .buy__wish[aria-pressed='true'] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .buy__wish[aria-pressed='true'] :global(svg) {
+    fill: currentColor;
+  }
+  .gallery__main img {
+    animation: fade-up 0.5s ease both;
   }
   .details {
     border-top: 1px solid var(--line);

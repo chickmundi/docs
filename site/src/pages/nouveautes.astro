@@ -1,0 +1,12 @@
+---
+import Base from '../layouts/Base.astro';
+import Listing from '../components/Listing.astro';
+import { products } from '../lib/catalog';
+
+// Most recently added products still in stock.
+const items = products.filter((p) => p.inStock).sort((a, b) => b.id - a.id).slice(0, 48);
+---
+
+<Base title="Nouveautés" description="Les derniers arrivages chez Marché Chemin-du-Roy : épicerie africaine, surgelés, perruques et soins capillaires.">
+  <Listing title="Nouveautés" intro="Les derniers produits arrivés en magasin." items={items} total={items.length} current={1} last={1} base="/nouveautes" icon="sparkles" />
+</Base>
