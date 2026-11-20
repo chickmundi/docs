@@ -42,3 +42,10 @@ The Hostinger API token is read from `HOSTINGER_API_TOKEN` (or injected by the s
 7. Clear LiteSpeed Cache.
 
 The test-site import (*Import (essai)*) refuses to run on a site that already has products or orders.
+
+## Design system (theme 1.0)
+
+- Colours (CSS variables in `mcr-theme/assets/theme.css`, section 1): forest green `--green-700` #174b35 (main buttons, header), deep green `--green-900/950` (footer, bands), terracotta `--terra-500` #c96b43 (aisle labels, promotional banners), muted gold `--gold-500` #e6b74f (discounts, search button), warm ivory `--ivory` #f8f6ef (page), sage `--sage` and sand `--sand` (tiles, panels).
+- Type: Plus Jakarta Sans (interface and headings), Fraunces (display headlines in the hero, banners and promotions).
+- Components: `template-parts/card.php` (one product card everywhere), `template-parts/home/*.php` (homepage sections), `template-parts/sidebar.php` (shop filters), header with mega menu and live search (WooCommerce Store API).
+- Homepage text, banners and section order: *MCR Gestion > Paramètres > Page d'accueil*.

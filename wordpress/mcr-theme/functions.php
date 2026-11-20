@@ -4,7 +4,7 @@
  */
 defined('ABSPATH') || exit;
 
-define('MCRT_VERSION', '0.3.0');
+define('MCRT_VERSION', '1.0.6');
 define('MCRT_DIR', get_template_directory());
 define('MCRT_URL', get_template_directory_uri());
 
@@ -83,20 +83,34 @@ function mcr_category_icon(WP_Term $term): string
 
 // ---------- Assets: one stylesheet, one small script, nothing else ----------
 add_action('wp_enqueue_scripts', function () {
-    wp_enqueue_style('mcr-fonts', 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap', [], null);
+    wp_enqueue_style('mcr-fonts', 'https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap', [], null);
     wp_enqueue_style('mcr', MCRT_URL . '/assets/theme.css', [], MCRT_VERSION);
     wp_enqueue_script('mcr', MCRT_URL . '/assets/theme.js', [], MCRT_VERSION, ['strategy' => 'defer', 'in_footer' => true]);
     wp_localize_script('mcr', 'MCR', [
         'ajax' => WC_AJAX::get_endpoint('%%endpoint%%'),
         'cartUrl' => wc_get_cart_url(),
         'lang' => mcr_lang(),
+        'store' => rest_url('wc/store/v1/'),
+        'searchUrl' => add_query_arg(['post_type' => 'product', 's' => ''], home_url('/')),
         'i18n' => [
+            'searching' => mcr_t('Recherche…'),
+            'noresult' => mcr_is_en() ? 'No products found for' : 'Aucun produit trouvé pour',
+            'allresults' => mcr_is_en() ? 'See all results' : 'Voir tous les résultats',
+            'out' => mcr_t('Épuisé'),
             'added' => mcr_t('ajouté au panier'),
             'add' => mcr_t('Ajouter à ma liste'),
             'remove' => mcr_t('Retirer de ma liste'),
         ],
     ]);
 }, 20);
+
+add_filter('wp_resource_hints', function ($urls, $type) {
+    if ($type === 'preconnect') {
+        $urls[] = ['href' => 'https://fonts.gstatic.com', 'crossorigin' => 'anonymous'];
+        $urls[] = 'https://fonts.googleapis.com';
+    }
+    return $urls;
+}, 10, 2);
 
 // Remove what this design does not use.
 add_filter('woocommerce_enqueue_styles', '__return_empty_array');
@@ -204,15 +218,17 @@ function mcr_child_categories(int $parent): array
     return is_array($terms) ? $terms : [];
 }
 
-/** Number of products in a category including its sub-categories. */
+/** Number of distinct products in a category including its sub-categories. */
 function mcr_category_count(WP_Term $term): int
 {
-    $n = (int) $term->count;
-    foreach (mcr_child_categories($term->term_id) as $c) {
-        $n += (int) $c->count;
-    }
-    return $n;
+    return function_exists('mcrt_distinct_count') ? mcrt_distinct_count($term) : (int) $term->count;
 }
+
+// Product changes: recount the categories.
+add_action('woocommerce_update_product', function () {
+    global $wpdb;
+    $wpdb->query("DELETE FROM {$wpdb->options} WHERE option_name LIKE '\\_transient\\_mcr\\_cnt\\_%' OR option_name LIKE '\\_transient\\_timeout\\_mcr\\_cnt\\_%'"); // phpcs:ignore
+});
 
 require_once MCRT_DIR . '/inc/template-tags.php';
 
@@ -224,6 +240,12 @@ add_action('pre_get_posts', function (WP_Query $q) {
     }
     if (!empty($_GET['promotions']) && (is_shop() || $q->get('post_type') === 'product')) {
         $q->set('post__in', array_merge([0], wc_get_product_ids_on_sale()));
+    }
+    // ?stock=instock : hide sold-out products (WooCommerce's own visibility term).
+    if (!empty($_GET['stock']) && ($q->is_post_type_archive('product') || $q->is_tax(get_object_taxonomies('product')) || $q->is_search())) {
+        $tax = (array) $q->get('tax_query');
+        $tax[] = ['taxonomy' => 'product_visibility', 'field' => 'name', 'terms' => ['outofstock'], 'operator' => 'NOT IN'];
+        $q->set('tax_query', $tax);
     }
     // Search: products only.
     if ($q->is_search() && !$q->get('post_type')) {
@@ -333,7 +355,36 @@ add_filter('woocommerce_product_tabs', function ($tabs) {
     unset($tabs['reviews']);
     return $tabs;
 });
-add_filter('woocommerce_output_related_products_args', fn($a) => array_merge($a, ['posts_per_page' => 8, 'columns' => 4]));
+add_filter('woocommerce_output_related_products_args', fn($a) => array_merge($a, ['posts_per_page' => 5, 'columns' => 5]));
+
+// Product page: aisle above the title, availability under the price.
+add_action('woocommerce_single_product_summary', function () {
+    global $product;
+    if ($cat = mcrt_primary_cat($product)) {
+        printf('<a class="pp-cat" href="%s">%s</a>', esc_url(get_term_link($cat)), esc_html($cat->name));
+    }
+}, 4);
+add_action('woocommerce_single_product_summary', function () {
+    global $product;
+    if ($product->managing_stock() || $product->is_type('variable')) {
+        return; // WooCommerce shows the stock itself
+    }
+    $in = $product->is_in_stock();
+    printf('<p class="pp-stock %s">%s %s</p>', $in ? 'is-in' : 'is-out', mcr_icon($in ? 'circle-check' : 'circle-x', 16), esc_html($in ? (mcr_is_en() ? 'In stock' : 'En stock') : mcr_t('Épuisé')));
+}, 11);
+add_filter('woocommerce_sale_flash', function ($html, $post, $product) {
+    $pct = mcrt_discount($product);
+    return $pct > 0 ? '<span class="onsale">-' . $pct . ' %</span>' : '';
+}, 10, 3);
+// Hide "SKU: N/A" on products without a code.
+add_filter('wc_product_sku_enabled', function ($on) {
+    if (is_admin() || !is_product()) {
+        return $on;
+    }
+    global $product;
+    return $product instanceof WC_Product && $product->get_sku() !== '' ? $on : false;
+});
+add_filter('woocommerce_product_related_products_heading', fn() => mcr_is_en() ? 'You may also like' : 'Vous aimerez aussi');
 
 // ---------- Cart and checkout ----------
 remove_action('woocommerce_cart_is_empty', 'wc_empty_cart_message', 10);
@@ -349,6 +400,9 @@ add_action('wp_footer', function () {
 }, 1);
 
 add_filter('body_class', function ($classes) {
+    if (is_front_page()) {
+        $classes[] = 'is-home';
+    }
     if (function_exists('is_cart') && is_cart() && WC()->cart && !WC()->cart->is_empty()) {
         $classes[] = 'has-cart-bar';
     }

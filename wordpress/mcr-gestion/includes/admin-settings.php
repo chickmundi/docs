@@ -97,9 +97,21 @@ add_action('admin_post_mcr_save_settings', function () {
             }
             break;
         case 'home':
-            foreach (['hero_title_fr', 'hero_highlight_fr', 'hero_title_en', 'hero_highlight_en'] as $k) {
+            foreach (['hero_eyebrow_fr', 'hero_eyebrow_en', 'hero_title_fr', 'hero_highlight_fr', 'hero_title_en', 'hero_highlight_en'] as $k) {
                 $current[$k] = sanitize_text_field($in[$k] ?? '');
             }
+            $current['newsletter_shortcode'] = sanitize_text_field($in['newsletter_shortcode'] ?? '');
+            $banners = [];
+            foreach ((array) ($in['banners'] ?? []) as $bn) {
+                $row = ['on' => !empty($bn['on']), 'tone' => in_array($bn['tone'] ?? '', ['green', 'terracotta', 'gold', 'sage'], true) ? $bn['tone'] : 'green', 'cat' => sanitize_title($bn['cat'] ?? ''), 'url' => esc_url_raw($bn['url'] ?? ''), 'image' => esc_url_raw($bn['image'] ?? '')];
+                foreach (['eyebrow', 'title', 'text', 'cta'] as $f) {
+                    foreach (['fr', 'en'] as $l) {
+                        $row["{$f}_{$l}"] = sanitize_text_field($bn["{$f}_{$l}"] ?? '');
+                    }
+                }
+                $banners[] = $row;
+            }
+            $current['banners'] = $banners;
             foreach (['hero_lead_fr', 'hero_lead_en'] as $k) {
                 $current[$k] = sanitize_textarea_field($in[$k] ?? '');
             }
@@ -240,10 +252,39 @@ function mcr_render_settings_page(): void
             $row('Instructions (FR / EN)', '<textarea name="mcr[instructions_fr]" rows="2" class="large-text">' . esc_textarea($s['instructions_fr']) . '</textarea><textarea name="mcr[instructions_en]" rows="2" class="large-text">' . esc_textarea($s['instructions_en']) . '</textarea>');
             break;
         case 'home':
+            $row('Petit titre (FR / EN)', mcr_input('hero_eyebrow_fr', $s['hero_eyebrow_fr'] ?? '', 'text', ['class' => 'large-text']) . '<br>' . mcr_input('hero_eyebrow_en', $s['hero_eyebrow_en'] ?? '', 'text', ['class' => 'large-text']));
             $row('Titre (français)', mcr_input('hero_title_fr', $s['hero_title_fr'], 'text', ['class' => 'large-text']) . '<br>' . mcr_input('hero_highlight_fr', $s['hero_highlight_fr'], 'text', ['class' => 'large-text']), 'Deuxième ligne : partie en couleur.');
             $row('Titre (anglais)', mcr_input('hero_title_en', $s['hero_title_en'], 'text', ['class' => 'large-text']) . '<br>' . mcr_input('hero_highlight_en', $s['hero_highlight_en'], 'text', ['class' => 'large-text']));
             $row('Texte d’accueil (français)', '<textarea name="mcr[hero_lead_fr]" rows="3" class="large-text">' . esc_textarea($s['hero_lead_fr']) . '</textarea>', 'Laisser vide pour le texte automatique (avec le nombre de produits).');
             $row('Texte d’accueil (anglais)', '<textarea name="mcr[hero_lead_en]" rows="3" class="large-text">' . esc_textarea($s['hero_lead_en']) . '</textarea>');
+            $row('Infolettre', mcr_input('newsletter_shortcode', $s['newsletter_shortcode'] ?? '', 'text', ['class' => 'large-text', 'placeholder' => '[formulaire-infolettre id="…"]']), 'Code court du formulaire d’inscription (Hostinger Reach, Contact Form 7…). Vide : la section invite à recevoir les promotions sur WhatsApp.');
+            echo '</table><h2>Bannières promotionnelles</h2><p>Trois bannières sous les catégories. Le lien et l’image viennent de la catégorie choisie, sauf si vous indiquez une adresse ou une image (copiez l’adresse d’une image de la Médiathèque).</p>';
+            $cats = get_terms(['taxonomy' => 'product_cat', 'hide_empty' => false, 'orderby' => 'name']);
+            $banners = array_values((array) ($s['banners'] ?? []));
+            while (count($banners) < 3) {
+                $banners[] = ['on' => false, 'tone' => 'sage', 'cat' => '', 'url' => '', 'image' => ''];
+            }
+            echo '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-bottom:20px">';
+            foreach (array_slice($banners, 0, 3) as $i => $bn) {
+                $n = "mcr[banners][{$i}]";
+                echo '<div style="background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:12px">';
+                printf('<p><label><input type="checkbox" name="%s[on]" value="1" %s> <strong>Bannière %d</strong></label> &nbsp; Couleur : <select name="%s[tone]">', $n, checked(!empty($bn['on']), true, false), $i + 1, $n);
+                foreach (['green' => 'Vert forêt', 'terracotta' => 'Terre cuite', 'gold' => 'Or doux', 'sage' => 'Sauge'] as $k => $l) {
+                    printf('<option value="%s"%s>%s</option>', $k, selected($bn['tone'] ?? '', $k, false), $l);
+                }
+                printf('</select></p><p>Catégorie : <select name="%s[cat]"><option value="">—</option>', $n);
+                foreach ($cats as $c) {
+                    printf('<option value="%s"%s>%s</option>', esc_attr($c->slug), selected($bn['cat'] ?? '', $c->slug, false), esc_html($c->name));
+                }
+                echo '</select></p>';
+                foreach (['eyebrow' => 'Sur-titre', 'title' => 'Titre', 'text' => 'Texte', 'cta' => 'Bouton'] as $f => $label) {
+                    printf('<p style="margin:6px 0">%s<br><input type="text" name="%s[%s_fr]" value="%s" placeholder="FR" style="width:100%%"><input type="text" name="%s[%s_en]" value="%s" placeholder="EN" style="width:100%%;margin-top:3px"></p>', esc_html($label), $n, $f, esc_attr($bn["{$f}_fr"] ?? ''), $n, $f, esc_attr($bn["{$f}_en"] ?? ''));
+                }
+                printf('<p style="margin:6px 0">Lien (facultatif)<br><input type="url" name="%s[url]" value="%s" style="width:100%%"></p>', $n, esc_attr($bn['url'] ?? ''));
+                printf('<p style="margin:6px 0">Image (facultatif)<br><input type="url" name="%s[image]" value="%s" style="width:100%%"></p>', $n, esc_attr($bn['image'] ?? ''));
+                echo '</div>';
+            }
+            echo '</div><table class="form-table" role="presentation">';
             echo '</table><h2>Sections de la page</h2><p>Changez l’ordre avec les numéros, décochez pour masquer. Une rangée de catégorie montre les 12 produits les plus récents en stock de cette catégorie.</p>';
             echo '<table class="widefat striped mcr-home"><thead><tr><th style="width:60px">Ordre</th><th style="width:70px">Afficher</th><th>Section</th><th>Catégorie</th><th>Titre FR / sur-titre FR</th><th>Titre EN / sur-titre EN</th></tr></thead><tbody>';
             $cats = get_terms(['taxonomy' => 'product_cat', 'hide_empty' => false, 'orderby' => 'name']);
@@ -333,12 +374,15 @@ add_action('wp_dashboard_setup', function () {
 function mcr_home_section_types(): array
 {
     return [
-        'categories' => 'Magasiner par catégorie (tuiles)',
-        'promos' => 'Promotions',
+        'deals' => 'Les offres du moment (produits en promotion)',
+        'categories' => 'Nos catégories (tuiles)',
+        'banners' => 'Bannières promotionnelles (ci-dessous)',
+        'popular' => 'Vos produits préférés (meilleurs vendeurs, par catégorie)',
+        'collections' => 'Faites vos courses selon vos besoins',
         'new' => 'Nouveautés',
-        'split' => 'Deux bannières (épices / soins capillaires)',
+        'community' => 'Les saveurs qui nous rapprochent (magasin, adresse, heures)',
+        'trust' => 'Nos engagements (livraison, cueillette…)',
+        'newsletter' => 'Infolettre ou promotions WhatsApp',
         'category' => 'Rangée de catégorie',
-        'visit' => 'Venez nous voir (adresse et heures)',
     ];
 }
-

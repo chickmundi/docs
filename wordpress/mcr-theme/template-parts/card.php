@@ -1,33 +1,65 @@
 <?php
-/** Product card. Expects $args['product'] (WC_Product). */
+/**
+ * Product card, used everywhere (home, shop, categories, search, related products).
+ * Expects $args['product'] (WC_Product). Only real data: price, sale, stock, reviews.
+ */
 defined('ABSPATH') || exit;
 $product = $args['product'] ?? null;
 if (!$product instanceof WC_Product) {
     return;
 }
-$pct = 0;
-if ($product->is_on_sale() && !$product->is_type('variable')) {
-    $reg = (float) $product->get_regular_price();
-    $pct = $reg > 0 ? (int) round((1 - (float) $product->get_price() / $reg) * 100) : 0;
+$en = mcr_is_en();
+$pct = mcrt_discount($product);
+$cat = mcrt_primary_cat($product);
+$in_stock = $product->is_in_stock();
+$simple_buyable = $product->is_type('simple') && $in_stock && $product->is_purchasable();
+$hint = mcrt_variation_hint($product);
+$unit = (string) get_post_meta($product->get_id(), '_mcr_unit_label', true);
+$is_new = !empty($args['show_new']) && $product->get_date_created() && $product->get_date_created()->getTimestamp() > time() - 30 * DAY_IN_SECONDS;
+$price_html = $product->get_price_html();
+if ($product->is_type('variable')) {
+    $min = (float) $product->get_variation_price('min', true);
+    $max = (float) $product->get_variation_price('max', true);
+    if ($min !== $max) {
+        $price_html = '<small class="pcard__from">' . esc_html($en ? 'From' : 'Dès') . '</small> ' . wc_price($min);
+    }
 }
-$simple_buyable = $product->is_type('simple') && $product->is_in_stock() && $product->is_purchasable();
+$reviews = (int) $product->get_review_count();
+$low = $product->managing_stock() && $in_stock && $product->get_stock_quantity() !== null && $product->get_stock_quantity() <= (int) get_option('woocommerce_notify_low_stock_amount', 2);
+$eager = !empty($args['eager']);
 ?>
-<article class="card" data-reveal>
-  <button class="card__wish" type="button" data-wish="<?php echo esc_attr(mcrt_wish_data($product)); ?>" aria-pressed="false" aria-label="<?php echo esc_attr(mcr_t('Ajouter à ma liste')); ?>"><?php echo mcr_icon('heart', 18); ?></button>
-  <a href="<?php echo esc_url($product->get_permalink()); ?>" class="card__media" tabindex="-1" aria-hidden="true">
-    <?php echo $product->get_image('woocommerce_thumbnail', ['loading' => 'lazy', 'alt' => '']); ?>
-    <span class="card__badges">
-      <?php if ($pct > 0) : ?><span class="badge">-<?php echo (int) $pct; ?>%</span><?php endif; ?>
-      <?php if (!$product->is_in_stock()) : ?><span class="badge badge--muted"><?php mcr_e('Épuisé'); ?></span><?php endif; ?>
+<article class="pcard<?php echo $in_stock ? '' : ' is-out'; ?>" data-reveal>
+  <div class="pcard__media">
+    <a href="<?php echo esc_url($product->get_permalink()); ?>" tabindex="-1" aria-hidden="true">
+      <?php echo $product->get_image('woocommerce_thumbnail', ['loading' => $eager ? 'eager' : 'lazy', 'alt' => '', 'decoding' => 'async']); ?>
+    </a>
+    <span class="pcard__badges">
+      <?php if ($pct > 0) : ?><span class="badge badge--sale">-<?php echo (int) $pct; ?> %</span><?php endif; ?>
+      <?php if ($is_new && !$pct) : ?><span class="badge badge--new"><?php echo esc_html($en ? 'New' : 'Nouveau'); ?></span><?php endif; ?>
+      <?php if (!$in_stock) : ?><span class="badge badge--muted"><?php mcr_e('Épuisé'); ?></span><?php endif; ?>
     </span>
-  </a>
-  <div class="card__body">
-    <h3 class="card__title"><a href="<?php echo esc_url($product->get_permalink()); ?>"><?php echo esc_html($product->get_name()); ?></a></h3>
-    <p class="price <?php echo $pct ? 'price--sale' : ''; ?>"><?php echo $product->get_price_html(); // phpcs:ignore ?></p>
-    <?php if ($simple_buyable) : ?>
-      <a href="<?php echo esc_url($product->add_to_cart_url()); ?>" class="btn card__btn" data-add-to-cart="<?php echo esc_attr($product->get_id()); ?>" data-name="<?php echo esc_attr($product->get_name()); ?>" rel="nofollow"><?php echo mcr_icon('shopping-cart', 17); ?> <?php mcr_e('Ajouter'); ?></a>
-    <?php else : ?>
-      <a href="<?php echo esc_url($product->get_permalink()); ?>" class="btn btn--ghost card__btn"><?php echo esc_html($product->add_to_cart_text()); ?> <?php echo mcr_icon('chevron-right', 16); ?></a>
+    <button class="pcard__wish" type="button" data-wish="<?php echo esc_attr(mcrt_wish_data($product)); ?>" aria-pressed="false" aria-label="<?php echo esc_attr(mcr_t('Ajouter à ma liste') . ' : ' . $product->get_name()); ?>"><?php echo mcr_icon('heart', 18); ?></button>
+  </div>
+  <div class="pcard__body">
+    <?php if ($cat) : ?><a class="pcard__cat" href="<?php echo esc_url(get_term_link($cat)); ?>"><?php echo esc_html($cat->name); ?></a><?php endif; ?>
+    <h3 class="pcard__title"><a href="<?php echo esc_url($product->get_permalink()); ?>"><?php echo esc_html($product->get_name()); ?></a></h3>
+    <?php if ($reviews > 0) : $avg = (float) $product->get_average_rating(); ?>
+      <p class="pcard__rating" aria-label="<?php echo esc_attr(sprintf($en ? 'Rated %s out of 5 (%d reviews)' : 'Noté %s sur 5 (%d avis)', number_format_i18n($avg, 1), $reviews)); ?>">
+        <span class="stars" style="--r:<?php echo esc_attr($avg / 5 * 100); ?>%"></span><small>(<?php echo (int) $reviews; ?>)</small>
+      </p>
     <?php endif; ?>
+    <p class="pcard__meta">
+      <?php if ($hint) : ?><span><?php echo esc_html($hint); ?></span><?php elseif ($unit) : ?><span><?php echo esc_html($en ? str_replace('par ', 'per ', $unit) : $unit); ?></span><?php endif; ?>
+      <?php if ($low) : ?><span class="pcard__low"><?php echo esc_html(sprintf($en ? 'Only %d left' : 'Plus que %d', $product->get_stock_quantity())); ?></span>
+      <?php elseif ($in_stock) : ?><span class="pcard__stock"><?php echo esc_html($en ? 'In stock' : 'En stock'); ?></span><?php endif; ?>
+    </p>
+    <div class="pcard__foot">
+      <span class="pcard__price<?php echo $pct ? ' is-sale' : ''; ?>"><?php echo $price_html; // phpcs:ignore ?></span>
+      <?php if ($simple_buyable) : ?>
+        <a href="<?php echo esc_url($product->add_to_cart_url()); ?>" class="pcard__add" data-add-to-cart="<?php echo esc_attr($product->get_id()); ?>" data-name="<?php echo esc_attr($product->get_name()); ?>" rel="nofollow" aria-label="<?php echo esc_attr(($en ? 'Add to cart: ' : 'Ajouter au panier : ') . $product->get_name()); ?>"><?php echo mcr_icon('plus', 18); ?><span><?php mcr_e('Ajouter'); ?></span></a>
+      <?php else : ?>
+        <a href="<?php echo esc_url($product->get_permalink()); ?>" class="pcard__add pcard__add--ghost" aria-label="<?php echo esc_attr(($in_stock ? ($en ? 'Choose options: ' : 'Choisir les options : ') : ($en ? 'View: ' : 'Voir : ')) . $product->get_name()); ?>"><span><?php echo esc_html($in_stock ? ($en ? 'Options' : 'Options') : ($en ? 'View' : 'Voir')); ?></span><?php echo mcr_icon('chevron-right', 16); ?></a>
+      <?php endif; ?>
+    </div>
   </div>
 </article>

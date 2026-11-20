@@ -65,25 +65,37 @@ function mcr_default_settings(): array
             'instructions_fr' => 'Présentez votre numéro de commande à la caisse.',
             'instructions_en' => 'Show your order number at the counter.',
         ],
-        // Homepage: hero text and the order of the sections (MCR Gestion > Paramètres > Page d'accueil).
+        // Homepage: hero text, banners and the order of the sections (MCR Gestion > Paramètres > Page d'accueil).
         'home' => [
-            'hero_title_fr' => 'Les saveurs d’Afrique et d’ici,',
-            'hero_highlight_fr' => 'livrées chez vous.',
-            'hero_title_en' => 'African and local flavours,',
-            'hero_highlight_en' => 'delivered to your door.',
+            'hero_eyebrow_fr' => 'Épicerie africaine et beauté à Trois-Rivières',
+            'hero_eyebrow_en' => 'African grocery and beauty in Trois-Rivières',
+            'hero_title_fr' => 'Les saveurs d’Afrique,',
+            'hero_highlight_fr' => 'près de chez vous.',
+            'hero_title_en' => 'The flavours of Africa,',
+            'hero_highlight_en' => 'close to home.',
             'hero_lead_fr' => '', // empty: automatic text with the number of products
             'hero_lead_en' => '',
+            'newsletter_shortcode' => '', // e.g. the shortcode of a Hostinger Reach or Contact Form 7 form
+            'banners' => [
+                ['on' => true, 'tone' => 'green', 'cat' => 'epices-et-condiments', 'url' => '', 'image' => '',
+                    'eyebrow_fr' => 'Saveurs d’Afrique', 'title_fr' => 'Épices, farines et condiments', 'text_fr' => 'Gari, fufu, piment, cube… tout pour cuisiner comme à la maison.', 'cta_fr' => 'Découvrir',
+                    'eyebrow_en' => 'Flavours of Africa', 'title_en' => 'Spices, flours and condiments', 'text_en' => 'Gari, fufu, chili, stock cubes… everything to cook like at home.', 'cta_en' => 'Discover'],
+                ['on' => true, 'tone' => 'terracotta', 'cat' => 'soins-capillaires', 'url' => '', 'image' => '',
+                    'eyebrow_fr' => 'Beauté et soins', 'title_fr' => 'Votre routine capillaire', 'text_fr' => 'Shampoings, revitalisants, huiles et soins pour cheveux naturels.', 'cta_fr' => 'Voir les soins',
+                    'eyebrow_en' => 'Beauty and care', 'title_en' => 'Your hair care routine', 'text_en' => 'Shampoos, conditioners, oils and care for natural hair.', 'cta_en' => 'See hair care'],
+                ['on' => true, 'tone' => 'gold', 'cat' => 'petit-dejeuner', 'url' => '', 'image' => '',
+                    'eyebrow_fr' => 'Bien commencer la journée', 'title_fr' => 'Le petit-déjeuner', 'text_fr' => 'Céréales, boissons chaudes, tartinades et biscuits.', 'cta_fr' => 'Faire le plein',
+                    'eyebrow_en' => 'Start the day right', 'title_en' => 'Breakfast', 'text_en' => 'Cereals, hot drinks, spreads and biscuits.', 'cta_en' => 'Stock up'],
+            ],
             'sections' => [
+                ['type' => 'deals', 'on' => true],
                 ['type' => 'categories', 'on' => true],
-                ['type' => 'promos', 'on' => true],
-                ['type' => 'new', 'on' => true],
-                ['type' => 'split', 'on' => true],
-                ['type' => 'category', 'on' => true, 'slug' => 'epicerie', 'title_fr' => 'Épicerie et saveurs d’Afrique', 'eyebrow_fr' => 'Garde-manger', 'title_en' => 'Grocery and African flavours', 'eyebrow_en' => 'Pantry'],
-                ['type' => 'category', 'on' => true, 'slug' => 'surgeles', 'title_fr' => 'Produits congelés', 'eyebrow_fr' => 'Offrez le meilleur à votre famille', 'title_en' => 'Frozen foods', 'eyebrow_en' => 'The best for your family'],
-                ['type' => 'category', 'on' => true, 'slug' => 'perruques', 'title_fr' => 'Nos perruques', 'eyebrow_fr' => 'Naturel, semi-naturel et synthétique', 'title_en' => 'Our wigs', 'eyebrow_en' => 'Natural, semi-natural and synthetic'],
-                ['type' => 'category', 'on' => true, 'slug' => 'extensions-capillaires', 'title_fr' => 'Extensions et tresses', 'eyebrow_fr' => 'Crochets, mèches, tissages', 'title_en' => 'Extensions and braids', 'eyebrow_en' => 'Crochet, braiding hair, weaves'],
-                ['type' => 'category', 'on' => true, 'slug' => 'soins-capillaires', 'title_fr' => 'Soins capillaires', 'eyebrow_fr' => 'Votre routine beauté', 'title_en' => 'Hair care', 'eyebrow_en' => 'Your beauty routine'],
-                ['type' => 'visit', 'on' => true],
+                ['type' => 'banners', 'on' => true],
+                ['type' => 'popular', 'on' => true],
+                ['type' => 'collections', 'on' => true],
+                ['type' => 'community', 'on' => true],
+                ['type' => 'trust', 'on' => true],
+                ['type' => 'newsletter', 'on' => true],
             ],
         ],
         'announcement' => [
@@ -114,3 +126,26 @@ function mcr_settings_install_defaults(): void
         }
     }
 }
+
+/** One time: homepage settings saved with the previous layout get the new hero text and section order. */
+add_action('init', function () {
+    if (get_option('mcr_home_v2')) {
+        return;
+    }
+    $saved = get_option('mcr_home', null);
+    if (is_array($saved) && !isset($saved['banners'])) {
+        $new = mcr_default_settings()['home'];
+        $old_titles = ['Les saveurs d’Afrique et d’ici,', 'African and local flavours,'];
+        foreach (['fr', 'en'] as $l) {
+            if (in_array($saved["hero_title_{$l}"] ?? '', $old_titles, true)) {
+                $saved["hero_title_{$l}"] = $new["hero_title_{$l}"];
+                $saved["hero_highlight_{$l}"] = $new["hero_highlight_{$l}"];
+            }
+        }
+        $custom = array_values(array_filter((array) ($saved['sections'] ?? []), fn($r) => ($r['type'] ?? '') === 'category' && !in_array($r['slug'] ?? '', ['epicerie', 'surgeles', 'perruques', 'extensions-capillaires', 'soins-capillaires'], true)));
+        $saved['sections'] = array_merge($new['sections'], $custom);
+        $saved['banners'] = $new['banners'];
+        update_option('mcr_home', $saved);
+    }
+    update_option('mcr_home_v2', 1, false);
+});

@@ -4,6 +4,6 @@ global $product;
 if (empty($product) || !$product->is_visible()) {
     return;
 }
-echo '<li class="grid__item">';
+echo '<li class="pgrid__item">';
 get_template_part('template-parts/card', null, ['product' => $product]);
 echo '</li>';
