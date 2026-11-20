@@ -1,0 +1,420 @@
+---
+import type { GetStaticPaths } from 'astro';
+import Base from '../../layouts/Base.astro';
+import ProductCard from '../../components/ProductCard.astro';
+import { store } from '../../config';
+import {
+  products,
+  money,
+  priceLabel,
+  discountPct,
+  primaryCategory,
+  categoryById,
+  productsIn,
+  plainText,
+  type Product,
+} from '../../lib/catalog';
+
+export const getStaticPaths = (() => products.map((product) => ({ params: { slug: product.slug }, props: { product } }))) satisfies GetStaticPaths;
+
+const { product: p } = Astro.props as { product: Product };
+const cat = primaryCategory(p);
+const parent = cat?.parent ? categoryById(cat.parent) : undefined;
+const pct = discountPct(p);
+const related = cat ? productsIn(cat).filter((x) => x.id !== p.id && x.inStock).slice(0, 8) : [];
+const summary = plainText(p.shortDescription || p.description).slice(0, 160) || `${p.name} chez ${store.name}, Trois-Rivières.`;
+const variationAttrs = p.attributes.filter((a) => a.variation);
+const infoAttrs = p.attributes.filter((a) => !a.variation);
+const hasVariations = p.type === 'variable' && p.variations.length > 0;
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: p.name,
+  image: p.images.map((i) => new URL(i.src, Astro.site).toString()),
+  description: summary,
+  sku: p.sku ?? String(p.id),
+  category: cat?.name,
+  offers: {
+    '@type': p.priceRange ? 'AggregateOffer' : 'Offer',
+    priceCurrency: 'CAD',
+    ...(p.priceRange
+      ? { lowPrice: (p.priceRange.min / 100).toFixed(2), highPrice: (p.priceRange.max / 100).toFixed(2) }
+      : { price: ((p.price ?? 0) / 100).toFixed(2) }),
+    availability: p.inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+    url: new URL(`/produit/${p.slug}/`, Astro.site).toString(),
+  },
+};
+
+const productData = {
+  id: p.id,
+  name: p.name,
+  slug: p.slug,
+  price: p.price,
+  unit: p.unit,
+  image: p.images[0]?.src,
+  variations: p.variations,
+  attrs: variationAttrs.map((a) => a.name),
+};
+---
+
+<Base title={p.name} description={summary} image={p.images[0]?.src}>
+  <script type="application/ld+json" slot="head" set:html={JSON.stringify(jsonLd)} />
+
+  <div class="container">
+    <nav class="breadcrumbs" aria-label="Fil d’Ariane">
+      <a href="/">Accueil</a>
+      {parent && (<><span aria-hidden="true">/</span><a href={`/categorie/${parent.slug}/`}>{parent.name}</a></>)}
+      {cat && (<><span aria-hidden="true">/</span><a href={`/categorie/${cat.slug}/`}>{cat.name}</a></>)}
+    </nav>
+
+    <div class="pdp">
+      <div class="gallery" data-gallery>
+        <div class="gallery__main">
+          {p.images[0] && <img src={p.images[0].src} alt={p.images[0].alt} width="800" height="800" data-gallery-main />}
+          {pct > 0 && <span class="badge gallery__badge">-{pct}%</span>}
+        </div>
+        {
+          p.images.length > 1 && (
+            <div class="gallery__thumbs">
+              {p.images.map((im, i) => (
+                <button type="button" aria-label={`Image ${i + 1}`} aria-pressed={i === 0 ? 'true' : 'false'} data-src={im.src}>
+                  <img src={im.src} alt="" loading="lazy" width="80" height="80" />
+                </button>
+              ))}
+            </div>
+          )
+        }
+      </div>
+
+      <div class="info">
+        {cat && <p class="eyebrow">{cat.name}</p>}
+        <h1>{p.name}</h1>
+
+        <p class={`price info__price ${pct ? 'price--sale' : ''}`} data-price>
+          {priceLabel(p)}
+          {p.unit && <span class="info__unit"> {p.unit}</span>}
+          {pct > 0 && <del>{money(p.regularPrice)}</del>}
+        </p>
+
+        <p class={`stock ${p.inStock ? 'stock--ok' : 'stock--out'}`}>
+          {p.inStock ? (p.lowStock ? `En stock, plus que ${p.lowStock} disponibles` : 'En stock') : 'Rupture de stock'}
+        </p>
+
+        {p.shortDescription && <div class="info__short" set:html={p.shortDescription} />}
+
+        <form class="buy" data-buy={JSON.stringify(productData)}>
+          {
+            hasVariations &&
+              variationAttrs.map((a) => (
+                <label class="field">
+                  {a.name.charAt(0).toUpperCase() + a.name.slice(1)}
+                  <select class="input" name={a.name} required>
+                    <option value="">Choisir…</option>
+                    {a.values.map((v) => (
+                      <option value={v}>{v}</option>
+                    ))}
+                  </select>
+                </label>
+              ))
+          }
+
+          <div class="buy__row">
+            <div class="qty" role="group" aria-label="Quantité">
+              <button type="button" data-step="-1" aria-label="Moins">−</button>
+              <input type="number" name="qty" value="1" min="1" max="99" inputmode="numeric" aria-label="Quantité" />
+              <button type="button" data-step="1" aria-label="Plus">+</button>
+            </div>
+            <button class="btn btn--accent buy__submit" type="submit" disabled={!p.inStock}>
+              {p.inStock ? 'Ajouter au panier' : 'Indisponible'}
+            </button>
+          </div>
+          <p class="buy__error" data-error hidden></p>
+          {p.unit === 'par kg' && <p class="buy__note">Prix au kilo : le montant final est ajusté selon le poids réel à la préparation.</p>}
+        </form>
+
+        <ul class="perks">
+          <li>🚚 Livraison gratuite dès {money(store.freeDeliveryThreshold)}, {store.deliveryArea.toLowerCase()}</li>
+          <li>🏪 Retrait en magasin au {store.address.street}</li>
+          <li>📞 Une question ? <a href={store.phoneHref}>{store.phone}</a></li>
+        </ul>
+      </div>
+    </div>
+
+    {
+      (p.description || infoAttrs.length > 0) && (
+        <section class="section details">
+          <h2>Description</h2>
+          {p.description && <div class="prose" set:html={p.description} />}
+          {infoAttrs.length > 0 && (
+            <dl class="attrs">
+              {infoAttrs.map((a) => (
+                <>
+                  <dt>{a.name}</dt>
+                  <dd>{a.values.join(', ')}</dd>
+                </>
+              ))}
+            </dl>
+          )}
+        </section>
+      )
+    }
+
+    {
+      related.length > 0 && (
+        <section class="section">
+          <div class="section__head">
+            <h2>Vous aimerez aussi</h2>
+            {cat && <a href={`/categorie/${cat.slug}/`}>Tout voir →</a>}
+          </div>
+          <div class="grid grid--rail">
+            {related.map((r) => (
+              <ProductCard product={r} />
+            ))}
+          </div>
+        </section>
+      )
+    }
+  </div>
+</Base>
+
+<script>
+  import { addToCart, toast, money } from '../../scripts/cart';
+
+  // Gallery thumbnails
+  document.querySelectorAll<HTMLElement>('[data-gallery]').forEach((g) => {
+    const main = g.querySelector<HTMLImageElement>('[data-gallery-main]');
+    g.querySelectorAll<HTMLButtonElement>('button[data-src]').forEach((b) =>
+      b.addEventListener('click', () => {
+        if (main) main.src = b.dataset.src!;
+        g.querySelectorAll('button[data-src]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      }),
+    );
+  });
+
+  const form = document.querySelector<HTMLFormElement>('[data-buy]');
+  if (form) {
+    const data = JSON.parse(form.dataset.buy!);
+    const qty = form.querySelector<HTMLInputElement>('input[name=qty]')!;
+    const err = form.querySelector<HTMLElement>('[data-error]')!;
+    const priceEl = document.querySelector<HTMLElement>('[data-price]');
+
+    form.querySelectorAll<HTMLButtonElement>('[data-step]').forEach((b) =>
+      b.addEventListener('click', () => {
+        qty.value = String(Math.max(1, Math.min(99, (Number(qty.value) || 1) + Number(b.dataset.step))));
+      }),
+    );
+
+    const selected = () => Object.fromEntries(data.attrs.map((a: string) => [a, (form.elements.namedItem(a) as HTMLSelectElement).value]));
+    const findVariation = () => {
+      const sel = selected();
+      return data.variations.find((v: any) =>
+        Object.entries(v.attributes).every(([k, val]) => !val || sel[k] === val),
+      );
+    };
+
+    form.addEventListener('change', () => {
+      if (!data.attrs.length) return;
+      const v = findVariation();
+      err.hidden = true;
+      if (v && v.price != null && priceEl) priceEl.textContent = money(v.price);
+    });
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const n = Math.max(1, Math.min(99, Number(qty.value) || 1));
+      let item = { key: String(data.id), id: data.id, name: data.name, price: data.price, unit: data.unit, image: data.image, slug: data.slug } as any;
+      if (data.attrs.length) {
+        const v = findVariation();
+        if (!v) {
+          err.textContent = 'Veuillez choisir une option.';
+          err.hidden = false;
+          return;
+        }
+        if (v.inStock === false) {
+          err.textContent = 'Cette option est en rupture de stock.';
+          err.hidden = false;
+          return;
+        }
+        item = {
+          ...item,
+          key: `${data.id}:${v.id}`,
+          variationId: v.id,
+          price: v.price ?? data.price,
+          variant: Object.entries(selected()).map(([k, val]) => `${k} : ${val}`).join(', '),
+        };
+      }
+      addToCart(item, n);
+      toast(`${n} × « ${data.name} » ajouté au panier`);
+    });
+  }
+</script>
+
+<style>
+  .pdp {
+    display: grid;
+    gap: 24px;
+  }
+  @media (min-width: 860px) {
+    .pdp {
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+      gap: 48px;
+      align-items: start;
+    }
+  }
+  .gallery__main {
+    position: relative;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    aspect-ratio: 1;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+  }
+  .gallery__main img {
+    position: absolute;
+    inset: 24px;
+    width: calc(100% - 48px);
+    height: calc(100% - 48px);
+    object-fit: contain;
+  }
+  .gallery__badge {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    font-size: 0.9rem;
+  }
+  .gallery__thumbs {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    overflow-x: auto;
+  }
+  .gallery__thumbs button {
+    flex: 0 0 72px;
+    height: 72px;
+    padding: 6px;
+    border-radius: 10px;
+    border: 1.5px solid var(--line);
+    background: #fff;
+    cursor: pointer;
+  }
+  .gallery__thumbs button[aria-pressed='true'] {
+    border-color: var(--brand);
+  }
+  .gallery__thumbs img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .info h1 {
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    overflow-wrap: anywhere;
+  }
+  .info__price {
+    font-size: 1.8rem;
+    margin: 0 0 6px;
+  }
+  .info__unit {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--muted);
+  }
+  .stock {
+    font-weight: 650;
+    margin: 0 0 16px;
+  }
+  .stock--ok {
+    color: var(--ok);
+  }
+  .stock--out {
+    color: var(--accent);
+  }
+  .info__short {
+    color: var(--muted);
+  }
+  .buy {
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+    margin: 20px 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  .buy__row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .buy__submit {
+    flex: 1 1 180px;
+    min-height: 50px;
+    font-size: 1.02rem;
+  }
+  .buy__error {
+    color: var(--accent);
+    font-weight: 600;
+    margin: 0;
+  }
+  .buy__note {
+    color: var(--muted);
+    font-size: 0.88rem;
+    margin: 0;
+  }
+  .qty {
+    display: inline-flex;
+    align-items: center;
+    border: 1.5px solid var(--line);
+    border-radius: 999px;
+    overflow: hidden;
+    height: 50px;
+  }
+  .qty button {
+    width: 44px;
+    height: 100%;
+    border: 0;
+    background: transparent;
+    font-size: 1.3rem;
+    cursor: pointer;
+  }
+  .qty button:hover {
+    background: var(--brand-soft);
+  }
+  .qty input {
+    width: 44px;
+    text-align: center;
+    border: 0;
+    font-weight: 700;
+    -moz-appearance: textfield;
+  }
+  .qty input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+  }
+  .perks {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 8px;
+    font-size: 0.94rem;
+  }
+  .details {
+    border-top: 1px solid var(--line);
+    margin-top: 40px;
+  }
+  .attrs {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 6px 20px;
+    margin-top: 16px;
+  }
+  .attrs dt {
+    font-weight: 700;
+    text-transform: capitalize;
+  }
+  .attrs dd {
+    margin: 0;
+  }
+</style>

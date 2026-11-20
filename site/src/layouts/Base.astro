@@ -1,0 +1,607 @@
+---
+import '../styles/global.css';
+import { store } from '../config';
+import { topCategories, childrenOf, money } from '../lib/catalog';
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+}
+
+const { title, description = store.tagline, image } = Astro.props;
+const fullTitle = title ? `${title} | ${store.name}` : `${store.name} | ${store.tagline}`;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const path = Astro.url.pathname;
+const year = new Date().getFullYear();
+---
+
+<!doctype html>
+<html lang="fr-CA">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/png" href="/images/brand/favicon.png" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="fr_CA" />
+    {image && <meta property="og:image" content={new URL(image, Astro.site)} />}
+    <meta name="theme-color" content="#4a32f0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Aller au contenu</a>
+
+    <div class="topbar">
+      <div class="container topbar__inner">
+        <p>🚚 Livraison <strong>gratuite</strong> dès {money(store.freeDeliveryThreshold)} d’achat · {store.deliveryArea}</p>
+        <a href={store.phoneHref} class="topbar__phone">{store.phone}</a>
+      </div>
+    </div>
+
+    <header class="header">
+      <div class="container header__inner">
+        <button class="icon-btn menu-toggle" aria-label="Ouvrir le menu" aria-controls="nav" aria-expanded="false" data-menu-toggle>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
+        </button>
+
+        <a href="/" class="logo" aria-label={`${store.name}, accueil`}>
+          <img src="/images/brand/MRC-logo.png" alt={store.name} width="375" height="117" />
+        </a>
+
+        <form class="search" action="/recherche/" role="search">
+          <label for="q" class="sr-only">Rechercher un produit</label>
+          <input id="q" name="q" type="search" placeholder="Rechercher : gari, perruque, plantain…" autocomplete="off" />
+          <button aria-label="Rechercher">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+          </button>
+        </form>
+
+        <div class="header__actions">
+        <a href="/promotions/" class="promo-link">Promotions</a>
+        <a href="/panier/" class="cart-link" aria-label="Panier">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 8H6.2"></path><circle cx="10" cy="20.5" r="1.3"></circle><circle cx="17" cy="20.5" r="1.3"></circle></svg>
+          <span class="cart-link__label">Panier</span>
+          <span class="cart-link__count" data-cart-count hidden>0</span>
+        </a>
+        </div>
+      </div>
+
+      <nav id="nav" class="nav" aria-label="Catégories">
+        <div class="container nav__inner">
+          <div class="nav__head">
+            <strong>Catégories</strong>
+            <button class="icon-btn" aria-label="Fermer le menu" data-menu-close>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+            </button>
+          </div>
+          <ul class="nav__list">
+            <li class="nav__mobile-only"><a href="/boutique/" aria-current={path.startsWith('/boutique') ? 'page' : undefined}>Boutique</a></li>
+            {
+              topCategories.map((c) => {
+                const kids = childrenOf(c);
+                const active = path.startsWith(`/categorie/${c.slug}`) || kids.some((k) => path.startsWith(`/categorie/${k.slug}`));
+                return (
+                  <li class={kids.length ? 'has-sub' : ''}>
+                    <a href={`/categorie/${c.slug}/`} aria-current={active ? 'page' : undefined}>
+                      {c.name}
+                    </a>
+                    {kids.length > 0 && (
+                      <ul class="nav__sub">
+                        {kids.map((k) => (
+                          <li>
+                            <a href={`/categorie/${k.slug}/`}>{k.name}</a>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                );
+              })
+            }
+            <li class="nav__mobile-only"><a href="/promotions/" class="nav__promo">Promotions</a></li>
+          </ul>
+        </div>
+      </nav>
+      <div class="nav-backdrop" data-menu-close></div>
+    </header>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__grid">
+        <div>
+          <img src="/images/brand/MRC-logo-whit.png" alt={store.name} width="188" height="59" loading="lazy" />
+          <p class="footer__tag">{store.tagline}.</p>
+          <p class="footer__social">
+            <a href={store.social.facebook} rel="noopener" target="_blank">Facebook</a>
+            <a href={store.social.instagram} rel="noopener" target="_blank">Instagram</a>
+          </p>
+        </div>
+        <div>
+          <h3>Magasin</h3>
+          <address>
+            {store.address.street}<br />
+            {store.address.city}, {store.address.region} {store.address.postalCode}
+          </address>
+          <ul>
+            {store.hours.map((h) => <li>{h.days} : {h.time}</li>)}
+          </ul>
+          <p><a href={store.mapUrl} target="_blank" rel="noopener">Itinéraire →</a></p>
+        </div>
+        <div>
+          <h3>Nous joindre</h3>
+          <ul>
+            <li><a href={store.phoneHref}>{store.phone}</a></li>
+            <li><a href={`mailto:${store.email}`}>{store.email}</a></li>
+            <li>{store.deliveryHours}</li>
+            {store.services.map((s) => <li>{s}</li>)}
+          </ul>
+        </div>
+        <div>
+          <h3>Informations</h3>
+          <ul>
+            <li><a href="/a-propos/">À propos</a></li>
+            <li><a href="/contact/">Contact</a></li>
+            <li><a href="/conditions-generales/">Conditions générales</a></li>
+            <li><a href="/politique-de-remboursement-et-de-retour/">Retours et remboursements</a></li>
+            <li><a href="/politique-de-confidentialite/">Confidentialité</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="container footer__bottom">
+        <p>© {year} {store.name}. Tous droits réservés.</p>
+        <p>Prix en dollars canadiens, taxes en sus s’il y a lieu.</p>
+      </div>
+    </footer>
+
+    <script>
+      import '../scripts/cart';
+
+      const nav = document.getElementById('nav')!;
+      const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]')!;
+      const setOpen = (open: boolean) => {
+        document.body.classList.toggle('menu-open', open);
+        toggle.setAttribute('aria-expanded', String(open));
+        if (open) nav.querySelector<HTMLElement>('a')?.focus();
+      };
+      toggle.addEventListener('click', () => setOpen(true));
+      document.querySelectorAll('[data-menu-close]').forEach((el) => el.addEventListener('click', () => setOpen(false)));
+      document.addEventListener('keydown', (e) => e.key === 'Escape' && setOpen(false));
+    </script>
+
+    <style>
+      .skip {
+        position: absolute;
+        left: -999px;
+      }
+      .skip:focus {
+        left: 16px;
+        top: 8px;
+        z-index: 100;
+        background: #fff;
+        padding: 8px 12px;
+        border-radius: 8px;
+      }
+
+      .topbar {
+        background: var(--ink);
+        color: #fff;
+        font-size: 0.85rem;
+      }
+      .topbar__inner {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        min-height: 36px;
+      }
+      .topbar p {
+        margin: 0;
+      }
+      .topbar__phone {
+        text-decoration: none;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      @media (max-width: 640px) {
+        .topbar__phone {
+          display: none;
+        }
+        .topbar p {
+          text-align: center;
+          width: 100%;
+          font-size: 0.8rem;
+        }
+      }
+
+      .header {
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        background: #fff;
+        border-bottom: 1px solid var(--line);
+      }
+      .header__inner {
+        display: grid;
+        grid-template-columns: auto auto 1fr auto;
+        grid-template-areas: 'menu logo . cart' 'search search search search';
+        align-items: center;
+        gap: 10px 12px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+      }
+      .menu-toggle {
+        grid-area: menu;
+      }
+      .logo {
+        grid-area: logo;
+      }
+      .logo img {
+        height: 40px;
+        width: auto;
+      }
+      .search {
+        grid-area: search;
+        position: relative;
+      }
+      .header__actions {
+        grid-area: cart;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .promo-link {
+        display: none;
+        font-weight: 700;
+        color: var(--accent);
+        text-decoration: none;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        white-space: nowrap;
+      }
+      .promo-link:hover {
+        background: #ffd3e4;
+      }
+      @media (min-width: 900px) {
+        .promo-link {
+          display: inline-block;
+        }
+      }
+      @media (min-width: 900px) {
+        .header__inner {
+          grid-template-columns: auto auto minmax(0, 1fr) auto;
+          grid-template-areas: 'menu logo search cart';
+          gap: 20px;
+          padding-top: 14px;
+          padding-bottom: 14px;
+        }
+        .logo img {
+          height: 48px;
+        }
+      }
+      @media (min-width: 1320px) {
+        .header__inner {
+          grid-template-columns: auto minmax(0, 1fr) auto;
+          grid-template-areas: 'logo search cart';
+          gap: 24px;
+        }
+      }
+      .icon-btn {
+        display: inline-grid;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+      }
+      .icon-btn:hover {
+        background: var(--brand-soft);
+      }
+      @media (min-width: 1320px) {
+        .icon-btn.menu-toggle {
+          display: none;
+        }
+      }
+      .search input {
+        width: 100%;
+        height: 46px;
+        border-radius: 999px;
+        border: 1.5px solid var(--line);
+        background: var(--bg);
+        padding: 0 52px 0 18px;
+      }
+      .search input:focus {
+        outline: none;
+        border-color: var(--brand);
+        background: #fff;
+      }
+      .search button {
+        position: absolute;
+        right: 4px;
+        top: 4px;
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        border: 0;
+        background: var(--brand);
+        color: #fff;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+      }
+      .cart-link {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        font-weight: 650;
+        padding: 8px 10px;
+        border-radius: 12px;
+      }
+      .cart-link:hover {
+        background: var(--brand-soft);
+      }
+      .cart-link__label {
+        display: none;
+      }
+      @media (min-width: 900px) {
+        .cart-link__label {
+          display: inline;
+        }
+      }
+      .cart-link__count {
+        position: absolute;
+        top: 0;
+        left: 24px;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 5px;
+        border-radius: 999px;
+        background: var(--accent);
+        color: #fff;
+        font-size: 0.75rem;
+        font-weight: 800;
+        display: grid;
+        place-items: center;
+      }
+      .cart-link__count[hidden] {
+        display: none;
+      }
+
+      /* Navigation: drawer on mobile, bar with dropdowns on desktop */
+      .nav {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: min(340px, 86vw);
+        background: #fff;
+        z-index: 60;
+        transform: translateX(-105%);
+        transition: transform 0.25s ease;
+        overflow-y: auto;
+        box-shadow: var(--shadow);
+      }
+      .nav-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgb(23 20 43 / 45%);
+        z-index: 55;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+      }
+      :global(body.menu-open) .nav {
+        transform: none;
+      }
+      :global(body.menu-open) .nav-backdrop {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .nav__inner {
+        padding-top: 12px;
+        padding-bottom: 24px;
+      }
+      .nav__head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .nav__list,
+      .nav__sub {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .nav__list > li > a {
+        display: block;
+        padding: 12px 4px;
+        font-weight: 650;
+        text-decoration: none;
+        border-bottom: 1px solid var(--line);
+      }
+      .nav__sub a {
+        display: block;
+        padding: 8px 4px 8px 18px;
+        text-decoration: none;
+        color: var(--muted);
+      }
+      .nav a:hover,
+      .nav a[aria-current='page'] {
+        color: var(--brand);
+      }
+      .nav__promo {
+        color: var(--accent) !important;
+      }
+
+      @media (min-width: 1320px) {
+        .nav {
+          position: static;
+          transform: none;
+          width: auto;
+          box-shadow: none;
+          overflow: visible;
+          border-top: 1px solid var(--line);
+          background: transparent;
+        }
+        .nav-backdrop,
+        .nav__head,
+        .nav__mobile-only {
+          display: none;
+        }
+        .nav__inner {
+          padding-top: 0;
+          padding-bottom: 0;
+        }
+        .nav__list {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0 2px;
+        }
+        .nav__list > li {
+          position: relative;
+        }
+        .nav__list {
+          flex-wrap: wrap;
+          justify-content: space-between;
+        }
+        .nav__list > li > a {
+          border: 0;
+          padding: 11px 5px;
+          font-size: 0.85rem;
+          white-space: nowrap;
+        }
+        .nav__list > li > a[aria-current='page'] {
+          box-shadow: inset 0 -3px 0 var(--brand);
+        }
+        .nav__sub {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          min-width: 230px;
+          background: #fff;
+          border: 1px solid var(--line);
+          border-radius: var(--radius-sm);
+          box-shadow: var(--shadow);
+          padding: 8px;
+          display: none;
+          z-index: 5;
+        }
+        .has-sub:hover .nav__sub,
+        .has-sub:focus-within .nav__sub {
+          display: block;
+        }
+        .nav__sub a {
+          padding: 8px 10px;
+          border-radius: 8px;
+          color: var(--ink);
+        }
+        .nav__sub a:hover {
+          background: var(--brand-soft);
+        }
+      }
+
+      .footer {
+        margin-top: 56px;
+        background: var(--ink);
+        color: #d9d6e6;
+        font-size: 0.94rem;
+      }
+      .footer__grid {
+        display: grid;
+        gap: 28px;
+        padding-top: 44px;
+        padding-bottom: 28px;
+        grid-template-columns: 1fr;
+      }
+      @media (min-width: 700px) {
+        .footer__grid {
+          grid-template-columns: 1.4fr 1fr 1fr 1fr;
+        }
+      }
+      .footer h3 {
+        color: #fff;
+        font-size: 1rem;
+        margin-bottom: 10px;
+      }
+      .footer ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 6px;
+      }
+      .footer address {
+        font-style: normal;
+        margin-bottom: 8px;
+      }
+      .footer a {
+        text-decoration: none;
+      }
+      .footer a:hover {
+        color: #fff;
+        text-decoration: underline;
+      }
+      .footer img {
+        width: 188px;
+        height: auto;
+      }
+      .footer__social {
+        display: flex;
+        gap: 16px;
+        font-weight: 600;
+      }
+      .footer__bottom {
+        border-top: 1px solid rgb(255 255 255 / 12%);
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 8px;
+        padding-top: 16px;
+        padding-bottom: 24px;
+        font-size: 0.82rem;
+        color: #a19cb5;
+      }
+      .footer__bottom p {
+        margin: 0;
+      }
+
+      :global(#toast) {
+        position: fixed;
+        left: 50%;
+        bottom: 24px;
+        transform: translate(-50%, 20px);
+        background: var(--ink);
+        color: #fff;
+        padding: 12px 18px;
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        opacity: 0;
+        transition: 0.2s;
+        z-index: 80;
+        max-width: calc(100vw - 32px);
+        pointer-events: none;
+      }
+      :global(#toast.is-visible) {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
+    </style>
+  </body>
+</html>

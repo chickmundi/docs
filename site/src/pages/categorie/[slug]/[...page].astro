@@ -1,0 +1,36 @@
+---
+import type { GetStaticPaths } from 'astro';
+import Base from '../../../layouts/Base.astro';
+import Listing from '../../../components/Listing.astro';
+import { categories, productsIn, childrenOf, categoryById, PAGE_SIZE, type Category } from '../../../lib/catalog';
+
+export const getStaticPaths = (({ paginate }) =>
+  categories.flatMap((category) =>
+    paginate(productsIn(category), { pageSize: PAGE_SIZE, params: { slug: category.slug }, props: { category } }),
+  )) satisfies GetStaticPaths;
+
+const { page, category } = Astro.props as { page: any; category: Category };
+const parent = category.parent ? categoryById(category.parent) : undefined;
+const siblings = parent ? childrenOf(parent) : childrenOf(category);
+const crumbs = parent ? [{ label: parent.name, href: `/categorie/${parent.slug}/` }] : [];
+const title = category.name;
+---
+
+<Base
+  title={page.currentPage > 1 ? `${title}, page ${page.currentPage}` : title}
+  description={category.description || `${title} : ${page.total} produits chez Marché Chemin-du-Roy, Trois-Rivières. Livraison gratuite dès 99 $.`}
+>
+  <Listing
+    title={title}
+    intro={category.description || undefined}
+    items={page.data}
+    total={page.total}
+    current={page.currentPage}
+    last={page.lastPage}
+    base={`/categorie/${category.slug}`}
+    crumbs={crumbs}
+    subcategories={siblings}
+    activeSlug={parent ? category.slug : undefined}
+    parentHref={`/categorie/${(parent ?? category).slug}/`}
+  />
+</Base>

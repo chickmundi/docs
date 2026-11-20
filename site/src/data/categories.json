@@ -1,0 +1,282 @@
+[
+  {
+    "id": 247,
+    "name": "Accessoires de cheveux",
+    "slug": "accessoires-de-cheveux",
+    "parent": 39,
+    "description": "",
+    "count": 84,
+    "image": null,
+    "parentSlug": "soins-capillaires"
+  },
+  {
+    "id": 168,
+    "name": "Autres",
+    "slug": "autres",
+    "parent": 47,
+    "description": "",
+    "count": 25,
+    "image": null,
+    "parentSlug": "epicerie"
+  },
+  {
+    "id": 197,
+    "name": "Clips",
+    "slug": "clips",
+    "parent": 38,
+    "description": "",
+    "count": 5,
+    "image": null,
+    "parentSlug": "extensions-capillaires"
+  },
+  {
+    "id": 205,
+    "name": "Conserves",
+    "slug": "conserves",
+    "parent": 47,
+    "description": "",
+    "count": 66,
+    "image": null,
+    "parentSlug": "epicerie"
+  },
+  {
+    "id": 64,
+    "name": "Crochets",
+    "slug": "crochets",
+    "parent": 38,
+    "description": "",
+    "count": 49,
+    "image": null,
+    "parentSlug": "extensions-capillaires"
+  },
+  {
+    "id": 47,
+    "name": "Épicerie",
+    "slug": "epicerie",
+    "parent": null,
+    "description": "",
+    "count": 480,
+    "image": "https://marchecheminduroy.com/wp-content/uploads/2023/11/grocery.png",
+    "parentSlug": null
+  },
+  {
+    "id": 84,
+    "name": "Épices et condiments",
+    "slug": "epices-et-condiments",
+    "parent": null,
+    "description": "",
+    "count": 68,
+    "image": "https://marchecheminduroy.com/wp-content/uploads/2025/10/0002_Layer.png",
+    "parentSlug": null
+  },
+  {
+    "id": 38,
+    "name": "Extensions capillaires",
+    "slug": "extensions-capillaires",
+    "parent": null,
+    "description": "",
+    "count": 116,
+    "image": "https://marchecheminduroy.com/wp-content/uploads/2025/10/Layer-3-copy.png",
+    "parentSlug": null
+  },
+  {
+    "id": 133,
+    "name": "Farines",
+    "slug": "farines",
+    "parent": 47,
+    "description": "",
+    "count": 48,
+    "image": null,
+    "parentSlug": "epicerie"
+  },
+  {
+    "id": 171,
+    "name": "Fruits et légumes",
+    "slug": "fruits-et-legumes",
+    "parent": null,
+    "description": "",
+    "count": 3,
+    "image": "https://marchecheminduroy.com/wp-content/uploads/2023/11/fruits-vegetables.png",
+    "parentSlug": null
+  },
+  {
+    "id": 249,
+    "name": "Garde-manger",
+    "slug": "garde-manger",
+    "parent": 47,
+    "description": "",
+    "count": 83,
+    "image": null,
+    "parentSlug": "epicerie"
+  },
+  {
+    "id": 70,
+    "name": "Mèches",
+    "slug": "meches",
+    "parent": 38,
+    "description": "",
+    "count": 31,
+    "image": null,
+    "parentSlug": "extensions-capillaires"
+  },
+  {
+    "id": 244,
+    "name": "Naturel",
+    "slug": "naturel",
+    "parent": 30,
+    "description": "",
+    "count": 7,
+    "image": null,
+    "parentSlug": "perruques"
+  },
+  {
+    "id": 30,
+    "name": "Perruques",
+    "slug": "perruques",
+    "parent": null,
+    "description": "",
+    "count": 35,
+    "image": "https://marchecheminduroy.com/wp-content/uploads/2025/10/MRC_0007_Layer-2-1.png",
+    "parentSlug": null
+  },
+  {
+    "id": 152,
+    "name": "Petit-déjeuner",
+    "slug": "petit-dejeuner",
+    "parent": null,
+    "description": "",
+    "count": 146,
+    "image": "https://marchecheminduroy.com/wp-content/uploads/2023/11/bakery.png",
+    "parentSlug": null
+  },
+  {
+    "id": 92,
+    "name": "Poissons et fruits de mer",
+    "slug": "poissons-et-fruits-de-mer",
+    "parent": null,
+    "description": "",
+    "count": 13,
+    "image": "https://marchecheminduroy.com/wp-content/uploads/2025/10/0003_pngwing.png",
+    "parentSlug": null
+  },
+  {
+    "id": 117,
+    "name": "Postiches",
+    "slug": "postiches",
+    "parent": 38,
+    "description": "",
+    "count": 9,
+    "image": null,
+    "parentSlug": "extensions-capillaires"
+  },
+  {
+    "id": 248,
+    "name": "Produits capillaires",
+    "slug": "produits-capillaires",
+    "parent": 39,
+    "description": "",
+    "count": 344,
+    "image": null,
+    "parentSlug": "soins-capillaires"
+  },
+  {
+    "id": 245,
+    "name": "Semi-naturel",
+    "slug": "semi-naturel",
+    "parent": 30,
+    "description": "",
+    "count": 17,
+    "image": null,
+    "parentSlug": "perruques"
+  },
+  {
+    "id": 39,
+    "name": "Soins capillaires",
+    "slug": "soins-capillaires",
+    "parent": null,
+    "description": "",
+    "count": 429,
+    "image": "https://marchecheminduroy.com/wp-content/uploads/2025/10/0005_Layer.png",
+    "parentSlug": null
+  },
+  {
+    "id": 265,
+    "name": "Soins corporels",
+    "slug": "soins-corporels",
+    "parent": null,
+    "description": "",
+    "count": 68,
+    "image": "https://marchecheminduroy.com/wp-content/uploads/2025/10/Bodycare.png",
+    "parentSlug": null
+  },
+  {
+    "id": 224,
+    "name": "Surgelés",
+    "slug": "surgeles",
+    "parent": null,
+    "description": "",
+    "count": 25,
+    "image": "https://marchecheminduroy.com/wp-content/uploads/2025/10/0000_Layer.png",
+    "parentSlug": null
+  },
+  {
+    "id": 246,
+    "name": "Synthétiques",
+    "slug": "synthetiques",
+    "parent": 30,
+    "description": "",
+    "count": 11,
+    "image": null,
+    "parentSlug": "perruques"
+  },
+  {
+    "id": 59,
+    "name": "Tissages naturels",
+    "slug": "tissages-naturels",
+    "parent": 38,
+    "description": "",
+    "count": 13,
+    "image": null,
+    "parentSlug": "extensions-capillaires"
+  },
+  {
+    "id": 218,
+    "name": "Tissages semi-naturels",
+    "slug": "tissages-semi-naturels",
+    "parent": 38,
+    "description": "",
+    "count": 3,
+    "image": null,
+    "parentSlug": "extensions-capillaires"
+  },
+  {
+    "id": 220,
+    "name": "Tissages synthétiques",
+    "slug": "tissages-synthetiques",
+    "parent": 38,
+    "description": "",
+    "count": 6,
+    "image": null,
+    "parentSlug": "extensions-capillaires"
+  },
+  {
+    "id": 263,
+    "name": "Tout",
+    "slug": "tout",
+    "parent": null,
+    "description": "",
+    "count": 1122,
+    "image": "https://marchecheminduroy.com/wp-content/uploads/2025/10/0002_Layer.png",
+    "parentSlug": null
+  },
+  {
+    "id": 93,
+    "name": "Viandes",
+    "slug": "viandes",
+    "parent": null,
+    "description": "",
+    "count": 12,
+    "image": "https://marchecheminduroy.com/wp-content/uploads/2025/10/0001_pngwing.png",
+    "parentSlug": null
+  }
+]

@@ -1,0 +1,66 @@
+---
+// Policy and information pages, text imported from the old site (src/data/pages.json).
+import Base from '../layouts/Base.astro';
+import pages from '../data/pages.json';
+
+export function getStaticPaths() {
+  // getStaticPaths runs in isolation, so the list lives inside it.
+  return ['a-propos', 'conditions-generales', 'politique-de-confidentialite', 'politique-de-remboursement-et-de-retour'].map((info) => ({
+    params: { info },
+  }));
+}
+
+const { info } = Astro.params as { info: string };
+const page = (pages as Record<string, { title: string; blocks: { type: string; text: string }[] }>)[info];
+const [first, ...rest] = page.blocks;
+const title = first?.type === 'h' ? first.text : page.title;
+const blocks = first?.type === 'h' ? rest : page.blocks;
+
+// Group consecutive list items into <ul>.
+type Node = { type: 'h' | 'p'; text: string } | { type: 'ul'; items: string[] };
+const nodes: Node[] = [];
+for (const b of blocks) {
+  if (b.type === 'li') {
+    const last = nodes[nodes.length - 1];
+    if (last?.type === 'ul') last.items.push(b.text);
+    else nodes.push({ type: 'ul', items: [b.text] });
+  } else nodes.push({ type: b.type as 'h' | 'p', text: b.text });
+}
+// Numbered paragraphs ("1. Commandes…") read as headings.
+const isHeading = (n: Node) => n.type === 'h' || (n.type === 'p' && /^\d+\.\s/.test(n.text) && n.text.length < 90);
+---
+
+<Base title={page.title} description={blocks.find((b) => b.type === 'p')?.text.slice(0, 160)}>
+  <div class="container">
+    <nav class="breadcrumbs" aria-label="Fil d’Ariane"><a href="/">Accueil</a><span aria-hidden="true">/</span><span>{page.title}</span></nav>
+    <article class="prose page">
+      <h1>{title}</h1>
+      {
+        nodes.map((n) =>
+          n.type === 'ul' ? (
+            <ul>{n.items.map((i) => <li>{i}</li>)}</ul>
+          ) : isHeading(n) ? (
+            <h2>{n.text}</h2>
+          ) : (
+            <p>{n.text}</p>
+          ),
+        )
+      }
+    </article>
+  </div>
+</Base>
+
+<style>
+  .page {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 24px;
+    max-width: 820px;
+  }
+  @media (min-width: 700px) {
+    .page {
+      padding: 40px 48px;
+    }
+  }
+</style>

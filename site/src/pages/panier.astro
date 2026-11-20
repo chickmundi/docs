@@ -1,0 +1,354 @@
+---
+import Base from '../layouts/Base.astro';
+import { store } from '../config';
+---
+
+<Base title="Panier" description="Votre panier Marché Chemin-du-Roy.">
+  <div class="container">
+    <h1 class="cart-title">Votre panier</h1>
+
+    <div class="cart" data-cart data-threshold={store.freeDeliveryThreshold} data-email={store.email} data-whatsapp={store.whatsapp}>
+      <div class="cart__empty" data-empty hidden>
+        <p>Votre panier est vide.</p>
+        <a class="btn" href="/boutique/">Continuer mes achats</a>
+      </div>
+
+      <div class="cart__layout" data-filled hidden>
+        <section aria-label="Articles">
+          <div class="ship" data-ship></div>
+          <ul class="lines" data-lines></ul>
+        </section>
+
+        <aside class="summary">
+          <h2>Récapitulatif</h2>
+          <dl>
+            <dt>Sous-total</dt><dd data-subtotal></dd>
+            <dt>Livraison</dt><dd data-shipping></dd>
+          </dl>
+          <p class="summary__note">Taxes (TPS/TVQ) applicables ajoutées à la confirmation. Les articles vendus au poids sont ajustés selon le poids réel.</p>
+
+          <form class="order" data-order>
+            <h2>Passer la commande</h2>
+            <fieldset>
+              <legend class="sr-only">Mode de réception</legend>
+              <label class="radio"><input type="radio" name="mode" value="Livraison" checked /> Livraison</label>
+              <label class="radio"><input type="radio" name="mode" value="Retrait en magasin" /> Retrait en magasin</label>
+            </fieldset>
+            <label class="field">Nom complet<input class="input" name="name" autocomplete="name" required /></label>
+            <label class="field">Téléphone<input class="input" name="phone" type="tel" autocomplete="tel" required /></label>
+            <label class="field">Courriel<input class="input" name="email" type="email" autocomplete="email" /></label>
+            <label class="field" data-address>Adresse de livraison<textarea class="input" name="address" rows="2" autocomplete="street-address" required></textarea></label>
+            <label class="field">Note (facultatif)<textarea class="input" name="note" rows="2" placeholder="Heure préférée, instructions…"></textarea></label>
+            <button class="btn btn--accent btn--block" type="submit">Envoyer ma commande par courriel</button>
+            {store.whatsapp && <button class="btn btn--ghost btn--block" type="submit" data-via="whatsapp">Commander par WhatsApp</button>}
+            <p class="summary__note">
+              Votre commande s’ouvre dans votre application de courriel{store.whatsapp && ' ou WhatsApp'}, prête à envoyer. Nous vous rappelons pour confirmer et convenir du paiement (à la livraison, en magasin ou par lien sécurisé).
+            </p>
+          </form>
+        </aside>
+      </div>
+    </div>
+  </div>
+</Base>
+
+<script>
+  import { getCart, setQty, clearCart, cartTotal, money, type CartItem } from '../scripts/cart';
+
+  const root = document.querySelector<HTMLElement>('[data-cart]')!;
+  const threshold = Number(root.dataset.threshold);
+  const email = root.dataset.email!;
+  const whatsapp = root.dataset.whatsapp;
+  const $ = <T extends HTMLElement>(s: string) => root.querySelector<T>(s)!;
+  const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+
+  function render() {
+    const items = getCart();
+    $('[data-empty]').hidden = items.length > 0;
+    $('[data-filled]').hidden = items.length === 0;
+    if (!items.length) return;
+
+    const total = cartTotal(items);
+    const pickup = (root.querySelector<HTMLInputElement>('input[name=mode]:checked')?.value ?? '') === 'Retrait en magasin';
+    const remaining = threshold - total;
+    $('[data-ship]').innerHTML = pickup
+      ? '<p>Retrait gratuit en magasin.</p>'
+      : remaining > 0
+        ? `<p>Plus que <strong>${money(remaining)}</strong> pour la livraison gratuite.</p><div class="bar"><span style="width:${Math.min(100, (total / threshold) * 100)}%"></span></div>`
+        : '<p>🎉 Vous profitez de la <strong>livraison gratuite</strong>.</p><div class="bar"><span style="width:100%"></span></div>';
+
+    $('[data-subtotal]').textContent = money(total);
+    $('[data-shipping]').textContent = pickup || remaining <= 0 ? 'Gratuite' : 'Calculée à la confirmation';
+
+    $('[data-lines]').innerHTML = items
+      .map(
+        (i) => `
+      <li class="line">
+        <a href="/produit/${i.slug}/" class="line__img">${i.image ? `<img src="${i.image}" alt="" width="80" height="80">` : ''}</a>
+        <div class="line__info">
+          <a href="/produit/${i.slug}/" class="line__name">${esc(i.name)}</a>
+          ${i.variant ? `<span class="line__meta">${esc(i.variant)}</span>` : ''}
+          <span class="line__meta">${money(i.price)}${i.unit ? ' ' + esc(i.unit) : ''}</span>
+          <button class="line__remove" data-remove="${i.key}">Retirer</button>
+        </div>
+        <div class="line__qty">
+          <div class="qty" role="group" aria-label="Quantité">
+            <button type="button" data-qty="${i.key}" data-d="-1" aria-label="Moins">−</button>
+            <span>${i.qty}</span>
+            <button type="button" data-qty="${i.key}" data-d="1" aria-label="Plus">+</button>
+          </div>
+          <strong class="price">${money(i.price * i.qty)}</strong>
+        </div>
+      </li>`,
+      )
+      .join('');
+  }
+
+  root.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+    const q = t.closest<HTMLElement>('[data-qty]');
+    if (q) {
+      const item = getCart().find((i) => i.key === q.dataset.qty);
+      if (item) setQty(item.key, item.qty + Number(q.dataset.d));
+    }
+    const r = t.closest<HTMLElement>('[data-remove]');
+    if (r) setQty(r.dataset.remove!, 0);
+  });
+
+  const form = $<HTMLFormElement>('[data-order]');
+  const addressField = $<HTMLElement>('[data-address]');
+  form.addEventListener('change', () => {
+    const pickup = (form.elements.namedItem('mode') as RadioNodeList).value === 'Retrait en magasin';
+    addressField.hidden = pickup;
+    (addressField.querySelector('textarea') as HTMLTextAreaElement).required = !pickup;
+    render();
+  });
+
+  function orderText(items: CartItem[], f: FormData) {
+    const lines = items.map(
+      (i) => `- ${i.qty} × ${i.name}${i.variant ? ` (${i.variant})` : ''}${i.unit ? ` [${i.unit}]` : ''} : ${money(i.price * i.qty)}`,
+    );
+    const pickup = f.get('mode') === 'Retrait en magasin';
+    return [
+      'Bonjour, je souhaite passer la commande suivante :',
+      '',
+      ...lines,
+      '',
+      `Sous-total : ${money(cartTotal(items))}`,
+      `Mode : ${f.get('mode')}`,
+      '',
+      `Nom : ${f.get('name')}`,
+      `Téléphone : ${f.get('phone')}`,
+      f.get('email') ? `Courriel : ${f.get('email')}` : '',
+      !pickup ? `Adresse : ${f.get('address')}` : '',
+      f.get('note') ? `Note : ${f.get('note')}` : '',
+    ]
+      .filter((l, i, a) => l !== '' || a[i - 1] !== '')
+      .join('\n');
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const items = getCart();
+    if (!items.length) return;
+    const f = new FormData(form);
+    const text = orderText(items, f);
+    const via = (e.submitter as HTMLElement | null)?.dataset.via;
+    const url =
+      via === 'whatsapp' && whatsapp
+        ? `https://wa.me/${whatsapp}?text=${encodeURIComponent(text)}`
+        : `mailto:${email}?subject=${encodeURIComponent(`Commande en ligne - ${f.get('name')}`)}&body=${encodeURIComponent(text)}`;
+    window.location.href = url;
+    setTimeout(() => {
+      if (confirm('Votre commande a-t-elle bien été envoyée ? Cliquez OK pour vider le panier.')) clearCart();
+    }, 1500);
+  });
+
+  document.addEventListener('cart:change', render);
+  render();
+</script>
+
+<style>
+  .cart-title {
+    margin-top: 28px;
+  }
+  .cart__empty {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 40px 24px;
+    text-align: center;
+  }
+  .cart__layout {
+    display: grid;
+    gap: 24px;
+  }
+  .cart__layout[hidden],
+  .cart__empty[hidden] {
+    display: none;
+  }
+  @media (min-width: 900px) {
+    .cart__layout {
+      grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
+      align-items: start;
+    }
+  }
+  .ship {
+    background: var(--brand-soft);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .ship :global(p) {
+    margin: 0 0 8px;
+  }
+  .ship :global(.bar) {
+    height: 8px;
+    border-radius: 99px;
+    background: #fff;
+    overflow: hidden;
+  }
+  .ship :global(.bar span) {
+    display: block;
+    height: 100%;
+    background: var(--brand);
+  }
+  .lines {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  .lines :global(.line) {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 12px;
+    padding: 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  .lines :global(.line:last-child) {
+    border-bottom: 0;
+  }
+  @media (min-width: 600px) {
+    .lines :global(.line) {
+      grid-template-columns: 80px minmax(0, 1fr) auto;
+    }
+  }
+  .lines :global(.line__img img) {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: contain;
+  }
+  .lines :global(.line__info) {
+    display: grid;
+    gap: 2px;
+    align-content: start;
+  }
+  .lines :global(.line__name) {
+    font-weight: 650;
+    text-decoration: none;
+  }
+  .lines :global(.line__meta) {
+    color: var(--muted);
+    font-size: 0.88rem;
+  }
+  .lines :global(.line__remove) {
+    justify-self: start;
+    border: 0;
+    background: none;
+    padding: 4px 0;
+    color: var(--accent);
+    font-size: 0.85rem;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .lines :global(.line__qty) {
+    grid-column: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  @media (min-width: 600px) {
+    .lines :global(.line__qty) {
+      grid-column: 3;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+  }
+  .lines :global(.qty) {
+    display: inline-flex;
+    align-items: center;
+    border: 1.5px solid var(--line);
+    border-radius: 999px;
+    height: 38px;
+  }
+  .lines :global(.qty button) {
+    width: 36px;
+    height: 100%;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+  }
+  .lines :global(.qty span) {
+    min-width: 24px;
+    text-align: center;
+    font-weight: 700;
+  }
+  .summary {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  @media (min-width: 900px) {
+    .summary {
+      position: sticky;
+      top: 140px;
+    }
+  }
+  .summary h2 {
+    font-size: 1.2rem;
+  }
+  .summary dl {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 6px;
+    margin: 0 0 8px;
+  }
+  .summary dd {
+    margin: 0;
+    font-weight: 700;
+    text-align: right;
+  }
+  .summary__note {
+    color: var(--muted);
+    font-size: 0.84rem;
+  }
+  .order {
+    display: grid;
+    gap: 12px;
+    border-top: 1px solid var(--line);
+    padding-top: 16px;
+    margin-top: 16px;
+  }
+  .order fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .order [hidden] {
+    display: none;
+  }
+  .radio {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    font-weight: 600;
+  }
+</style>

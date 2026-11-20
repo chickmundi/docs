@@ -1,0 +1,77 @@
+---
+interface Props {
+  current: number;
+  last: number;
+  base: string; // e.g. /boutique
+}
+const { current, last, base } = Astro.props;
+const href = (n: number) => (n === 1 ? `${base}/` : `${base}/${n}/`);
+const pages: (number | '…')[] = [];
+for (let n = 1; n <= last; n++) {
+  if (n === 1 || n === last || Math.abs(n - current) <= 1) pages.push(n);
+  else if (pages[pages.length - 1] !== '…') pages.push('…');
+}
+---
+
+{
+  last > 1 && (
+    <nav class="pager" aria-label="Pagination">
+      {current > 1 ? <a href={href(current - 1)} rel="prev">← Précédent</a> : <span />}
+      <ol>
+        {pages.map((n) =>
+          n === '…' ? (
+            <li class="gap">…</li>
+          ) : (
+            <li>
+              <a href={href(n)} aria-current={n === current ? 'page' : undefined}>
+                {n}
+              </a>
+            </li>
+          ),
+        )}
+      </ol>
+      {current < last ? <a href={href(current + 1)} rel="next">Suivant →</a> : <span />}
+    </nav>
+  )
+}
+
+<style>
+  .pager {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin: 32px 0 0;
+    flex-wrap: wrap;
+  }
+  .pager > a {
+    font-weight: 650;
+    text-decoration: none;
+    color: var(--brand);
+  }
+  ol {
+    display: flex;
+    gap: 4px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex-wrap: wrap;
+  }
+  ol a,
+  .gap {
+    display: grid;
+    place-items: center;
+    min-width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  ol a:hover {
+    background: var(--brand-soft);
+  }
+  ol a[aria-current='page'] {
+    background: var(--brand);
+    color: #fff;
+  }
+</style>

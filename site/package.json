@@ -1,0 +1,15 @@
+{
+  "name": "marche-chemin-du-roy",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "import": "NODE_USE_ENV_PROXY=1 node scripts/import-products.mjs"
+  },
+  "dependencies": {
+    "astro": "^7.4.13",
+    "sharp": "^0.35.5"
+  }
+}

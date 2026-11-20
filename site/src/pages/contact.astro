@@ -1,0 +1,78 @@
+---
+import Base from '../layouts/Base.astro';
+import { store } from '../config';
+---
+
+<Base title="Contact" description={`Joindre ${store.name} : ${store.phone}, ${store.email}, ${store.address.street}, ${store.address.city}.`}>
+  <div class="container">
+    <nav class="breadcrumbs" aria-label="Fil d’Ariane"><a href="/">Accueil</a><span aria-hidden="true">/</span><span>Contact</span></nav>
+    <h1>Nous joindre</h1>
+    <p class="lead">Une question sur un produit, une commande ou une livraison ? Nous serons ravis de vous aider dans les plus brefs délais.</p>
+
+    <div class="contact">
+      <a class="tile" href={store.phoneHref}>
+        <span class="eyebrow">Téléphone</span>
+        <strong>{store.phone}</strong>
+        <span>Appelez-nous entre 9 h et 18 h.</span>
+      </a>
+      <a class="tile" href={`mailto:${store.email}`}>
+        <span class="eyebrow">Courriel</span>
+        <strong>{store.email}</strong>
+        <span>Réponse rapide, 7 jours sur 7.</span>
+      </a>
+      <a class="tile" href={store.mapUrl} target="_blank" rel="noopener">
+        <span class="eyebrow">Magasin</span>
+        <strong>{store.address.street}</strong>
+        <span>{store.address.city}, {store.address.region} {store.address.postalCode}</span>
+      </a>
+      <div class="tile">
+        <span class="eyebrow">Heures d’ouverture</span>
+        {store.hours.map((h) => <span><strong>{h.days}</strong> · {h.time}</span>)}
+        <span>{store.deliveryHours}</span>
+      </div>
+    </div>
+
+    <iframe
+      class="map"
+      title="Carte : Marché Chemin-du-Roy"
+      loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade"
+      src="https://www.google.com/maps?q=65+Rue+Notre-Dame+E,+Trois-Rivi%C3%A8res,+QC+G8T+4B8&output=embed"></iframe>
+  </div>
+</Base>
+
+<style>
+  .lead {
+    color: var(--muted);
+    max-width: 60ch;
+  }
+  .contact {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    margin: 24px 0;
+  }
+  .tile {
+    display: grid;
+    gap: 4px;
+    align-content: start;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+  a.tile:hover {
+    border-color: var(--brand);
+  }
+  .tile strong {
+    font-size: 1.05rem;
+  }
+  .map {
+    width: 100%;
+    height: 360px;
+    border: 0;
+    border-radius: 20px;
+  }
+</style>

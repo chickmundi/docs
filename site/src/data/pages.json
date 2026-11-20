@@ -1,0 +1,591 @@
+{
+  "a-propos": {
+    "title": "À propos",
+    "blocks": [
+      {
+        "type": "h",
+        "text": "Marché Chemin du Roy"
+      },
+      {
+        "type": "h",
+        "text": "Une passion pour les saveurs authentiques"
+      },
+      {
+        "type": "p",
+        "text": "Bien plus qu’une simple épicerie, le Marché Chemin du Roy est une véritable destination culinaire au cœur de Trois-Rivières. Depuis notre création, nous nous engageons à vous faire découvrir les richesses gastronomiques locales et de l'Afrique en créant un lieu de rencontre accueillant où la diversité culturelle s’exprime à travers nos produits."
+      },
+      {
+        "type": "p",
+        "text": "Un service personnaliséNotre équipe passionnée et experte vous accueille avec le sourire et vous guide. Nous offrons un service personnalisé adapté au besoin de chaque client, afin de garantir une expérience unique, attentive et de qualité."
+      },
+      {
+        "type": "p",
+        "text": "Qualité garantieParce que vous méritez le meilleur, nous proposons des produits soigneusement choisis pour leur qualité et leur excellence"
+      },
+      {
+        "type": "p",
+        "text": "Communauté et partageNotre marché célèbre la richesse des cultures africaines et l’esprit local québécois. À travers chaque produit, nous encourageons le partage, la proximité et le soutien aux communautés qui font vivre notre richesse culturelle."
+      },
+      {
+        "type": "h",
+        "text": "Notre exclusivité"
+      },
+      {
+        "type": "p",
+        "text": "En plus d’être un Dépanneur, Marché Chemin du Roy se démarque par ses variétés des produits tels que:"
+      },
+      {
+        "type": "p",
+        "text": "Produits du Dépanneur:"
+      },
+      {
+        "type": "p",
+        "text": "Bières, produits pour les animaux, les liqueurs, les produits laitiers, les chips, les produits en conserve, les rafraichissements, les produits de maison et etc."
+      },
+      {
+        "type": "p",
+        "text": "Produits du Marché"
+      },
+      {
+        "type": "li",
+        "text": "Produits frais: bananes plantains, ignames, gombo, assortiment de légumes et etc."
+      },
+      {
+        "type": "li",
+        "text": "Produits africains: Farines traditionnelles (fufu, gari), épices authentiques, huiles condiments et etc."
+      },
+      {
+        "type": "li",
+        "text": "Produits surgelés: Poissons fumés, viandes, bobolo, eru, placali, attieke et etc."
+      },
+      {
+        "type": "li",
+        "text": "Produits capillaires: mèches, perruques, tissages, crochets, accessoires de cheveux, produits pour les soins de cheveux et etc."
+      },
+      {
+        "type": "h",
+        "text": "Marché Chemin du Roy, votre épicerie à Trois-Rivières !"
+      }
+    ]
+  },
+  "contact": {
+    "title": "Contact",
+    "blocks": [
+      {
+        "type": "h",
+        "text": "Multiple payment methods"
+      },
+      {
+        "type": "p",
+        "text": "Pay securely online, on delivery, or in-store at your convenience."
+      },
+      {
+        "type": "h",
+        "text": "New stocks and sales"
+      },
+      {
+        "type": "p",
+        "text": "New arrivals are in! Explore them now with special offers."
+      },
+      {
+        "type": "h",
+        "text": "Quality assurance"
+      },
+      {
+        "type": "p",
+        "text": "We guarantee the quality of every product you order and services."
+      },
+      {
+        "type": "h",
+        "text": "Free delivery"
+      },
+      {
+        "type": "p",
+        "text": "Get your products at your door step for every offer as from $99"
+      }
+    ]
+  },
+  "conditions-generales": {
+    "title": "Conditions générales",
+    "blocks": [
+      {
+        "type": "h",
+        "text": "Termes et Conditions Générales"
+      },
+      {
+        "type": "p",
+        "text": "En accédant à notre site web et en passant une commande, vous acceptez pleinement et sans réserve les présentes Conditions Générales de Vente. Nous vous invitons à les lire attentivement."
+      },
+      {
+        "type": "p",
+        "text": "1. Commandes et Processus de Commande"
+      },
+      {
+        "type": "p",
+        "text": "Processus de commande : La sélection de produits et leur ajout au panier ne constituent pas une commande ferme. Une commande n’est considérée comme finale et acceptée par Marché Chemin du Roy qu’après l’envoi d’un courriel de confirmation d’expédition, sauf pour les commandes via whatsapp."
+      },
+      {
+        "type": "p",
+        "text": "Exactitude des informations : Il est de votre responsabilité de fournir une adresse courriel, une adresse de livraison et des informations de facturation exactes et complètes."
+      },
+      {
+        "type": "p",
+        "text": "Prix et disponibilité : Nous nous efforçons de garantir l’exactitude des prix et de la disponibilité des produits affichés. Cependant, des erreurs peuvent survenir. Si un produit commandé n’est pas disponible ou si un prix incorrect est identifié, nous vous en informerons et vous proposerons soit un remboursement, soit l’annulation de cet article de votre commande."
+      },
+      {
+        "type": "p",
+        "text": "2. Prix et Paiement"
+      },
+      {
+        "type": "p",
+        "text": "Devise : Tous les prix sont indiqués en dollars canadiens (CAD)."
+      },
+      {
+        "type": "p",
+        "text": "Taxes : Les prix affichés sont sujets aux taxes de vente applicables au Québec si il y a lieu d’etre (TPS et TVQ), qui seront ajoutées au total final de votre commande."
+      },
+      {
+        "type": "p",
+        "text": "Modes de paiement : Nous acceptons les modes de paiement suivants sur notre site : Carte de crédit/débit (Visa, MasterCard)."
+      },
+      {
+        "type": "p",
+        "text": "Sécurité des paiements : Toutes les transactions sont sécurisées et chiffrées. Les informations de votre carte de crédit ne sont pas stockées sur nos serveurs."
+      },
+      {
+        "type": "p",
+        "text": "3. Livraison"
+      },
+      {
+        "type": "p",
+        "text": "Zones de livraison : Nous livrons actuellement dans la région de Trois-Rivières. Les frais et les délais de livraison varient selon votre emplacement et seront précisés (Frais de livraison), lors du processus de commande."
+      },
+      {
+        "type": "p",
+        "text": "Délais de livraison : Nous traitons les commandes aussi rapidement que possible. Les commandes sont traitées et expédiées dans les 24 à 72h suivant la commande. Les livraisons sont effectuées du lundi au dimanche dans les créneaux horaires sélectionnés."
+      },
+      {
+        "type": "p",
+        "text": "Réception de la commande : Il est de votre responsabilité de vous assurer que quelqu’un est disponible pour recevoir la commande. Un appel sera effectué avant toutes livraisons. La livraison se fait main en main et en cas d’absence, nous retournons la commande au magasin pour que vous puissiez procéder au retrait en magasin. Les frais de livraison sont non remboursables. Le risque de détérioration des produits périssables incombe au client une fois la livraison tentée ou effectuée."
+      },
+      {
+        "type": "p",
+        "text": "4. Politique de Retour et de Remboursement"
+      },
+      {
+        "type": "p",
+        "text": "Étant donné que nous vendons principalement des produits alimentaires périssables, les retours et remboursements ne sont généralement pas acceptés pour des raisons d’hygiène et de sécurité alimentaire."
+      },
+      {
+        "type": "p",
+        "text": "Cependant :"
+      },
+      {
+        "type": "p",
+        "text": "Si un produit est indisponible, nous vous appellerons et par la suite, s’il y a lieu de l’échanger pour un article similaire, nous le ferons. Dans le cas contraire, nous procéderons au remboursement, à cet effet."
+      },
+      {
+        "type": "p",
+        "text": "5. Protection des Données et Vie Privée"
+      },
+      {
+        "type": "p",
+        "text": "Nous respectons votre vie privée. Toutes les informations personnelles que vous nous communiquez sont traitées conformément à notre Politique de Confidentialité, que nous vous encourageons à lire. Nous utilisons vos données uniquement pour traiter votre commande et améliorer votre expérience. Nous ne partageons pas vos données avec des tiers à des fins de marketing sans votre consentement."
+      },
+      {
+        "type": "p",
+        "text": "6. Propriété Intellectuelle"
+      },
+      {
+        "type": "p",
+        "text": "Tous les éléments du site (logos, textes, graphismes) sont et restent la propriété exclusive de Marché Chemin du Roy ou de ses concédants. Toute reproduction ou utilisation sans autorisation écrite préalable est strictement interdite."
+      },
+      {
+        "type": "p",
+        "text": "7. Limitation de Responsabilité"
+      },
+      {
+        "type": "p",
+        "text": "Dans la mesure maximale permise par la loi, la responsabilité de Marché Chemin du Roy ne saurait être étendue aux dommages indirects ou consécutifs résultant de l’utilisation de nos produits ou de notre site web."
+      },
+      {
+        "type": "p",
+        "text": "8. Droit Applicable et Litiges"
+      },
+      {
+        "type": "p",
+        "text": "Ces conditions sont régies par les lois de la province de Québec et du Canada. Tout litige relatif à leur interprétation ou à leur exécution relève de la compétence des tribunaux de la province de Québec."
+      },
+      {
+        "type": "p",
+        "text": "9. Modification des Conditions"
+      },
+      {
+        "type": "p",
+        "text": "Marché Chemin du Roy se réserve le droit de modifier ces Conditions Générales de Vente à tout moment. Les conditions applicables sont celles en vigueur à la date de votre commande."
+      },
+      {
+        "type": "p",
+        "text": "10. Nous Contacter"
+      },
+      {
+        "type": "p",
+        "text": "Pour toute question concernant ces Termes et Conditions, votre commande ou nos services, veuillez nous contacter en utilisant les informations fournies sur notre site web."
+      }
+    ]
+  },
+  "politique-de-confidentialite": {
+    "title": "Politique de confidentialité",
+    "blocks": [
+      {
+        "type": "h",
+        "text": "Politique de Confidentialité"
+      },
+      {
+        "type": "p",
+        "text": "Chez Marché Chemin du Roy, nous nous engageons à protéger votre vie privée. Cette politique explique comment nous collectons, utilisons et protégeons vos informations personnelles."
+      },
+      {
+        "type": "p",
+        "text": "1. Informations que nous collectons"
+      },
+      {
+        "type": "p",
+        "text": "Nous collectons les informations suivantes :"
+      },
+      {
+        "type": "li",
+        "text": "Informations de identification (nom, prénom)"
+      },
+      {
+        "type": "li",
+        "text": "Coordonnées (adresse, email, téléphone)"
+      },
+      {
+        "type": "li",
+        "text": "Informations de paiement (traitées de manière sécurisée)"
+      },
+      {
+        "type": "li",
+        "text": "Données de navigation (adresse IP, cookies)"
+      },
+      {
+        "type": "li",
+        "text": "Historique des commandes"
+      },
+      {
+        "type": "p",
+        "text": "2. Utilisation de vos informations"
+      },
+      {
+        "type": "p",
+        "text": "Vos données sont utilisées pour :"
+      },
+      {
+        "type": "li",
+        "text": "Traiter et livrer vos commandes"
+      },
+      {
+        "type": "li",
+        "text": "Vous envoyer des confirmations de commande"
+      },
+      {
+        "type": "li",
+        "text": "Gérer votre compte client"
+      },
+      {
+        "type": "li",
+        "text": "Améliorer nos services"
+      },
+      {
+        "type": "li",
+        "text": "Vous informer des promotions (avec votre consentement)"
+      },
+      {
+        "type": "p",
+        "text": "3. Partage des informations"
+      },
+      {
+        "type": "p",
+        "text": "Nous ne vendons ni ne louons vos informations personnelles. Nous pouvons partager vos données avec :"
+      },
+      {
+        "type": "li",
+        "text": "Nos prestataires de livraison"
+      },
+      {
+        "type": "li",
+        "text": "Nos processeurs de paiement"
+      },
+      {
+        "type": "li",
+        "text": "Les autorités légales si requis par la loi"
+      },
+      {
+        "type": "p",
+        "text": "4. Conservation des données"
+      },
+      {
+        "type": "p",
+        "text": "Nous conservons vos données pendant :"
+      },
+      {
+        "type": "li",
+        "text": "3 ans pour les comptes inactifs"
+      },
+      {
+        "type": "li",
+        "text": "10 ans pour les données comptables (conformément à la loi)"
+      },
+      {
+        "type": "li",
+        "text": "Jusqu’à votre désinscription pour les emails marketing"
+      },
+      {
+        "type": "p",
+        "text": "5. Vos droits"
+      },
+      {
+        "type": "p",
+        "text": "Conformément au RGPD et à la Loi sur la protection des renseignements personnels, vous avez le droit :"
+      },
+      {
+        "type": "li",
+        "text": "D’accéder à vos données"
+      },
+      {
+        "type": "li",
+        "text": "De rectifier vos informations"
+      },
+      {
+        "type": "li",
+        "text": "De supprimer votre compte"
+      },
+      {
+        "type": "li",
+        "text": "De vous opposer au traitement"
+      },
+      {
+        "type": "li",
+        "text": "À la portabilité des données"
+      },
+      {
+        "type": "li",
+        "text": "De retirer votre consentement"
+      },
+      {
+        "type": "p",
+        "text": "6. Cookies"
+      },
+      {
+        "type": "p",
+        "text": "Notre site utilise des cookies pour :"
+      },
+      {
+        "type": "li",
+        "text": "Améliorer votre expérience utilisateur"
+      },
+      {
+        "type": "li",
+        "text": "Mémoriser vos préférences"
+      },
+      {
+        "type": "li",
+        "text": "Analyser le trafic du site"
+      },
+      {
+        "type": "li",
+        "text": "Personnaliser le contenu"
+      },
+      {
+        "type": "p",
+        "text": "Vous pouvez désactiver les cookies dans les paramètres de votre navigateur."
+      },
+      {
+        "type": "p",
+        "text": "7. Sécurité"
+      },
+      {
+        "type": "p",
+        "text": "Nous mettons en œuvre des mesures de sécurité techniques et organisationnelles :"
+      },
+      {
+        "type": "li",
+        "text": "Chiffrement SSL"
+      },
+      {
+        "type": "li",
+        "text": "Paiements sécurisés"
+      },
+      {
+        "type": "li",
+        "text": "Accès restreint aux données"
+      },
+      {
+        "type": "li",
+        "text": "Sauvegardes régulières"
+      },
+      {
+        "type": "p",
+        "text": "8. Contact"
+      },
+      {
+        "type": "p",
+        "text": "Pour toute question concernant cette politique ou vos données :Marché Chemin du Roy65 Rue Notre Dame E, Trois-Rivières+1 819-372-9966"
+      },
+      {
+        "type": "p",
+        "text": "9. Modifications"
+      },
+      {
+        "type": "p",
+        "text": "Nous nous réservons le droit de modifier cette politique. Les changements seront notifiés sur notre site web."
+      },
+      {
+        "type": "p",
+        "text": "Nous vous remercions de votre confiance."
+      }
+    ]
+  },
+  "politique-de-remboursement-et-de-retour": {
+    "title": "Politique de remboursement et de retour",
+    "blocks": [
+      {
+        "type": "h",
+        "text": "Politique de Retour et de Remboursement"
+      },
+      {
+        "type": "p",
+        "text": "Chez Marché Chemin du Roy, nous nous engageons à vous offrir des produits de qualité supérieure. Veuillez lire attentivement notre politique de retour et de remboursement."
+      },
+      {
+        "type": "p",
+        "text": "1. Politique Générale pour les Produits Alimentaires"
+      },
+      {
+        "type": "p",
+        "text": "Étant donné la nature périssable de nos produits, nous n’acceptons généralement pas les retours ni les remboursements pour les produits alimentaires, sauf dans les cas exceptionnels décrits ci-dessous."
+      },
+      {
+        "type": "p",
+        "text": "2. Cas Exceptionnels Acceptés"
+      },
+      {
+        "type": "p",
+        "text": "Tout potentiel retour ou remboursement se fait en magasin."
+      },
+      {
+        "type": "p",
+        "text": "Nous acceptons les retours et remboursements dans les situations suivantes :"
+      },
+      {
+        "type": "p",
+        "text": "Produit Avarié ou Détérioré :"
+      },
+      {
+        "type": "li",
+        "text": "Date de péremption dépassée au moment de la livraison"
+      },
+      {
+        "type": "p",
+        "text": "Erreur de Notre Part :"
+      },
+      {
+        "type": "li",
+        "text": "Produit incorrect livré"
+      },
+      {
+        "type": "li",
+        "text": "Produit indisponible"
+      },
+      {
+        "type": "p",
+        "text": "3. Délais de Réclamation"
+      },
+      {
+        "type": "p",
+        "text": "Toute réclamation doit être formulée dans les 24 heures suivant la réception de votre commande."
+      },
+      {
+        "type": "p",
+        "text": "4. Procédure de Retour"
+      },
+      {
+        "type": "p",
+        "text": "Pour signaler un problème :"
+      },
+      {
+        "type": "li",
+        "text": "Contactez-nous par téléphone au +1 819-372-9966 ou venez en magasin"
+      },
+      {
+        "type": "li",
+        "text": "Fournissez des preuves : apportez nous l’article et expliquez nous le problème."
+      },
+      {
+        "type": "p",
+        "text": "5. Remboursements"
+      },
+      {
+        "type": "p",
+        "text": "Les remboursements sont traités sous 5 à 10 jours ouvrables :"
+      },
+      {
+        "type": "li",
+        "text": "Sur le mode de paiement original"
+      },
+      {
+        "type": "li",
+        "text": "Montant proportionnel aux produits concernés"
+      },
+      {
+        "type": "li",
+        "text": "Déduction des frais de livraison si applicable"
+      },
+      {
+        "type": "p",
+        "text": "6. Contact Service Client"
+      },
+      {
+        "type": "p",
+        "text": "Pour toute question concernant les retours :Marché Chemin du Roy65 Rue Notre Dame E, Trois-Rivières+1 819-372-9966"
+      },
+      {
+        "type": "p",
+        "text": "Heures d’ouverture du magasin : Lundi au samedi, 8h30 à 22h00. Dimanche , 9h à 22h"
+      },
+      {
+        "type": "p",
+        "text": "7. Exceptions"
+      },
+      {
+        "type": "p",
+        "text": "Cette politique ne couvre pas :"
+      },
+      {
+        "type": "li",
+        "text": "Les changements d’avis"
+      },
+      {
+        "type": "li",
+        "text": "Les achats en magasin physique"
+      },
+      {
+        "type": "li",
+        "text": "Les produits entamés ou partiellement consommés"
+      },
+      {
+        "type": "li",
+        "text": "Les dommages dus à une mauvaise conservation par le client"
+      },
+      {
+        "type": "p",
+        "text": "Nous nous réservons le droit de juger chaque cas individuellement et de prendre la décision finale concernant tout retour ou remboursement."
+      }
+    ]
+  },
+  "suivi-de-commande": {
+    "title": "Suivi de commande",
+    "blocks": []
+  }
+}

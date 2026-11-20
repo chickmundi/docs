@@ -1,0 +1,125 @@
+---
+// Shared layout for the shop, category and promotions pages.
+import ProductCard from './ProductCard.astro';
+import Pagination from './Pagination.astro';
+import type { Product, Category } from '../lib/catalog';
+
+interface Props {
+  title: string;
+  intro?: string;
+  items: Product[];
+  total: number;
+  current: number;
+  last: number;
+  base: string;
+  crumbs?: { label: string; href: string }[];
+  subcategories?: Category[];
+  activeSlug?: string;
+  parentHref?: string;
+}
+const { title, intro, items, total, current, last, base, crumbs = [], subcategories = [], activeSlug, parentHref } = Astro.props;
+---
+
+<div class="container">
+  <nav class="breadcrumbs" aria-label="Fil d’Ariane">
+    <a href="/">Accueil</a>
+    {
+      crumbs.map((c) => (
+        <>
+          <span aria-hidden="true">/</span>
+          <a href={c.href}>{c.label}</a>
+        </>
+      ))
+    }
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">{title}</span>
+  </nav>
+
+  <header class="listing__head">
+    <h1>{title}</h1>
+    <p class="listing__count">{total} produit{total > 1 ? 's' : ''}{last > 1 && ` · page ${current} sur ${last}`}</p>
+    {intro && <p class="listing__intro">{intro}</p>}
+  </header>
+
+  {
+    subcategories.length > 0 && (
+      <ul class="chips" aria-label="Sous-catégories">
+        {parentHref && (
+          <li>
+            <a href={parentHref} aria-current={!activeSlug ? 'page' : undefined}>
+              Tout voir
+            </a>
+          </li>
+        )}
+        {subcategories.map((s) => (
+          <li>
+            <a href={`/categorie/${s.slug}/`} aria-current={activeSlug === s.slug ? 'page' : undefined}>
+              {s.name} <span>{s.count}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
+  <div class="grid">
+    {items.map((p, i) => <ProductCard product={p} eager={i < 4} />)}
+  </div>
+
+  <Pagination current={current} last={last} base={base} />
+</div>
+
+<style>
+  .listing__head {
+    margin-bottom: 18px;
+  }
+  .listing__head h1 {
+    margin-bottom: 4px;
+  }
+  .listing__count {
+    color: var(--muted);
+    margin: 0;
+  }
+  .listing__intro {
+    max-width: 70ch;
+    margin: 10px 0 0;
+  }
+  .chips {
+    display: flex;
+    gap: 8px;
+    list-style: none;
+    padding: 0 0 4px;
+    margin: 0 0 20px;
+    overflow-x: auto;
+  }
+  .chips a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 38px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1.5px solid var(--line);
+    background: var(--surface);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+  .chips a span {
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 0.8rem;
+  }
+  .chips a:hover {
+    border-color: var(--brand);
+  }
+  .chips a[aria-current='page'] {
+    background: var(--brand);
+    border-color: var(--brand);
+    color: #fff;
+  }
+  .chips a[aria-current='page'] span {
+    color: #dcd6ff;
+  }
+</style>

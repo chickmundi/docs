@@ -1,0 +1,15 @@
+---
+import type { GetStaticPaths } from 'astro';
+import Base from '../../layouts/Base.astro';
+import Listing from '../../components/Listing.astro';
+import { products, sortDefault, PAGE_SIZE } from '../../lib/catalog';
+
+export const getStaticPaths = (({ paginate }) =>
+  paginate(sortDefault(products), { pageSize: PAGE_SIZE })) satisfies GetStaticPaths;
+
+const { page } = Astro.props;
+---
+
+<Base title={page.currentPage > 1 ? `Boutique, page ${page.currentPage}` : 'Boutique'} description="Tous nos produits : épicerie africaine et québécoise, surgelés, perruques, extensions et soins capillaires.">
+  <Listing title="Tous les produits" items={page.data} total={page.total} current={page.currentPage} last={page.lastPage} base="/boutique" />
+</Base>
