@@ -163,10 +163,10 @@ foreach (['short_description' => 'woocommerce_product_get_short_description', 'd
 }
 
 add_filter('the_content', function ($content) {
-    if (!mcr_is_en() || is_admin() || !in_the_loop() || get_post_type() === 'product') {
+    if (!mcr_is_en() || is_admin() || !in_the_loop()) {
         return $content;
     }
-    $en = mcr_en_meta(get_the_ID(), 'content');
+    $en = mcr_en_meta(get_the_ID(), get_post_type() === 'product' ? 'description' : 'content');
     return $en !== '' ? wpautop($en) : $content;
 }, 5);
 
@@ -304,3 +304,13 @@ add_filter('woocommerce_gateway_description', function ($desc, $id) {
     }
     return $desc;
 }, 10, 2);
+
+// Product page short description (the template reads the post excerpt directly).
+add_filter('woocommerce_short_description', function ($excerpt) {
+    if (!mcr_is_en() || is_admin()) {
+        return $excerpt;
+    }
+    $id = get_the_ID();
+    $en = $id ? mcr_en_meta((int) $id, 'short_description') : '';
+    return $en !== '' ? $en : $excerpt;
+}, 5);
