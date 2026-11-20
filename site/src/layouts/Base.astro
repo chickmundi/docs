@@ -31,6 +31,7 @@ const year = new Date().getFullYear();
     <meta property="og:locale" content="fr_CA" />
     {image && <meta property="og:image" content={new URL(image, Astro.site)} />}
     <meta name="theme-color" content="#4a32f0" />
+    {import.meta.env.PUBLIC_PREVIEW && <meta name="robots" content="noindex, nofollow" />}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
