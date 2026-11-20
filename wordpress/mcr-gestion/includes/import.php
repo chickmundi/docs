@@ -395,3 +395,47 @@ add_action('admin_init', function () {
     }
     update_option('mcr_fr_languages_v1', ($core ?: 'core-failed') . ' / ' . $done . ' packs', false);
 });
+
+// Test site only: sell and deliver in Canada (the country field then shows "Canada" only).
+add_action('admin_init', function () {
+    if (!get_option('mcr_import_finished') || get_option('mcr_staging_countries_v1')) {
+        return;
+    }
+    update_option('woocommerce_allowed_countries', 'specific');
+    update_option('woocommerce_specific_allowed_countries', ['CA']);
+    update_option('woocommerce_ship_to_countries', '');
+    update_option('woocommerce_default_country', 'CA:QC');
+    update_option('woocommerce_default_customer_address', 'base');
+    update_option('mcr_staging_countries_v1', 1, false);
+});
+
+
+// Test site only: "pay on delivery or at pickup" so orders can be tested end to end.
+add_action('admin_init', function () {
+    if (!get_option('mcr_import_finished') || get_option('mcr_staging_cod_v1')) {
+        return;
+    }
+    $cod = (array) get_option('woocommerce_cod_settings', []);
+    $cod = array_merge($cod, [
+        'enabled' => 'yes',
+        'title' => 'Payer à la livraison ou au retrait',
+        'description' => 'Payez par carte de débit, crédit ou comptant à la réception de votre commande.',
+        'instructions' => 'Payez à la réception de votre commande, à la livraison ou en magasin.',
+        'enable_for_methods' => [],
+        'enable_for_virtual' => 'yes',
+    ]);
+    update_option('woocommerce_cod_settings', $cod);
+    update_option('mcr_staging_cod_v1', 1, false);
+});
+
+// Test site only: Canadian French price format in the admin (front end is set by language).
+add_action('admin_init', function () {
+    if (!get_option('mcr_import_finished') || get_option('mcr_staging_price_format_v1')) {
+        return;
+    }
+    update_option('woocommerce_currency', 'CAD');
+    update_option('woocommerce_currency_pos', 'right_space');
+    update_option('woocommerce_price_decimal_sep', ',');
+    update_option('woocommerce_price_thousand_sep', ' ');
+    update_option('mcr_staging_price_format_v1', 1, false);
+});

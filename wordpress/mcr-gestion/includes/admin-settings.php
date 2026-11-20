@@ -14,7 +14,7 @@ add_action('admin_menu', function () {
 
 function mcr_settings_tabs(): array
 {
-    return ['store' => 'Commerce', 'hours' => 'Heures du magasin', 'delivery' => 'Livraison', 'pickup' => 'Retrait en magasin', 'announcement' => 'Bandeau d’annonce'];
+    return ['store' => 'Commerce', 'hours' => 'Heures du magasin', 'delivery' => 'Livraison', 'pickup' => 'Retrait en magasin', 'announcement' => 'Bandeau d’annonce', 'home' => 'Page d’accueil'];
 }
 
 add_action('admin_post_mcr_save_settings', function () {
@@ -94,6 +94,40 @@ add_action('admin_post_mcr_save_settings', function () {
             foreach (['instructions_fr', 'instructions_en'] as $k) {
                 $current[$k] = sanitize_textarea_field($in[$k] ?? '');
             }
+            break;
+        case 'home':
+            foreach (['hero_title_fr', 'hero_highlight_fr', 'hero_title_en', 'hero_highlight_en'] as $k) {
+                $current[$k] = sanitize_text_field($in[$k] ?? '');
+            }
+            foreach (['hero_lead_fr', 'hero_lead_en'] as $k) {
+                $current[$k] = sanitize_textarea_field($in[$k] ?? '');
+            }
+            $rows = [];
+            foreach ((array) ($in['sections'] ?? []) as $r) {
+                $type = sanitize_key($r['type'] ?? '');
+                if (!array_key_exists($type, mcr_home_section_types())) {
+                    continue;
+                }
+                $row = ['type' => $type, 'on' => !empty($r['on']), 'pos' => (float) ($r['pos'] ?? 99)];
+                if ($type === 'category') {
+                    $row['slug'] = sanitize_title($r['slug'] ?? '');
+                    if ($row['slug'] === '') {
+                        continue; // empty "new row"
+                    }
+                    if (!get_term_by('slug', $row['slug'], 'product_cat')) {
+                        $errors[] = "La catégorie « {$row['slug']} » n’existe pas.";
+                    }
+                    foreach (['title_fr', 'eyebrow_fr', 'title_en', 'eyebrow_en'] as $k) {
+                        $row[$k] = sanitize_text_field($r[$k] ?? '');
+                    }
+                }
+                $rows[] = $row;
+            }
+            usort($rows, fn($a, $b) => $a['pos'] <=> $b['pos']);
+            $current['sections'] = array_map(function ($r) {
+                unset($r['pos']);
+                return $r;
+            }, $rows);
             break;
         case 'announcement':
             $current['enabled'] = !empty($in['enabled']);
@@ -203,6 +237,40 @@ function mcr_render_settings_page(): void
             $row('Plages horaires', '<label><input type="checkbox" name="mcr[slots_enabled]" value="1" ' . checked($s['slots_enabled'], true, false) . '> Le client choisit une plage de retrait</label> <select name="mcr[slot_minutes]">' . implode('', array_map(fn($m) => '<option value="' . $m . '" ' . selected((int) $s['slot_minutes'], $m, false) . '>' . $m . ' min</option>', [30, 60, 120])) . '</select>');
             $row('Instructions (FR / EN)', '<textarea name="mcr[instructions_fr]" rows="2" class="large-text">' . esc_textarea($s['instructions_fr']) . '</textarea><textarea name="mcr[instructions_en]" rows="2" class="large-text">' . esc_textarea($s['instructions_en']) . '</textarea>');
             break;
+        case 'home':
+            $row('Titre (français)', mcr_input('hero_title_fr', $s['hero_title_fr'], 'text', ['class' => 'large-text']) . '<br>' . mcr_input('hero_highlight_fr', $s['hero_highlight_fr'], 'text', ['class' => 'large-text']), 'Deuxième ligne : partie en couleur.');
+            $row('Titre (anglais)', mcr_input('hero_title_en', $s['hero_title_en'], 'text', ['class' => 'large-text']) . '<br>' . mcr_input('hero_highlight_en', $s['hero_highlight_en'], 'text', ['class' => 'large-text']));
+            $row('Texte d’accueil (français)', '<textarea name="mcr[hero_lead_fr]" rows="3" class="large-text">' . esc_textarea($s['hero_lead_fr']) . '</textarea>', 'Laisser vide pour le texte automatique (avec le nombre de produits).');
+            $row('Texte d’accueil (anglais)', '<textarea name="mcr[hero_lead_en]" rows="3" class="large-text">' . esc_textarea($s['hero_lead_en']) . '</textarea>');
+            echo '</table><h2>Sections de la page</h2><p>Changez l’ordre avec les numéros, décochez pour masquer. Une rangée de catégorie montre les 12 produits les plus récents en stock de cette catégorie.</p>';
+            echo '<table class="widefat striped mcr-home"><thead><tr><th style="width:60px">Ordre</th><th style="width:70px">Afficher</th><th>Section</th><th>Catégorie</th><th>Titre FR / sur-titre FR</th><th>Titre EN / sur-titre EN</th></tr></thead><tbody>';
+            $cats = get_terms(['taxonomy' => 'product_cat', 'hide_empty' => false, 'orderby' => 'name']);
+            $types = mcr_home_section_types();
+            $sections = array_values((array) $s['sections']);
+            for ($i = 0; $i < 3; $i++) {
+                $sections[] = ['type' => 'category', 'on' => true, 'slug' => '', 'title_fr' => '', 'eyebrow_fr' => '', 'title_en' => '', 'eyebrow_en' => '', 'new' => true];
+            }
+            foreach ($sections as $i => $sec) {
+                $n = "mcr[sections][{$i}]";
+                echo '<tr><td><input type="number" step="1" name="' . $n . '[pos]" value="' . esc_attr(($i + 1) * 10) . '" class="small-text"><input type="hidden" name="' . $n . '[type]" value="' . esc_attr($sec['type']) . '"></td>';
+                echo '<td><input type="checkbox" name="' . $n . '[on]" value="1" ' . checked(!empty($sec['on']), true, false) . '></td>';
+                echo '<td>' . esc_html(!empty($sec['new']) ? 'Nouvelle rangée de catégorie' : $types[$sec['type']]) . '</td>';
+                if ($sec['type'] === 'category') {
+                    echo '<td><select name="' . $n . '[slug]"><option value="">' . (!empty($sec['new']) ? '— choisir —' : '— retirer —') . '</option>';
+                    foreach ($cats as $c) {
+                        printf('<option value="%s"%s>%s</option>', esc_attr($c->slug), selected($sec['slug'], $c->slug, false), esc_html(($c->parent ? '— ' : '') . $c->name));
+                    }
+                    echo '</select></td>';
+                    foreach (['fr', 'en'] as $l) {
+                        echo '<td><input type="text" name="' . $n . '[title_' . $l . ']" value="' . esc_attr($sec['title_' . $l]) . '" placeholder="Nom de la catégorie" style="width:100%"><br><input type="text" name="' . $n . '[eyebrow_' . $l . ']" value="' . esc_attr($sec['eyebrow_' . $l]) . '" placeholder="Sur-titre (facultatif)" style="width:100%"></td>';
+                    }
+                } else {
+                    echo '<td colspan="3"></td>';
+                }
+                echo '</tr>';
+            }
+            echo '</tbody>';
+            break;
         case 'announcement':
             $row('Bandeau', '<label><input type="checkbox" name="mcr[enabled]" value="1" ' . checked($s['enabled'], true, false) . '> Afficher en haut du site</label>');
             $row('Texte (français)', mcr_input('text_fr', $s['text_fr'], 'text', ['class' => 'large-text']));
@@ -259,3 +327,16 @@ add_action('wp_dashboard_setup', function () {
         echo '</ul><p><a href="' . esc_url(admin_url('admin.php?page=mcr-expiry')) . '">Voir tous les lots</a></p>';
     });
 });
+
+function mcr_home_section_types(): array
+{
+    return [
+        'categories' => 'Magasiner par catégorie (tuiles)',
+        'promos' => 'Promotions',
+        'new' => 'Nouveautés',
+        'split' => 'Deux bannières (épices / soins capillaires)',
+        'category' => 'Rangée de catégorie',
+        'visit' => 'Venez nous voir (adresse et heures)',
+    ];
+}
+

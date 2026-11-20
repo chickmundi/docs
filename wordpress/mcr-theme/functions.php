@@ -4,7 +4,7 @@
  */
 defined('ABSPATH') || exit;
 
-define('MCRT_VERSION', '0.1.0');
+define('MCRT_VERSION', '0.2.0');
 define('MCRT_DIR', get_template_directory());
 define('MCRT_URL', get_template_directory_uri());
 
@@ -253,6 +253,40 @@ add_action('woocommerce_after_add_to_cart_form', function () {
         esc_html(mcr_t('Commander via WhatsApp'))
     );
 }, 5);
+
+/** Whole-cart order on WhatsApp: the message lists every item, the subtotal and asks for delivery or pickup. */
+add_action('woocommerce_proceed_to_checkout', function () {
+    if (!mcrt_has_whatsapp() || !WC()->cart || WC()->cart->is_empty()) {
+        return;
+    }
+    $en = function_exists('mcr_is_en') && mcr_is_en();
+    $lines = [$en ? 'Hello, I would like to order:' : 'Bonjour, je souhaite commander :', ''];
+    foreach (WC()->cart->get_cart() as $item) {
+        $p = $item['data'];
+        $opts = [];
+        foreach ((array) ($item['variation'] ?? []) as $k => $v) {
+            if ($v !== '') {
+                $opts[] = wc_attribute_label(str_replace('attribute_', '', $k), $p) . ' : ' . $v;
+            }
+        }
+        $total = wp_strip_all_tags(WC()->cart->get_product_subtotal($p, $item['quantity']));
+        $lines[] = sprintf('%d × %s%s : %s', $item['quantity'], $p->get_name(), $opts ? ' (' . implode(', ', $opts) . ')' : '', html_entity_decode($total));
+    }
+    $lines[] = '';
+    $lines[] = ($en ? 'Subtotal: ' : 'Sous-total : ') . html_entity_decode(wp_strip_all_tags(WC()->cart->get_cart_subtotal()));
+    $lines[] = '';
+    $lines[] = $en ? 'Delivery or in-store pickup: ' : 'Livraison ou retrait en magasin : ';
+    $lines[] = $en ? 'Name: ' : 'Nom : ';
+    $lines[] = $en ? 'Address (for delivery): ' : 'Adresse (pour la livraison) : ';
+    $url = mcrt_whatsapp_link(implode("\n", $lines));
+    printf(
+        '<a class="btn btn--wa cart__wa" href="%s" target="_blank" rel="noopener">%s %s</a><p class="cart__wa-note">%s</p>',
+        esc_url($url),
+        mcr_icon('whatsapp', 20),
+        esc_html(mcr_t('Commander via WhatsApp')),
+        esc_html($en ? 'We confirm the total and delivery fee with you on WhatsApp.' : 'Nous confirmons avec vous le total et les frais de livraison sur WhatsApp.')
+    );
+}, 30);
 
 function mcrt_has_whatsapp(): bool
 {

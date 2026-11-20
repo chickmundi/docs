@@ -290,3 +290,17 @@ foreach (['product_cat', 'mcr_department'] as $tax) {
         });
     }
 }
+
+// English title for the "pay on delivery or at pickup" option.
+add_filter('woocommerce_gateway_title', function ($title, $id) {
+    if ($id === 'cod' && !is_admin() && mcr_is_en()) {
+        return 'Pay on delivery or at pickup';
+    }
+    return $title;
+}, 10, 2);
+add_filter('woocommerce_gateway_description', function ($desc, $id) {
+    if ($id === 'cod' && !is_admin() && mcr_is_en()) {
+        return 'Pay by debit, credit or cash when you receive your order.';
+    }
+    return $desc;
+}, 10, 2);

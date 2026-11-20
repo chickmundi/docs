@@ -2440,7 +2440,7 @@ span.onsale { position: absolute; top: 14px; left: 14px; z-index: 2; padding: 3p
   .shop_table_responsive td.product-thumbnail::before,
   .shop_table_responsive td.actions::before { content: none; }
 }
-.woocommerce-checkout { display: grid; gap: 24px; }
+form.woocommerce-checkout { display: grid; gap: 24px; }
 @media (min-width: 960px) {
   form.woocommerce-checkout { grid-template-columns: minmax(0, 1.3fr) minmax(340px, 1fr); align-items: start; }
   form.woocommerce-checkout #order_review_heading,
@@ -2499,3 +2499,16 @@ span.onsale { position: absolute; top: 14px; left: 14px; z-index: 2; padding: 3p
 .screen-reader-text:focus { position: static !important; width: auto; height: auto; clip: auto; }
 .wc-main { padding-bottom: 24px; }
 .wc-main .breadcrumbs { margin-top: 18px; }
+
+/* ---------- Cart: WhatsApp order ---------- */
+.cart__wa { display: flex; width: 100%; justify-content: center; gap: .5rem; margin-top: .75rem; }
+.cart__wa-note { margin: .4rem 0 0; font-size: .82rem; color: var(--muted, #6b6577); text-align: center; }
+
+/* ---------- Checkout: shipping notes and address suggestions ---------- */
+.mcr-ship-hint { display: block; margin: .15rem 0 .4rem 1.6rem; font-size: .82rem; color: var(--muted, #6b6577); }
+.mcr-ship-note { margin: .5rem 0; padding: .6rem .8rem; border-radius: 10px; background: #fff4e0; color: #7a4d00; font-size: .88rem; }
+.mcr-ac { position: absolute; z-index: 30; left: 0; right: 0; top: 100%; margin: .25rem 0 0; padding: .3rem; list-style: none; background: #fff; border: 1px solid var(--line, #e7e1d6); border-radius: 12px; box-shadow: 0 12px 30px rgba(30, 20, 60, .14); }
+.mcr-ac__item { display: flex; flex-direction: column; padding: .55rem .7rem; border-radius: 8px; cursor: pointer; line-height: 1.3; }
+.mcr-ac__item span { font-size: .82rem; color: var(--muted, #6b6577); }
+.mcr-ac__item:hover, .mcr-ac__item.is-active { background: #f1eefe; }
+.mcr-ac__msg { padding: .55rem .7rem; font-size: .85rem; color: var(--muted, #6b6577); }
