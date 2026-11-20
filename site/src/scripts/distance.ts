@@ -5,7 +5,8 @@ import { store } from '../config';
 
 export type Place = { lat: number; lon: number; label: string };
 
-// Mauricie / Centre-du-Québec area, so "Rue Notre-Dame" doesn't match another city.
+// Mauricie / Centre-du-Québec area. Results here are preferred (so "Rue Notre-Dame" matches
+// Trois-Rivières first), but addresses elsewhere are still found, so they can be refused as too far.
 const VIEWBOX = { west: -73.4, south: 45.9, east: -71.8, north: 46.9 };
 
 async function getJSON(url: string, timeoutMs = 8000) {
@@ -27,7 +28,6 @@ async function nominatim(q: string): Promise<Place | null> {
     countrycodes: 'ca',
     'accept-language': 'fr',
     viewbox: `${VIEWBOX.west},${VIEWBOX.north},${VIEWBOX.east},${VIEWBOX.south}`,
-    bounded: '1',
     q,
   });
   const d = await getJSON(`https://nominatim.openstreetmap.org/search?${p}`);
@@ -40,7 +40,6 @@ async function photon(q: string): Promise<Place | null> {
     limit: '1',
     lat: String(store.location.lat),
     lon: String(store.location.lon),
-    bbox: `${VIEWBOX.west},${VIEWBOX.south},${VIEWBOX.east},${VIEWBOX.north}`,
   });
   const d = await getJSON(`https://photon.komoot.io/api/?${p}`);
   const f = d?.features?.[0];
@@ -51,13 +50,24 @@ async function photon(q: string): Promise<Place | null> {
 }
 
 export async function geocode(q: string): Promise<Place | null> {
-  try {
-    const r = await nominatim(q);
-    if (r) return r;
-  } catch {
-    /* rate limited or down: try the next service */
+  let nominatimAnswered = false;
+  for (let attempt = 0; attempt < 2 && !nominatimAnswered; attempt++) {
+    try {
+      const r = await nominatim(q);
+      if (r) return r;
+      nominatimAnswered = true; // a clean "not found"
+    } catch {
+      // Rate limited (about 1 request per second) or down: wait and retry once, then use the backup.
+      if (attempt === 0) await new Promise((res) => setTimeout(res, 1500));
+    }
   }
-  return photon(q);
+  try {
+    return await photon(q);
+  } catch (err) {
+    // The backup failing after a clean "not found" still means "not found", not "service down".
+    if (nominatimAnswered) return null;
+    throw err;
+  }
 }
 
 /** Road distance in km from the store to a place. */
