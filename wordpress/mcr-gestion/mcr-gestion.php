@@ -41,6 +41,7 @@ add_action('plugins_loaded', function () {
         require_once MCR_DIR . 'includes/admin-settings.php';
         require_once MCR_DIR . 'includes/import.php';
         require_once MCR_DIR . 'includes/reports.php';
+        require_once MCR_DIR . 'includes/english-import.php';
     }
 }, 20);
 
