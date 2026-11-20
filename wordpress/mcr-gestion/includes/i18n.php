@@ -210,9 +210,21 @@ function mcr_t(string $fr): string
     if (!mcr_is_en()) {
         return $fr;
     }
+    return mcr_strings_en()[$fr] ?? $fr;
+}
+
+/** Theme texts in English: built-in list, with the store's own changes on top. */
+function mcr_strings_en(): array
+{
     static $dict = null;
-    $dict ??= require MCR_DIR . 'includes/strings-en.php';
-    return $dict[$fr] ?? $fr;
+    if ($dict === null) {
+        $dict = require MCR_DIR . 'includes/strings-en.php';
+        $custom = get_option('mcr_strings_en', []);
+        if (is_array($custom)) {
+            $dict = array_merge($dict, array_filter($custom, fn($v) => $v !== ''));
+        }
+    }
+    return $dict;
 }
 
 function mcr_e(string $fr): void

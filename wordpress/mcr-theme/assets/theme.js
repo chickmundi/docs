@@ -167,6 +167,51 @@
       .catch(function () { window.location.href = a.href; });
   });
 
+
+  // ---------- Cart: quantity steppers, automatic update ----------
+  var cartTimer = null;
+  function cartUpdateSoon() {
+    clearTimeout(cartTimer);
+    cartTimer = setTimeout(function () {
+      var btn = $('.woocommerce-cart-form [name="update_cart"]');
+      if (!btn) return;
+      btn.disabled = false;
+      btn.removeAttribute('aria-disabled');
+      btn.click();
+    }, 450);
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('.cartx__step');
+    if (!b) return;
+    e.preventDefault();
+    var input = $('input.qty', b.closest('[data-stepper]'));
+    if (!input) return;
+    var min = parseFloat(input.min || '0') || 0;
+    var max = parseFloat(input.max || '') || Infinity;
+    var step = parseFloat(input.step || '1') || 1;
+    var v = (parseFloat(input.value) || 0) + step * parseFloat(b.getAttribute('data-step'));
+    v = Math.max(min, Math.min(max, v));
+    if (String(v) === input.value) return;
+    input.value = v;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    b.closest('.cartx__item').classList.add('is-busy');
+    cartUpdateSoon();
+  });
+  document.addEventListener('change', function (e) {
+    if (e.target.matches && e.target.matches('.cartx input.qty') && e.isTrusted) cartUpdateSoon();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && e.target.matches && e.target.matches('.cartx input.qty')) { e.preventDefault(); cartUpdateSoon(); }
+  });
+
+  // After the cart refreshes, update the item counts in the header and bottom bar.
+  if (window.jQuery) window.jQuery(document.body).on('updated_cart_totals updated_wc_div', function () {
+    var h = $('.cartx__head h2 span');
+    var n = h ? ((h.textContent.match(/\d+/) || [])[0] || '0') : '0';
+    $$('[data-cart-count]').forEach(function (el) { el.textContent = n; el.hidden = n === '0'; });
+    $$('.cartx__item.is-busy').forEach(function (el) { el.classList.remove('is-busy'); });
+  });
+
   // ---------- Order this product on WhatsApp ----------
   var waBtn = $('[data-wa-order]');
   if (waBtn) waBtn.addEventListener('click', function () {

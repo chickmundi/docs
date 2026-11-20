@@ -4,7 +4,7 @@
  */
 defined('ABSPATH') || exit;
 
-define('MCRT_VERSION', '0.2.0');
+define('MCRT_VERSION', '0.3.0');
 define('MCRT_DIR', get_template_directory());
 define('MCRT_URL', get_template_directory_uri());
 
@@ -334,3 +334,23 @@ add_filter('woocommerce_product_tabs', function ($tabs) {
     return $tabs;
 });
 add_filter('woocommerce_output_related_products_args', fn($a) => array_merge($a, ['posts_per_page' => 8, 'columns' => 4]));
+
+// ---------- Cart and checkout ----------
+remove_action('woocommerce_cart_is_empty', 'wc_empty_cart_message', 10);
+remove_action('woocommerce_cart_collaterals', 'woocommerce_cross_sell_display');
+
+// Icons that appear after a cart or checkout refresh must already be on the page.
+add_action('wp_footer', function () {
+    if (function_exists('is_cart') && (is_cart() || is_checkout())) {
+        foreach (['circle-check', 'truck', 'store', 'lock', 'arrow-right', 'trash-2', 'minus', 'plus', 'whatsapp', 'shopping-basket', 'badge-percent', 'map-pin'] as $i) {
+            mcr_icon($i);
+        }
+    }
+}, 1);
+
+add_filter('body_class', function ($classes) {
+    if (function_exists('is_cart') && is_cart() && WC()->cart && !WC()->cart->is_empty()) {
+        $classes[] = 'has-cart-bar';
+    }
+    return $classes;
+});

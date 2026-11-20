@@ -121,6 +121,74 @@
     input.addEventListener('blur', function () { setTimeout(close, 150); });
   }
 
+
+  // ---------- "Livraison ou retrait" cards (drive WooCommerce's shipping choice) ----------
+  var KEY = 'mcr-mode';
+  var desired = null;
+  try { desired = sessionStorage.getItem(KEY); } catch (e) {}
+  function methodInputs() { return Array.prototype.slice.call(document.querySelectorAll('#order_review input[name^="shipping_method"]')); }
+  function isPickup(v) { return /^(mcr_pickup|local_pickup)/.test(v || ''); }
+  function inputFor(mode) {
+    return methodInputs().filter(function (i) { return mode === 'pickup' ? isPickup(i.value) : !isPickup(i.value); })[0] || null;
+  }
+  function labelText(input) {
+    if (!input) return '';
+    var l = input.id ? document.querySelector('label[for="' + input.id + '"]') : null;
+    return (l || input.parentNode).textContent.replace(/\s+/g, ' ').trim();
+  }
+  function setMode(mode, fromUser) {
+    var box = document.querySelector('[data-mcr-mode]');
+    if (!box || !mode) return;
+    desired = mode;
+    try { sessionStorage.setItem(KEY, mode); } catch (e) {}
+    box.querySelectorAll('[data-mode]').forEach(function (b) { b.setAttribute('aria-checked', String(b.getAttribute('data-mode') === mode)); });
+    var hidden = box.querySelector('[data-mode-input]');
+    if (hidden) hidden.value = mode;
+    document.querySelectorAll('.mcr-addr').forEach(function (row) { row.classList.toggle('is-off', mode === 'pickup'); });
+    var input = inputFor(mode);
+    if (input && input.type === 'radio' && !input.checked) {
+      input.checked = true;
+      $(input).trigger('change');
+    }
+    refreshNote();
+    if (fromUser && mode === 'delivery') {
+      var a = document.getElementById('billing_address_1');
+      if (a && !a.value) setTimeout(function () { a.focus(); }, 60);
+    }
+  }
+  function refreshNote() {
+    var box = document.querySelector('[data-mcr-mode]');
+    if (!box) return;
+    var note = box.querySelector('[data-mode-note]');
+    var priceEl = box.querySelector('[data-mode-price]');
+    var del = inputFor('delivery');
+    var reviewNote = document.querySelector('#order_review .mcr-ship-note');
+    if (priceEl && del) {
+      var t = labelText(del).replace(/^(Livraison|Delivery)\s*/, '');
+      priceEl.textContent = t.replace(/^\((.*?)\)\s*:\s*/, '$1 · ').replace(/^(gratuite|free)\s*\((.*?)\)/i, function (m, a, km) { return km + ' · ' + (C.lang === 'en' ? 'free' : 'gratuite'); });
+    }
+    var msg = '';
+    if (desired === 'delivery' && !del) {
+      var street = (document.getElementById('billing_address_1') || {}).value || '';
+      msg = reviewNote ? reviewNote.textContent.trim() : (street ? (C.lang === 'en' ? 'Calculating the delivery price…' : 'Calcul du prix de livraison…') : (C.lang === 'en' ? 'Enter your address to see the delivery price.' : 'Entrez votre adresse pour voir le prix de livraison.'));
+    }
+    note.hidden = !msg;
+    note.textContent = msg;
+    note.classList.toggle('is-warn', !!reviewNote && !del);
+  }
+  $(document.body).on('click', '[data-mcr-mode] [data-mode]', function (e) {
+    e.preventDefault();
+    setMode(this.getAttribute('data-mode'), true);
+  });
+  $(document.body).on('updated_checkout', function () {
+    if (!document.querySelector('[data-mcr-mode]')) return;
+    if (!desired) {
+      var checked = methodInputs().filter(function (i) { return i.type === 'hidden' || i.checked; })[0];
+      desired = checked && isPickup(checked.value) ? 'pickup' : 'delivery';
+    }
+    setMode(desired, false);
+  });
+
   function init() { attach('billing'); attach('shipping'); }
   $(init);
   $(document.body).on('updated_checkout', init);

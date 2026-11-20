@@ -21,6 +21,7 @@ function mcr_default_settings(): array
             'lon' => -72.5258898,
             'facebook' => 'https://www.facebook.com/MarcheCheminduRoy',
             'instagram' => 'https://www.instagram.com/marchechemindu/',
+            'coupons_enabled' => false,
         ],
         // Store opening hours (not delivery hours). 1 = Monday ... 7 = Sunday.
         'hours' => [

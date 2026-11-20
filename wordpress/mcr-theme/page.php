@@ -7,7 +7,7 @@ while (have_posts()) : the_post();
     <div class="container">
       <nav class="breadcrumbs" aria-label="breadcrumb"><a href="<?php echo esc_url(home_url('/')); ?>"><?php mcr_e('Accueil'); ?></a> <?php echo mcr_icon('chevron-right', 14); ?> <span><?php the_title(); ?></span></nav>
       <article class="<?php echo $wc ? 'wc-page' : 'page prose'; ?>">
-        <h1><?php the_title(); ?></h1>
+        <?php if (!(is_cart() && WC()->cart && !WC()->cart->is_empty())) : ?><h1><?php the_title(); ?></h1><?php endif; ?>
         <?php the_content(); ?>
       </article>
     </div>

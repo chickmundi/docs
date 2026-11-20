@@ -15,7 +15,14 @@ function mcr_english_data(): array
 {
     $file = MCR_DIR . 'data/en.json';
     $d = is_readable($file) ? json_decode((string) file_get_contents($file), true) : null;
-    return is_array($d) ? $d + ['products' => [], 'categories' => [], 'pages' => []] : ['products' => [], 'categories' => [], 'pages' => []];
+    $d = is_array($d) ? $d + ['products' => [], 'categories' => [], 'pages' => []] : ['products' => [], 'categories' => [], 'pages' => []];
+    // English written for the information pages that were never translated on the old site.
+    $extra = MCR_DIR . 'data/pages-en.json';
+    $pages = is_readable($extra) ? json_decode((string) file_get_contents($extra), true) : null;
+    if (is_array($pages)) {
+        $d['pages'] = array_merge($pages, (array) $d['pages']);
+    }
+    return $d;
 }
 
 /** Current product ID for an ID from the old site (same number, or remapped by the test-site import). */
@@ -31,7 +38,7 @@ function mcr_current_product_id(int $old_id): int
 function mcr_render_english_page(): void
 {
     $d = mcr_english_data();
-    echo '<div class="wrap"><h1>Traductions anglaises</h1>';
+    echo '<div class="mcr-english"><h2>Importer de l’ancien site</h2>';
     if ($msg = get_transient('mcr_english_result')) {
         delete_transient('mcr_english_result');
         echo '<div class="notice notice-success"><p>' . esc_html($msg) . '</p></div>';
@@ -117,6 +124,6 @@ add_action('admin_post_mcr_import_english', function () {
         $n['skip'],
         $n['missing']
     ), 120);
-    wp_safe_redirect(admin_url('admin.php?page=mcr-english'));
+    wp_safe_redirect(admin_url('admin.php?page=mcr-translate&tab=import'));
     exit;
 });
