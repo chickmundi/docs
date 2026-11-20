@@ -104,3 +104,65 @@ async function lookup(key: string, address: string): Promise<{ km: number; label
   } catch {}
   return result;
 }
+
+// ---------- Address suggestions while typing (Photon, built for search-as-you-type) ----------
+
+export type Suggestion = {
+  street: string; // "4520 Boulevard des Récollets"
+  hasNumber: boolean; // false when only the street is known
+  city: string;
+  postcode: string;
+  lat: number;
+  lon: number;
+  label: string; // one-line display
+};
+
+const strip = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+/** Up to 5 Quebec address suggestions, nearest to the store first. Pass an AbortSignal to cancel stale requests. */
+export async function suggestAddresses(query: string, signal?: AbortSignal): Promise<Suggestion[]> {
+  const p = new URLSearchParams({
+    q: query,
+    limit: '10',
+    lang: 'fr',
+    lat: String(store.location.lat),
+    lon: String(store.location.lon),
+  });
+  p.append('layer', 'house');
+  p.append('layer', 'street');
+  const res = await fetch(`https://photon.komoot.io/api/?${p}`, { signal, headers: { Accept: 'application/json' } });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const d = await res.json();
+  const typedNumber = query.trim().match(/^\d+[a-zA-Z]?/)?.[0];
+  const seen = new Set<string>();
+  const out: Suggestion[] = [];
+  for (const f of d?.features ?? []) {
+    const pr = f.properties ?? {};
+    if (pr.countrycode && pr.countrycode !== 'CA') continue;
+    const streetName = pr.street ?? pr.name;
+    if (!streetName) continue;
+    const number = pr.housenumber ?? '';
+    // A street-only match keeps the number the customer typed (the distance is then approximate).
+    const street = [number || typedNumber || '', streetName].filter(Boolean).join(' ');
+    const city = pr.city ?? pr.town ?? pr.village ?? pr.district ?? pr.county ?? '';
+    const key = strip(`${street}|${city}`);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({
+      street,
+      hasNumber: Boolean(number),
+      city,
+      postcode: pr.postcode ?? '',
+      lon: f.geometry.coordinates[0],
+      lat: f.geometry.coordinates[1],
+      label: [street, city, pr.postcode].filter(Boolean).join(', '),
+    });
+    if (out.length === 5) break;
+  }
+  return out;
+}
+
+/** Road distance for a place already pinned on the map (e.g. a chosen suggestion). */
+export async function distanceForPlace(place: Place): Promise<{ km: number; label: string }> {
+  return { km: await roadDistanceKm(place), label: place.label };
+}

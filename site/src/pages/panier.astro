@@ -42,7 +42,22 @@ import { store } from '../config';
             </fieldset>
 
             <div class="address" data-address>
-              <label class="field">Adresse (numéro et rue)<input class="input" name="street" autocomplete="address-line1" placeholder="ex. 4520 boul. des Récollets" /></label>
+              <div class="field combo">
+                <label for="street">Adresse (numéro et rue)</label>
+                <input
+                  class="input"
+                  id="street"
+                  name="street"
+                  autocomplete="off"
+                  placeholder="Commencez à taper : 4520 boul. des Réc…"
+                  role="combobox"
+                  aria-autocomplete="list"
+                  aria-expanded="false"
+                  aria-controls="street-suggestions"
+                />
+                <ul class="combo__list" id="street-suggestions" role="listbox" aria-label="Adresses suggérées" hidden></ul>
+                <span class="combo__hint" data-suggest-status aria-live="polite"></span>
+              </div>
               <div class="address__row">
                 <label class="field">App. (facultatif)<input class="input" name="unit" autocomplete="address-line2" /></label>
                 <label class="field">Code postal<input class="input" name="postal" autocomplete="postal-code" placeholder="ex. G8T 4B8" /></label>
@@ -72,7 +87,7 @@ import { store } from '../config';
 
 <script>
   import { getCart, setQty, clearCart, cartTotal, money, type CartItem } from '../scripts/cart';
-  import { distanceForAddress } from '../scripts/distance';
+  import { distanceForAddress, distanceForPlace, suggestAddresses, type Suggestion, type Place } from '../scripts/distance';
   import { quoteDelivery, minDeliveryFee } from '../lib/delivery';
   import { store } from '../config';
 
@@ -95,6 +110,8 @@ import { store } from '../config';
     | { state: 'notfound'; address: string }
     | { state: 'error'; address: string };
   let dist: Dist = { state: 'idle' };
+  // Exact map point of a chosen suggestion, valid while the address fields still match it.
+  let pinned: { address: string; place: Place } | null = null;
 
   const addressText = () => {
     const street = field('street').value.trim();
@@ -212,7 +229,7 @@ import { store } from '../config';
     dist = { state: 'loading' };
     render();
     try {
-      const r = await distanceForAddress(address);
+      const r = pinned && pinned.address === address ? await distanceForPlace(pinned.place) : await distanceForAddress(address);
       if (addressText() !== address) return; // address changed meanwhile
       dist = r ? { state: 'ok', km: r.km, label: r.label, address } : { state: 'notfound', address };
     } catch {
@@ -240,8 +257,133 @@ import { store } from '../config';
       $('[data-pickup]').hidden = !isPickup();
       render();
     }
+    // While the suggestion list is open, wait for a choice instead of looking up a half-typed address.
+    if (name === 'street' && !list.hidden) return;
     if (['street', 'city', 'postal'].includes(name) && field('street').value.trim()) calculate();
   });
+
+  // ---------- Address autocomplete ----------
+  const streetInput = field('street');
+  const list = $<HTMLUListElement>('#street-suggestions');
+  const suggestStatus = $('[data-suggest-status]');
+  let suggestions: Suggestion[] = [];
+  let active = -1;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let controller: AbortController | undefined;
+
+  function closeList() {
+    list.hidden = true;
+    list.innerHTML = '';
+    streetInput.setAttribute('aria-expanded', 'false');
+    streetInput.removeAttribute('aria-activedescendant');
+    active = -1;
+  }
+
+  function showSuggestions(items: Suggestion[]) {
+    suggestions = items;
+    active = -1;
+    if (!items.length) {
+      closeList();
+      return;
+    }
+    list.innerHTML = items
+      .map(
+        (s, i) => `<li role="option" id="sugg-${i}" aria-selected="false" data-i="${i}">
+          <strong>${esc(s.street)}</strong><span>${esc([s.city, s.postcode].filter(Boolean).join(', '))}${s.hasNumber ? '' : ' · rue'}</span>
+        </li>`,
+      )
+      .join('');
+    list.hidden = false;
+    streetInput.setAttribute('aria-expanded', 'true');
+    suggestStatus.textContent = `${items.length} adresse${items.length > 1 ? 's' : ''} suggérée${items.length > 1 ? 's' : ''}. Flèches pour choisir, Entrée pour valider.`;
+  }
+
+  function highlight(i: number) {
+    active = (i + suggestions.length) % suggestions.length;
+    list.querySelectorAll('[role=option]').forEach((li, j) => li.setAttribute('aria-selected', String(j === active)));
+    streetInput.setAttribute('aria-activedescendant', `sugg-${active}`);
+    list.querySelector(`#sugg-${active}`)?.scrollIntoView({ block: 'nearest' });
+  }
+
+  function choose(i: number) {
+    const s = suggestions[i];
+    if (!s) return;
+    streetInput.value = s.street;
+    if (s.city) field('city').value = s.city;
+    field('postal').value = s.postcode;
+    closeList();
+    suggestStatus.textContent = '';
+    pinned = { address: addressText(), place: { lat: s.lat, lon: s.lon, label: s.label } };
+    dist = { state: 'idle' };
+    calculate();
+    if (!s.hasNumber) streetInput.focus();
+  }
+
+  async function fetchSuggestions() {
+    const typed = streetInput.value.trim();
+    if (typed.length < 3) {
+      closeList();
+      return;
+    }
+    // Add the city when the customer changed it from the default, to narrow the search.
+    const city = field('city').value.trim();
+    const q = city && city !== store.address.city ? `${typed}, ${city}` : typed;
+    controller?.abort();
+    controller = new AbortController();
+    const signal = controller.signal;
+    try {
+      let items: Suggestion[];
+      try {
+        items = await suggestAddresses(q, signal);
+      } catch (err) {
+        if ((err as Error).name === 'AbortError') throw err;
+        await new Promise((r) => setTimeout(r, 700)); // brief network hiccup or rate limit: retry once
+        if (signal.aborted) return;
+        items = await suggestAddresses(q, signal);
+      }
+      if (streetInput.value.trim() !== typed) return; // stale
+      showSuggestions(items);
+    } catch (err) {
+      if ((err as Error).name !== 'AbortError') closeList(); // suggestions are optional: the address can still be typed fully
+    }
+  }
+
+  streetInput.addEventListener('input', () => {
+    pinned = null;
+    clearTimeout(timer);
+    timer = setTimeout(fetchSuggestions, 300);
+  });
+  streetInput.addEventListener('keydown', (e) => {
+    if (list.hidden || !suggestions.length) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      highlight(active + 1);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      highlight(active - 1);
+    } else if (e.key === 'Enter' && active >= 0) {
+      e.preventDefault();
+      choose(active);
+    } else if (e.key === 'Escape') {
+      closeList();
+    }
+  });
+  // mousedown (not click) so the field keeps focus and no half-typed lookup starts.
+  list.addEventListener('mousedown', (e) => {
+    const li = (e.target as HTMLElement).closest<HTMLElement>('[data-i]');
+    if (!li) return;
+    e.preventDefault();
+    choose(Number(li.dataset.i));
+  });
+  streetInput.addEventListener('blur', () => {
+    setTimeout(() => {
+      if (!list.hidden) {
+        closeList();
+        if (streetInput.value.trim()) calculate();
+      }
+    }, 150);
+  });
+  for (const name of ['city', 'postal']) field(name).addEventListener('input', () => (pinned = null));
   form.addEventListener('input', (e) => {
     const name = (e.target as HTMLInputElement).name;
     if (['street', 'city', 'postal'].includes(name) && dist.state !== 'loading' && dist.state !== 'idle') {
@@ -521,6 +663,53 @@ import { store } from '../config';
     gap: 6px;
     align-items: center;
     font-weight: 600;
+  }
+  .combo {
+    position: relative;
+    display: grid;
+    gap: 6px;
+    font-weight: 600;
+    font-size: 0.92rem;
+  }
+  .combo__list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    margin: 4px 0 0;
+    padding: 6px;
+    list-style: none;
+    background: #fff;
+    border: 1.5px solid var(--brand);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow);
+    max-height: 280px;
+    overflow-y: auto;
+    font-weight: 400;
+  }
+  .combo__list :global([role='option']) {
+    display: grid;
+    gap: 1px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    line-height: 1.3;
+  }
+  .combo__list :global([role='option'] span) {
+    color: var(--muted);
+    font-size: 0.82rem;
+  }
+  .combo__list :global([role='option']:hover),
+  .combo__list :global([role='option'][aria-selected='true']) {
+    background: var(--brand-soft);
+  }
+  .combo__hint {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
   }
   .address {
     display: grid;
