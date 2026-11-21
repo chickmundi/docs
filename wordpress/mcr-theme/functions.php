@@ -4,7 +4,7 @@
  */
 defined('ABSPATH') || exit;
 
-define('MCRT_VERSION', '1.2.5');
+define('MCRT_VERSION', '1.2.6');
 define('MCRT_DIR', get_template_directory());
 define('MCRT_URL', get_template_directory_uri());
 
@@ -315,7 +315,7 @@ function mcrt_has_whatsapp(): bool
     return (string) mcrt_store('whatsapp', '') !== '';
 }
 
-// Delivery price callout, right above the add-to-cart box.
+// Delivery price callout, right after the add-to-cart box and the WhatsApp button.
 add_action('woocommerce_single_product_summary', function () {
     $d = function_exists('mcr_setting') ? mcr_setting('delivery') : [];
     $fees = array_column($d['tiers'] ?? [], 'fee');
@@ -338,7 +338,7 @@ add_action('woocommerce_single_product_summary', function () {
             mcr_icon('arrow-right', 15)
         );
     }
-}, 25);
+}, 35);
 
 add_action('woocommerce_single_product_summary', function () {
     $d = function_exists('mcr_setting') ? mcr_setting('delivery') : [];
