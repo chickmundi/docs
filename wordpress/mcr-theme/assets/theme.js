@@ -347,6 +347,49 @@
     sInput.addEventListener('focus', function () { if (sInput.value.trim().length >= 2 && panel.innerHTML) { panel.hidden = false; sInput.setAttribute('aria-expanded', 'true'); } });
   }
 
+
+  // ---------- Product carousels (arrows; the deals row also slides by itself) ----------
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  $$('[data-carousel]').forEach(function (wrap) {
+    var row = $('.prow', wrap);
+    if (!row) return;
+    var en = C.lang === 'en';
+    var nav = document.createElement('div');
+    nav.className = 'prow-nav';
+    nav.innerHTML = '<button type="button" class="prow-nav__btn" data-dir="-1" aria-label="' + (en ? 'Previous products' : 'Produits précédents') + '"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>' +
+      '<button type="button" class="prow-nav__btn" data-dir="1" aria-label="' + (en ? 'Next products' : 'Produits suivants') + '"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>';
+    wrap.insertBefore(nav, row);
+    var prev = nav.children[0], next = nav.children[1];
+    function step() { var li = row.querySelector('li'); if (!li) return row.clientWidth; var gap = parseFloat(getComputedStyle(row).columnGap) || 14; return li.getBoundingClientRect().width + gap; }
+    function atEnd() { return row.scrollLeft + row.clientWidth >= row.scrollWidth - 4; }
+    function update() {
+      var scrollable = row.scrollWidth > row.clientWidth + 4;
+      nav.hidden = !scrollable;
+      prev.disabled = row.scrollLeft <= 4;
+      next.disabled = atEnd();
+    }
+    function go(dir) { row.scrollBy({ left: dir * step(), behavior: reduceMotion ? 'auto' : 'smooth' }); }
+    nav.addEventListener('click', function (e) { var b = e.target.closest('[data-dir]'); if (!b) return; pause(); go(+b.getAttribute('data-dir')); });
+    row.addEventListener('scroll', function () { window.requestAnimationFrame(update); }, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+
+    // Auto-slide (deals): one card every 3.5 s, back to the start at the end.
+    if (!wrap.hasAttribute('data-autoplay') || reduceMotion) return;
+    var timer = null, visible = false, pausedUntil = 0;
+    function pause() { pausedUntil = Date.now() + 8000; }
+    function tick() {
+      if (!visible || document.hidden || Date.now() < pausedUntil || row.matches(':hover') || wrap.contains(document.activeElement)) return;
+      if (atEnd()) row.scrollTo({ left: 0, behavior: 'smooth' }); else go(1);
+    }
+    ['pointerdown', 'touchstart', 'wheel', 'keydown'].forEach(function (ev) { row.addEventListener(ev, pause, { passive: true }); });
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (es) { visible = es[0].isIntersecting; }, { threshold: 0.4 }).observe(row);
+    } else { visible = true; }
+    timer = setInterval(tick, 3500);
+    wrap.classList.add('is-auto');
+  });
+
   // ---------- Order this product on WhatsApp ----------
   var waBtn = $('[data-wa-order]');
   if (waBtn) waBtn.addEventListener('click', function () {

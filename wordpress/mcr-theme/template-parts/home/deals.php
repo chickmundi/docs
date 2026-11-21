@@ -23,7 +23,7 @@ $best = mcrt_discount($products[0]);
         <?php if ($best > 0) : ?><p class="deals__big"><small><?php echo esc_html($en ? 'up to' : 'jusqu’à'); ?></small>-<?php echo (int) $best; ?> %</p><?php endif; ?>
         <a class="btn btn--gold" href="<?php echo esc_url(add_query_arg('promotions', '1', mcr_shop_url())); ?>"><?php echo esc_html(sprintf($en ? 'All %d deals' : 'Les %d promotions', count($ids))); ?> <?php echo mcr_icon('arrow-right', 16); ?></a>
       </div>
-      <?php mcrt_product_row($products, 'prow--scroll deals__row'); ?>
+      <div class="prow-wrap" data-carousel data-autoplay><?php mcrt_product_row($products, 'prow--scroll deals__row'); ?></div>
     </div>
   </div>
 </section>

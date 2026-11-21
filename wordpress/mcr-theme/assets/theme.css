@@ -1338,3 +1338,27 @@ form.woocommerce-checkout > * { min-width: 0; }
 .woocommerce-billing-fields__field-wrapper > * { min-width: 0; }
 .mcr-slots__asap[aria-pressed='true'] strong, .mcr-slots__asap[aria-pressed='true'] small { color: #fff; }
 .mcr-slots__asap[aria-pressed='true'] > span:first-child { background: rgb(255 255 255 / 18%); }
+
+/* Product carousels: small arrows above the row, never over the photos */
+.prow-wrap { position: relative; min-width: 0; }
+.prow-nav { display: flex; justify-content: flex-end; gap: 6px; margin: 0 0 8px; }
+.prow-nav[hidden] { display: none; }
+.prow-nav__btn { display: grid; place-items: center; width: 32px; height: 32px; border: 1.5px solid var(--line-2); border-radius: 50%; background: #fff; color: var(--green-800); transition: background var(--t), opacity var(--t), border-color var(--t); }
+.prow-nav__btn:hover:not(:disabled) { background: var(--sage); border-color: var(--green-300); }
+.prow-nav__btn:disabled { opacity: .35; cursor: default; }
+.section--deals .prow-nav__btn { border-color: rgb(255 255 255 / 35%); background: rgb(255 255 255 / 12%); color: #fff; }
+.section--deals .prow-nav__btn:hover:not(:disabled) { background: rgb(255 255 255 / 22%); }
+.prow--scroll { scroll-behavior: smooth; }
+
+/* Narrow product cards: price never hidden behind the button */
+.pcard { container-type: inline-size; }
+@container (max-width: 215px) {
+  .pcard__foot { gap: 6px; }
+  .pcard__add span { display: none; }
+  .pcard__add, .pcard__add--ghost { width: 38px; height: 38px; padding: 0; justify-content: center; }
+  .pcard__price { font-size: .98rem; }
+}
+@media (max-width: 999px) {
+  .deals .prow-wrap { position: relative; }
+  .deals .prow-nav { position: absolute; right: 0; top: -59px; margin: 0; }
+}
