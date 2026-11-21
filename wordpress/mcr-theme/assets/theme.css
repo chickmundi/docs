@@ -1289,3 +1289,10 @@ form.woocommerce-checkout > * { min-width: 0; }
   .ct-way strong { font-size: 1.02rem; }
   .ct-way__hint { font-size: .8rem; }
 }
+
+/* Product page: smaller name, bigger orange price */
+.product_title { font-size: clamp(1.3rem, 1.1rem + .7vw, 1.75rem); line-height: 1.2; letter-spacing: -.01em; }
+.summary .price, .summary .price > .amount, .summary .price ins, .single_variation .price, .single_variation .price ins { color: #d9631e; }
+.summary .price { font-size: clamp(2rem, 1.6rem + 1.4vw, 2.6rem); line-height: 1.1; }
+.summary .price del { font-size: 1.15rem; color: var(--muted); }
+.single_variation .price { font-size: 1.8rem; font-weight: 800; }
