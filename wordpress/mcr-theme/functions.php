@@ -4,7 +4,7 @@
  */
 defined('ABSPATH') || exit;
 
-define('MCRT_VERSION', '1.0.6');
+define('MCRT_VERSION', '1.0.9');
 define('MCRT_DIR', get_template_directory());
 define('MCRT_URL', get_template_directory_uri());
 
@@ -315,22 +315,36 @@ function mcrt_has_whatsapp(): bool
     return (string) mcrt_store('whatsapp', '') !== '';
 }
 
+// Delivery price callout, right above the add-to-cart box.
+add_action('woocommerce_single_product_summary', function () {
+    $d = function_exists('mcr_setting') ? mcr_setting('delivery') : [];
+    $fees = array_column($d['tiers'] ?? [], 'fee');
+    if (empty($d['enabled'])) {
+        return;
+    }
+    if ($fees) {
+        $en = mcr_is_en();
+        printf(
+            '<div class="pp-delivery"><span class="pp-delivery__ic">%s</span><p><strong>%s</strong><span>%s</span></p><a class="pp-delivery__link" href="%s">%s %s</a></div>',
+            mcr_icon('truck', 22),
+            esc_html($en
+                ? sprintf('Delivery from %s to %s', mcrt_money(min($fees)), mcrt_money(max($fees)))
+                : sprintf('Livraison de %s à %s', mcrt_money(min($fees)), mcrt_money(max($fees)))),
+            esc_html($en
+                ? sprintf('Depending on distance. Free from %s (within %s km).', mcrt_money((float) $d['free_min_subtotal']), $d['free_radius_km'])
+                : sprintf('Selon la distance. Gratuite dès %s (jusqu’à %s km).', mcrt_money((float) $d['free_min_subtotal']), $d['free_radius_km'])),
+            esc_url(home_url('/livraison/')),
+            esc_html($en ? 'Rates' : 'Tarifs'),
+            mcr_icon('arrow-right', 15)
+        );
+    }
+}, 25);
+
 add_action('woocommerce_single_product_summary', function () {
     $d = function_exists('mcr_setting') ? mcr_setting('delivery') : [];
     $tiers = $d['tiers'] ?? [];
     $fees = array_column($tiers, 'fee');
     echo '<ul class="perks">';
-    if ($fees) {
-        printf(
-            '<li><span class="perk-ic">%s</span><span>%s <a href="%s">%s</a></span></li>',
-            mcr_icon('truck', 18),
-            esc_html(mcr_is_en()
-                ? sprintf('Delivery from %s to %s depending on distance, free from %s (within %s km) ·', mcrt_money(min($fees)), mcrt_money(max($fees)), mcrt_money((float) $d['free_min_subtotal']), $d['free_radius_km'])
-                : sprintf('Livraison de %s à %s selon la distance, gratuite dès %s (jusqu’à %s km) ·', mcrt_money(min($fees)), mcrt_money(max($fees)), mcrt_money((float) $d['free_min_subtotal']), $d['free_radius_km'])),
-            esc_url(home_url('/livraison/')),
-            esc_html(mcr_is_en() ? 'Rates' : 'Tarifs')
-        );
-    }
     printf('<li><span class="perk-ic">%s</span><span>%s</span></li>', mcr_icon('store', 18), esc_html((mcr_is_en() ? 'Free in-store pickup at ' : 'Retrait gratuit en magasin au ') . mcrt_store('street')));
     printf('<li><span class="perk-ic">%s</span><span>%s <a href="%s">%s</a></span></li>', mcr_icon('phone', 18), esc_html(mcr_is_en() ? 'Questions?' : 'Une question ?'), esc_url(mcrt_phone_href()), esc_html((string) mcrt_store('phone')));
     echo '</ul>';
