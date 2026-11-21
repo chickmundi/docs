@@ -32,7 +32,7 @@ function mcr_slot_bookings(): array
     $orders = wc_get_orders([
         'limit' => -1,
         'return' => 'ids',
-        'status' => ['processing', 'on-hold', 'pending', 'mcr-preparing', 'mcr-ready', 'mcr-out', 'completed'],
+        'status' => ['mcr-whatsapp', 'processing', 'on-hold', 'pending', 'mcr-preparing', 'mcr-ready', 'mcr-out', 'completed'],
         'meta_key' => '_mcr_pickup_slot',
         'meta_compare' => '>=',
         'meta_value' => (new DateTimeImmutable('now', mcr_store_tz()))->format('Y-m-d'),

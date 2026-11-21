@@ -390,31 +390,4 @@
     wrap.classList.add('is-auto');
   });
 
-  // ---------- Order this product on WhatsApp ----------
-  var waBtn = $('[data-wa-order]');
-  if (waBtn) waBtn.addEventListener('click', function () {
-    var form = $('form.cart');
-    var qty = form && $('input.qty', form) ? $('input.qty', form).value : '1';
-    var opts = [];
-    var missing = false;
-    if (form) $$('.variations select', form).forEach(function (s) {
-      var label = (s.closest('tr') && $('label', s.closest('tr'))) ? $('label', s.closest('tr')).textContent.trim() : s.name.replace('attribute_', '');
-      if (!s.value) missing = true;
-      else opts.push(label + ' : ' + s.options[s.selectedIndex].text);
-    });
-    if (missing) { toast(C.lang === 'en' ? 'Choose an option first.' : 'Choisissez une option avant de commander.'); return; }
-    var priceEl = form && $('.single_variation .price .amount, .single_variation .price ins .amount', form);
-    var price = priceEl ? priceEl.textContent.trim() : '';
-    var en = C.lang === 'en';
-    var lines = [
-      en ? 'Hello, I would like to order:' : 'Bonjour, je souhaite commander :',
-      '',
-      qty + ' × ' + waBtn.getAttribute('data-name') + (opts.length ? ' (' + opts.join(', ') + ')' : '') + (price ? ' : ' + price : ''),
-      waBtn.getAttribute('data-url'),
-      '',
-      en ? 'Delivery or in-store pickup: ' : 'Livraison ou retrait en magasin : ',
-      en ? 'My address: ' : 'Mon adresse : ',
-    ];
-    window.open('https://wa.me/' + waBtn.getAttribute('data-wa-number') + '?text=' + encodeURIComponent(lines.join('\n')), '_blank', 'noopener');
-  });
 })();

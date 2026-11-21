@@ -40,6 +40,7 @@ add_action('admin_post_mcr_save_settings', function () {
                 $current[$k] = (float) str_replace(',', '.', (string) ($in[$k] ?? $current[$k]));
             }
             $current['coupons_enabled'] = !empty($in['coupons_enabled']);
+            $current['wa_expire_hours'] = max(0, min(720, (int) ($in['wa_expire_hours'] ?? 48)));
             break;
         case 'hours':
             foreach (MCR_DAYS as $d => $_) {
@@ -209,6 +210,7 @@ function mcr_render_settings_page(): void
             $row('Facebook', mcr_input('facebook', $s['facebook'], 'url'));
             $row('Instagram', mcr_input('instagram', $s['instagram'], 'url'));
             $row('Codes promo', '<label><input type="checkbox" name="mcr[coupons_enabled]" value="1" ' . checked(!empty($s['coupons_enabled']), true, false) . '> Accepter les codes promo au panier et à la caisse</label>', 'Désactivé : le champ « Code promo » n’apparaît plus et aucun code n’est accepté.');
+            $row('Commandes WhatsApp', '<label><input type="number" min="0" max="720" step="1" class="small-text" name="mcr[wa_expire_hours]" value="' . esc_attr((string) ($s['wa_expire_hours'] ?? 48)) . '"> heures</label>', 'Une commande WhatsApp qui n’est pas confirmée dans ce délai est annulée automatiquement. 0 = jamais.');
             break;
         case 'hours':
             echo '<tr><td colspan="2"><p class="description">Heures d’ouverture du magasin. Les heures de livraison se règlent dans l’onglet Livraison.</p></td></tr>';

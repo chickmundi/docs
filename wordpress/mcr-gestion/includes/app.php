@@ -203,6 +203,9 @@ function mcr_app_order_data(WC_Order $o, bool $full = false): array
 function mcr_app_next_steps(WC_Order $o, string $mode): array
 {
     $s = $o->get_status();
+    if ($s === 'mcr-whatsapp') {
+        return [['status' => 'processing', 'label' => 'Confirmer la commande'], ['status' => 'cancelled', 'label' => 'Annuler']];
+    }
     $labels = ['mcr-preparing' => 'En préparation', 'mcr-ready' => 'Prête au retrait', 'mcr-out' => 'En livraison', 'completed' => $mode === 'pickup' ? 'Récupérée (terminée)' : 'Livrée (terminée)'];
     $next = [];
     if (in_array($s, ['processing', 'on-hold', 'pending'], true)) {
@@ -217,7 +220,7 @@ function mcr_app_next_steps(WC_Order $o, string $mode): array
     return array_map(fn($st) => ['status' => $st, 'label' => $labels[$st]], array_values(array_unique($next)));
 }
 
-const MCR_APP_OPEN = ['processing', 'on-hold', 'mcr-preparing', 'mcr-ready', 'mcr-out'];
+const MCR_APP_OPEN = ['mcr-whatsapp', 'processing', 'on-hold', 'mcr-preparing', 'mcr-ready', 'mcr-out'];
 
 add_action('rest_api_init', function () {
     $perm = fn() => mcr_app_can();
@@ -390,9 +393,9 @@ function mcr_push_order(WC_Order $o, string $event): void
     $total = html_entity_decode(wp_strip_all_tags(wc_price($o->get_total())));
     $name = trim($o->get_billing_first_name() . ' ' . $o->get_billing_last_name());
     if ($event === 'new') {
-        $title = sprintf('🛒 Nouvelle commande n° %s : %s', $o->get_order_number(), $total);
+        $title = sprintf($o->has_status('mcr-whatsapp') ? '💬 Commande WhatsApp n° %s : %s' : '🛒 Nouvelle commande n° %s : %s', $o->get_order_number(), $total);
         $slot = function_exists('mcr_order_slot_text') ? mcr_order_slot_text($o, false) : '';
-        $body = sprintf('%s · %s · %d article%s · %s%s', $name ?: 'Client', $mode === 'pickup' ? ($slot ? 'Retrait ' . $slot : 'Retrait en magasin') : 'Livraison', $o->get_item_count(), $o->get_item_count() > 1 ? 's' : '', mcr_app_is_paid($o) ? 'payée' : 'à encaisser', $o->get_customer_note() ? ' · 📝 note' : '');
+        $body = sprintf('%s · %s · %d article%s · %s%s', $name ?: 'Client', $mode === 'pickup' ? ($slot ? 'Retrait ' . $slot : 'Retrait en magasin') : 'Livraison', $o->get_item_count(), $o->get_item_count() > 1 ? 's' : '', $o->has_status('mcr-whatsapp') ? 'à confirmer sur WhatsApp' : (mcr_app_is_paid($o) ? 'payée' : 'à encaisser'), $o->get_customer_note() ? ' · 📝 note' : '');
     } else {
         $title = sprintf('❌ Commande n° %s annulée', $o->get_order_number());
         $body = sprintf('%s · %s', $name ?: 'Client', $total);

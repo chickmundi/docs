@@ -4,7 +4,7 @@
   var C = window.MCR_APP || {};
   var app = document.getElementById('app');
   var state = { tab: 'open', data: null, order: null, loading: false, seen: load('mcr-seen', {}), pushOn: false };
-  var STATUS_COLORS = { processing: 'blue', 'on-hold': 'amber', 'mcr-preparing': 'amber', 'mcr-ready': 'green', 'mcr-out': 'violet', completed: 'grey', cancelled: 'red', refunded: 'red', failed: 'red', pending: 'grey' };
+  var STATUS_COLORS = { 'mcr-whatsapp': 'green', processing: 'blue', 'on-hold': 'amber', 'mcr-preparing': 'amber', 'mcr-ready': 'green', 'mcr-out': 'violet', completed: 'grey', cancelled: 'red', refunded: 'red', failed: 'red', pending: 'grey' };
 
   function load(k, d) { try { return JSON.parse(localStorage.getItem(k)) || d; } catch (e) { return d; } }
   function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
@@ -126,7 +126,7 @@
     if (!silent) renderLoading();
     return api('orders?tab=' + state.tab).then(function (d) {
       if (d.nonce) C.nonce = d.nonce;
-      var ids = d.orders.filter(function (o) { return o.status === 'processing' || o.status === 'on-hold'; }).map(function (o) { return o.id; });
+      var ids = d.orders.filter(function (o) { return o.status === 'processing' || o.status === 'on-hold' || o.status === 'mcr-whatsapp'; }).map(function (o) { return o.id; });
       if (lastOpenIds && state.tab === 'open' && ids.some(function (id) { return lastOpenIds.indexOf(id) === -1; })) chime();
       if (state.tab === 'open') lastOpenIds = ids;
       // First use on this phone: what is already there is not "new".
@@ -187,7 +187,7 @@
     var d = state.data || { orders: [], open: 0, today: { count: 0, total: '' } };
     var tabs = [['open', 'À traiter' + (d.open ? ' · ' + d.open : '')], ['done', 'Terminées'], ['all', 'Toutes']];
     var list = d.orders.length ? d.orders.map(function (o) {
-      var fresh = (o.status === 'processing' || o.status === 'on-hold') && !state.seen[o.id];
+      var fresh = (o.status === 'processing' || o.status === 'on-hold' || o.status === 'mcr-whatsapp') && !state.seen[o.id];
       return '<li><button class="card' + (fresh ? ' is-new' : '') + '" data-order="' + o.id + '">' +
         '<span class="card__top"><strong>n° ' + esc(o.number) + '</strong>' + chip(o) + '<span class="card__ago">' + ago(o.date) + '</span></span>' +
         '<span class="card__mid"><span class="card__name">' + esc(o.name || 'Client') + '</span><span class="card__total">' + esc(o.total_label) + '</span></span>' +
