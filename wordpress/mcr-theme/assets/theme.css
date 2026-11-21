@@ -1393,3 +1393,17 @@ form.woocommerce-checkout > * { min-width: 0; }
   .cats > li.is-wide-6 > .cat .cat__name { align-self: end; font-size: 1.1rem; }
   .cats > li.is-wide-6 > .cat .cat__n { align-self: start; }
 }
+
+/* Hero picture on phones: whole disc, bigger centred basket, balanced side items */
+@media (max-width: 759px) {
+  .hero__main { padding-bottom: 26px; }
+  .hero__art { width: 100%; max-width: 310px; aspect-ratio: 1; margin: 6px auto 0; }
+  .hero__disc { inset: 7%; }
+  .hero__img--a { width: 72%; left: 14%; top: 17%; }
+  .hero__img--b { width: 38%; left: -2%; bottom: 2%; top: auto; }
+  .hero__img--c { width: 34%; right: -1%; bottom: 4%; top: auto; }
+  .hero__tag { width: 70px; height: 70px; right: 2%; top: 3%; }
+  .hero__tag strong { font-size: 1.15rem; }
+  .hero__tag small { font-size: .6rem; }
+}
+@media (max-width: 380px) { .hero__art { max-width: 270px; } }
