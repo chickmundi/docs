@@ -1595,3 +1595,7 @@ html.wa-open { overflow: hidden; }
 .buy__wa-row--solo { margin-top: 6px; }
 .buy__wa-row--solo .buy__share { flex: 1 1 auto; }
 @media (max-width: 380px) { .buy__share { padding: 0 14px; } .buy__share span { display: none; } }
+
+/* Footer credit */
+.footer__credit a { color: var(--gold-300, #f3d48a); font-weight: 700; text-decoration: none; }
+.footer__credit a:hover, .footer__credit a:focus-visible { text-decoration: underline; }

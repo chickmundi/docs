@@ -57,6 +57,7 @@ $shop_cats = array_slice(array_values(array_filter(mcr_top_categories(), fn($c) 
   </div>
   <div class="container footer__bottom">
     <p>© <?php echo esc_html(gmdate('Y') . ' ' . mcrt_store('name', 'Marché Chemin-du-Roy')); ?>. <?php mcr_e('Tous droits réservés.'); ?></p>
+    <p class="footer__credit"><?php echo esc_html(mcr_is_en() ? 'Designed by' : 'Conçu par'); ?> <a href="https://chickservice.com" target="_blank" rel="noopener">CHICK Service</a></p>
     <p><?php mcr_e('Prix en dollars canadiens, taxes en sus s’il y a lieu.'); ?></p>
     <p class="footer__lang"><a href="<?php echo esc_url(mcr_switch_url('fr')); ?>" <?php echo $en ? '' : 'aria-current="true"'; ?>>Français</a><a href="<?php echo esc_url(mcr_switch_url('en')); ?>" <?php echo $en ? 'aria-current="true"' : ''; ?>>English</a></p>
   </div>
