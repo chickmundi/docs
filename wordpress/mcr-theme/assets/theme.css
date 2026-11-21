@@ -1585,3 +1585,13 @@ html.wa-open { overflow: hidden; }
 .mcr-freebar.is-done { background: var(--sage); border-color: var(--green-300, #9cc8ad); }
 .mcr-freebar.is-done .mcr-freebar__track span { background: var(--green-500, #2f8a5b); }
 .mcr-freebar[hidden] { display: none; }
+
+/* ---------- Product page: order on WhatsApp + share on WhatsApp (darker green) ---------- */
+.buy__wa-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.buy__wa-row .buy__wa { flex: 1 1 auto; min-width: 0; margin-bottom: 0; }
+.buy__share { flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 50px; padding: 0 18px; background: #075e54; color: #fff !important; border: 0; }
+.buy__share:hover { background: #054d44; color: #fff !important; }
+.buy__share svg { fill: currentColor; stroke: none; }
+.buy__wa-row--solo { margin-top: 6px; }
+.buy__wa-row--solo .buy__share { flex: 1 1 auto; }
+@media (max-width: 380px) { .buy__share { padding: 0 14px; } .buy__share span { display: none; } }

@@ -4,7 +4,7 @@
  */
 defined('ABSPATH') || exit;
 
-define('MCRT_VERSION', '1.3.2');
+define('MCRT_VERSION', '1.3.4');
 define('MCRT_DIR', get_template_directory());
 define('MCRT_URL', get_template_directory_uri());
 
@@ -266,13 +266,87 @@ add_action('woocommerce_after_add_to_cart_form', function () {
     }
     // The form itself (name, phone, delivery or pickup) comes from MCR Gestion.
     printf(
-        '<button type="button" class="btn btn--wa buy__wa" data-wa-sheet="product" data-product-id="%d" data-name="%s" data-price="%s">%s %s</button>',
+        '<div class="buy__wa-row"><button type="button" class="btn btn--wa buy__wa" data-wa-sheet="product" data-product-id="%d" data-name="%s" data-price="%s">%s %s</button>%s</div>',
         $product->get_id(),
         esc_attr($product->get_name()),
         esc_attr((string) wc_get_price_to_display($product)),
         mcr_icon('whatsapp', 20),
-        esc_html(mcr_t('Commander via WhatsApp'))
+        esc_html(mcr_t('Commander via WhatsApp')),
+        mcrt_wa_share_button($product) // phpcs:ignore
     );
+}, 5);
+
+/** "Share on WhatsApp": a friendly message in the visitor's language, with the product, its price and link. */
+function mcrt_wa_share_text(WC_Product $p): string
+{
+    $en = mcr_is_en();
+    $store = (string) mcrt_store('name', 'Marché Chemin-du-Roy');
+    $money = fn($v) => html_entity_decode(wp_strip_all_tags(wc_price((float) $v)));
+    if ($p->is_type('variable')) {
+        $min = (float) $p->get_variation_price('min', true);
+        $max = (float) $p->get_variation_price('max', true);
+        $price = $min !== $max ? ($en ? 'from ' : 'dès ') . $money($min) : $money($min);
+    } else {
+        $price = $money(wc_get_price_to_display($p));
+    }
+    $line = $p->get_name() . ($p->get_price() !== '' ? ' — ' . $price : '');
+    if ($p->is_on_sale() && ($pct = mcrt_discount($p)) > 0) {
+        $line .= ' (' . ($en ? 'on sale ' : 'en promo ') . '-' . $pct . ' %)';
+    }
+    return implode("\n", [
+        sprintf($en ? 'Hi! 👋 Check out this product from %s:' : 'Salut ! 👋 Regarde ce produit du %s :', $store),
+        '',
+        '🛒 ' . $line,
+        $p->get_permalink(),
+    ]);
+}
+
+function mcrt_wa_share_button(WC_Product $p): string
+{
+    $en = mcr_is_en();
+    return sprintf(
+        '<a class="btn buy__share" href="%s" target="_blank" rel="noopener" aria-label="%s">%s <span>%s</span></a>',
+        esc_attr('https://wa.me/?text=' . rawurlencode(mcrt_wa_share_text($p))), // esc_url() would drop the line breaks; the text is fully encoded
+        esc_attr($en ? 'Share this product on WhatsApp' : 'Partager ce produit sur WhatsApp'),
+        mcr_icon('whatsapp', 20),
+        esc_html($en ? 'Share' : 'Partager')
+    );
+}
+
+// Out of stock (no add-to-cart form): the share button alone.
+add_action('woocommerce_single_product_summary', function () {
+    global $product;
+    if ($product instanceof WC_Product && !$product->is_in_stock()) {
+        echo '<div class="buy__wa-row buy__wa-row--solo">' . mcrt_wa_share_button($product) . '</div>'; // phpcs:ignore
+    }
+}, 31);
+
+// Link previews (WhatsApp, Facebook, Messenger): product photo, name, price.
+add_action('wp_head', function () {
+    if (!is_product()) {
+        return;
+    }
+    $p = wc_get_product(get_queried_object_id());
+    if (!$p) {
+        return;
+    }
+    $img = wp_get_attachment_image_src($p->get_image_id(), 'woocommerce_single');
+    $desc = wp_strip_all_tags($p->get_short_description() ?: $p->get_description());
+    $desc = mb_substr(trim(preg_replace('/\s+/', ' ', $desc)), 0, 180);
+    $title = $p->get_name() . ' — ' . html_entity_decode(wp_strip_all_tags(wc_price(wc_get_price_to_display($p))));
+    echo "\n" . '<meta property="og:type" content="product">' . "\n";
+    echo '<meta property="og:site_name" content="' . esc_attr((string) mcrt_store('name', get_bloginfo('name'))) . '">' . "\n";
+    echo '<meta property="og:title" content="' . esc_attr($title) . '">' . "\n";
+    echo '<meta property="og:url" content="' . esc_url($p->get_permalink()) . '">' . "\n";
+    echo '<meta property="og:locale" content="' . (mcr_is_en() ? 'en_CA' : 'fr_CA') . '">' . "\n";
+    if ($desc) {
+        echo '<meta property="og:description" content="' . esc_attr($desc) . '">' . "\n";
+    }
+    if ($img) {
+        echo '<meta property="og:image" content="' . esc_url($img[0]) . '">' . "\n" . '<meta property="og:image:width" content="' . (int) $img[1] . '">' . "\n" . '<meta property="og:image:height" content="' . (int) $img[2] . '">' . "\n";
+    }
+    echo '<meta property="product:price:amount" content="' . esc_attr(wc_format_decimal(wc_get_price_to_display($p), 2)) . '">' . "\n" . '<meta property="product:price:currency" content="' . esc_attr(get_woocommerce_currency()) . '">' . "\n";
+    echo '<meta name="twitter:card" content="summary_large_image">' . "\n";
 }, 5);
 
 /** Whole-cart order on WhatsApp: opens the MCR Gestion form (name, phone, delivery or pickup). */
