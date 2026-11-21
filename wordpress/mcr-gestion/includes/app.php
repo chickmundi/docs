@@ -157,6 +157,7 @@ function mcr_app_order_data(WC_Order $o, bool $full = false): array
         'items_count' => $o->get_item_count(),
         'paid' => mcr_app_is_paid($o),
         'payment' => $o->get_payment_method_title(),
+        'slot' => function_exists('mcr_order_slot_text') ? mcr_order_slot_text($o, false) : '',
     ];
     if ($full) {
         $items = [];
@@ -390,7 +391,8 @@ function mcr_push_order(WC_Order $o, string $event): void
     $name = trim($o->get_billing_first_name() . ' ' . $o->get_billing_last_name());
     if ($event === 'new') {
         $title = sprintf('🛒 Nouvelle commande n° %s : %s', $o->get_order_number(), $total);
-        $body = sprintf('%s · %s · %d article%s · %s%s', $name ?: 'Client', $mode === 'pickup' ? 'Retrait en magasin' : 'Livraison', $o->get_item_count(), $o->get_item_count() > 1 ? 's' : '', mcr_app_is_paid($o) ? 'payée' : 'à encaisser', $o->get_customer_note() ? ' · 📝 note' : '');
+        $slot = function_exists('mcr_order_slot_text') ? mcr_order_slot_text($o, false) : '';
+        $body = sprintf('%s · %s · %d article%s · %s%s', $name ?: 'Client', $mode === 'pickup' ? ($slot ? 'Retrait ' . $slot : 'Retrait en magasin') : 'Livraison', $o->get_item_count(), $o->get_item_count() > 1 ? 's' : '', mcr_app_is_paid($o) ? 'payée' : 'à encaisser', $o->get_customer_note() ? ' · 📝 note' : '');
     } else {
         $title = sprintf('❌ Commande n° %s annulée', $o->get_order_number());
         $body = sprintf('%s · %s', $name ?: 'Client', $total);

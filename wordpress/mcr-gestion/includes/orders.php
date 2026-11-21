@@ -151,6 +151,9 @@ add_action('woocommerce_order_status_changed', function ($order_id, $from, $to, 
             ? ["Hello {$name},", "Your order #{$num} has left the store and is on its way to you.", (string) mcr_setting('delivery', 'instructions_en')]
             : ["Bonjour {$name},", "Votre commande n° {$num} a quitté le magasin et est en route vers vous.", (string) mcr_setting('delivery', 'instructions_fr')];
     }
+    if ($to === 'mcr-ready') {
+        $lines = apply_filters('mcr_ready_email_lines', $lines, $order, $en);
+    }
     $lines[] = $en ? "Questions? Call us at {$store['phone']} or write on WhatsApp." : "Une question ? Appelez-nous au {$store['phone']} ou écrivez-nous sur WhatsApp.";
     $lines[] = $store['name'];
     $mailer = WC()->mailer();

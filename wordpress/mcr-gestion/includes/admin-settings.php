@@ -92,6 +92,8 @@ add_action('admin_post_mcr_save_settings', function () {
             $current['slots_enabled'] = !empty($in['slots_enabled']);
             $current['prep_minutes'] = max(0, (int) ($in['prep_minutes'] ?? 0));
             $current['slot_minutes'] = in_array((int) ($in['slot_minutes'] ?? 60), [30, 60, 120], true) ? (int) $in['slot_minutes'] : 60;
+            $current['days_ahead'] = max(1, min(14, (int) ($in['days_ahead'] ?? 4)));
+            $current['slot_capacity'] = max(0, (int) ($in['slot_capacity'] ?? 0));
             foreach (['instructions_fr', 'instructions_en'] as $k) {
                 $current[$k] = sanitize_textarea_field($in[$k] ?? '');
             }
@@ -249,6 +251,8 @@ function mcr_render_settings_page(): void
             $row('Heures de retrait', '<label><input type="checkbox" name="mcr[use_store_hours]" value="1" ' . checked($s['use_store_hours'], true, false) . '> Mêmes heures que le magasin</label>');
             $row('Préparation (minutes)', mcr_input('prep_minutes', $s['prep_minutes'], 'number', ['min' => '0']));
             $row('Plages horaires', '<label><input type="checkbox" name="mcr[slots_enabled]" value="1" ' . checked($s['slots_enabled'], true, false) . '> Le client choisit une plage de retrait</label> <select name="mcr[slot_minutes]">' . implode('', array_map(fn($m) => '<option value="' . $m . '" ' . selected((int) $s['slot_minutes'], $m, false) . '>' . $m . ' min</option>', [30, 60, 120])) . '</select>');
+            $row('Jours proposés', mcr_input('days_ahead', $s['days_ahead'] ?? 4, 'number', ['min' => '1', 'max' => '14']), 'Nombre de jours d’ouverture proposés au client (aujourd’hui compris). Les plages suivent les heures du magasin (onglet « Heures du magasin ») et commencent après le temps de préparation.');
+            $row('Commandes par plage', mcr_input('slot_capacity', $s['slot_capacity'] ?? 0, 'number', ['min' => '0']), '0 = sans limite. Une plage pleine s’affiche « Complet ».');
             $row('Instructions (FR / EN)', '<textarea name="mcr[instructions_fr]" rows="2" class="large-text">' . esc_textarea($s['instructions_fr']) . '</textarea><textarea name="mcr[instructions_en]" rows="2" class="large-text">' . esc_textarea($s['instructions_en']) . '</textarea>');
             break;
         case 'home':

@@ -1296,3 +1296,26 @@ form.woocommerce-checkout > * { min-width: 0; }
 .summary .price { font-size: clamp(2rem, 1.6rem + 1.4vw, 2.6rem); line-height: 1.1; }
 .summary .price del { font-size: 1.15rem; color: var(--muted); }
 .single_variation .price { font-size: 1.8rem; font-weight: 800; }
+
+/* Pickup time slots */
+.mcr-slots { margin-top: 14px; padding: 16px; border-radius: var(--radius); background: var(--sage-50); border: 1.5px solid #d8e3d5; }
+.mcr-slots.is-missing { border-color: var(--terra-500); box-shadow: 0 0 0 3px rgb(201 107 67 / 15%); }
+.mcr-slots__title { margin: 0 0 10px; font-weight: 800; }
+.mcr-slots__days { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 10px; scrollbar-width: none; }
+.mcr-slots__days::-webkit-scrollbar { display: none; }
+.mcr-slots__day { flex: none; height: 40px; padding: 0 16px; border: 1.5px solid var(--line-2); border-radius: var(--radius-pill); background: #fff; font-weight: 700; font-size: .9rem; white-space: nowrap; }
+.mcr-slots__day[aria-selected='true'] { background: var(--green-700); border-color: var(--green-700); color: #fff; }
+.mcr-slots__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
+.mcr-slots__slot { display: grid; place-items: center; min-height: 48px; padding: 6px 8px; border: 1.5px solid var(--line-2); border-radius: 12px; background: #fff; font-weight: 700; font-size: .9rem; color: var(--ink); transition: border-color .15s, background .15s; }
+.mcr-slots__slot:hover:not(:disabled) { border-color: var(--green-500); }
+.mcr-slots__slot[aria-pressed='true'] { background: var(--green-700); border-color: var(--green-700); color: #fff; box-shadow: 0 0 0 3px rgb(23 75 53 / 18%); }
+.mcr-slots__slot:disabled { opacity: .45; cursor: not-allowed; text-decoration: line-through; }
+.mcr-slots__slot small { font-size: .7rem; font-weight: 600; text-decoration: none; }
+.mcr-slots__chosen { margin: 12px 0 0; padding: 10px 12px; border-radius: 10px; background: #fff; color: var(--green-800); font-weight: 700; }
+.mcr-slots__none { margin: 0; color: var(--terra-700); font-weight: 600; }
+.mcr-slot-banner { display: grid; gap: 2px; margin: 0 0 18px; padding: 16px 18px; border-radius: var(--radius); background: var(--green-700); color: #fff; }
+.mcr-slot-banner strong { color: var(--gold-300); font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; }
+.mcr-slot-banner span { font-size: 1.2rem; font-weight: 800; }
+.mcr-slot-note { padding: 12px 14px; border-radius: 12px; background: var(--sage); }
+.mcr-mode > *, .mcr-slots, .mcr-slots__days, .mcr-slots__grid { min-width: 0; max-width: 100%; }
+.woocommerce-billing-fields__field-wrapper > * { min-width: 0; }

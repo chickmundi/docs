@@ -192,7 +192,7 @@
         '<span class="card__top"><strong>n° ' + esc(o.number) + '</strong>' + chip(o) + '<span class="card__ago">' + ago(o.date) + '</span></span>' +
         '<span class="card__mid"><span class="card__name">' + esc(o.name || 'Client') + '</span><span class="card__total">' + esc(o.total_label) + '</span></span>' +
         '<span class="card__bot"><span class="mode mode--' + esc(o.mode || 'none') + '">' + (o.mode === 'pickup' ? ic('store', 15) + ' Retrait' : o.mode === 'delivery' ? ic('truck', 15) + ' Livraison' : '') + '</span>' +
-        '<span>' + o.items_count + ' article' + (o.items_count > 1 ? 's' : '') + '</span>' + (o.paid ? '<span class="paid">Payée</span>' : '<span class="unpaid">À encaisser</span>') + '</span>' +
+        (o.slot ? '<span class="slot">🕒 ' + esc(o.slot) + '</span>' : '') + '<span>' + o.items_count + ' article' + (o.items_count > 1 ? 's' : '') + '</span>' + (o.paid ? '<span class="paid">Payée</span>' : '<span class="unpaid">À encaisser</span>') + '</span>' +
         (fresh ? '<span class="dot" aria-label="Nouvelle"></span>' : '') + '</button></li>';
     }).join('') : '<li class="empty">' + (state.tab === 'open' ? '🎉 Aucune commande à traiter pour le moment.' : 'Aucune commande.') + '</li>';
     app.innerHTML = header() +
@@ -219,7 +219,7 @@
       (o.next.length ? '<section class="steps">' + o.next.map(function (n, i) { return '<button class="btn ' + (i === 0 ? 'btn--primary' : 'btn--soft') + '" data-status="' + n.status + '">' + esc(n.label) + '</button>'; }).join('') + '</section>' : '') +
       '<section class="box"><div class="box__row"><div><small>Client</small><strong>' + esc(o.name || '—') + '</strong>' + (o.phone ? '<span>' + esc(o.phone) + '</span>' : '') + '</div></div>' +
       '<div class="actions">' + (digits ? '<a class="btn btn--soft" href="tel:' + esc(digits) + '">' + ic('phone', 18) + ' Appeler</a><a class="btn btn--wa" href="' + esc(wa) + '" target="_blank" rel="noopener">' + ic('chat', 18) + ' WhatsApp</a>' : '') + '</div></section>' +
-      '<section class="box"><div class="box__row"><div><small>' + (o.mode === 'pickup' ? 'Retrait en magasin' : 'Livraison') + '</small><strong>' + esc(o.mode === 'pickup' ? 'Le client vient chercher la commande' : (o.address || 'Adresse non indiquée')) + '</strong>' + (o.distance ? '<span>' + esc(o.distance) + ' · ' + esc(o.shipping_total) + '</span>' : '') + '</div>' + (o.mode === 'pickup' ? ic('store', 26) : ic('truck', 26)) + '</div>' +
+      '<section class="box"><div class="box__row"><div><small>' + (o.mode === 'pickup' ? 'Retrait en magasin' : 'Livraison') + '</small><strong>' + esc(o.mode === 'pickup' ? (o.slot ? '🕒 ' + o.slot : 'Le client vient chercher la commande') : (o.address || 'Adresse non indiquée')) + '</strong>' + (o.distance ? '<span>' + esc(o.distance) + ' · ' + esc(o.shipping_total) + '</span>' : '') + '</div>' + (o.mode === 'pickup' ? ic('store', 26) : ic('truck', 26)) + '</div>' +
       (maps ? '<div class="actions"><a class="btn btn--soft" href="' + esc(maps) + '" target="_blank" rel="noopener">' + ic('map', 18) + ' Ouvrir dans Maps</a></div>' : '') + '</section>' +
       (o.note ? '<section class="box box--note">' + ic('note', 20) + '<div><small>Note du client</small><p>' + esc(o.note) + '</p></div></section>' : '') +
       '<section class="box"><small>' + o.items_count + ' article' + (o.items_count > 1 ? 's' : '') + '</small><ul class="items">' + o.items.map(function (it) {

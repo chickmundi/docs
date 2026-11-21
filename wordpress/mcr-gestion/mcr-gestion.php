@@ -2,7 +2,7 @@
 /**
  * Plugin Name: MCR Gestion
  * Description: Fonctions propres au Marché Chemin-du-Roy : français et anglais, livraison selon la distance, retrait en magasin, lots et péremption, attributs épicerie et cheveux, WhatsApp, rapports par département, page d'accueil.
- * Version: 0.4.0
+ * Version: 0.5.0
  * Author: Marché Chemin-du-Roy
  * Text Domain: mcr
  * Requires at least: 6.5
@@ -12,7 +12,7 @@
 
 defined('ABSPATH') || exit;
 
-define('MCR_VERSION', '0.4.0');
+define('MCR_VERSION', '0.5.0');
 define('MCR_FILE', __FILE__);
 define('MCR_DIR', plugin_dir_path(__FILE__));
 define('MCR_URL', plugin_dir_url(__FILE__));
@@ -38,6 +38,7 @@ add_action('plugins_loaded', function () {
     require_once MCR_DIR . 'includes/delivery.php';
     require_once MCR_DIR . 'includes/orders.php';
     require_once MCR_DIR . 'includes/checkout.php';
+    require_once MCR_DIR . 'includes/pickup-slots.php';
     require_once MCR_DIR . 'includes/webpush.php';
     require_once MCR_DIR . 'includes/app.php';
     if (is_admin()) {

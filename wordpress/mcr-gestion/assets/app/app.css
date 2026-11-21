@@ -115,3 +115,4 @@ svg { display: block; flex: none; }
 
 @media (min-width: 720px) { .steps { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+.slot { flex-basis: 100%; order: -1; color: var(--terra); font-weight: 800; }

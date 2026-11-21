@@ -145,6 +145,8 @@
     var hidden = box.querySelector('[data-mode-input]');
     if (hidden) hidden.value = mode;
     document.querySelectorAll('.mcr-addr').forEach(function (row) { row.classList.toggle('is-off', mode === 'pickup'); });
+    var slots = document.querySelector('[data-mcr-slots]');
+    if (slots) slots.hidden = mode !== 'pickup';
     var input = inputFor(mode);
     if (input && input.type === 'radio' && !input.checked) {
       input.checked = true;
@@ -187,6 +189,28 @@
       desired = checked && isPickup(checked.value) ? 'pickup' : 'delivery';
     }
     setMode(desired, false);
+  });
+
+  // ---------- Pickup time slots ----------
+  $(document.body).on('click', '[data-mcr-slots] [data-day]', function () {
+    var box = this.closest('[data-mcr-slots]');
+    var day = this.getAttribute('data-day');
+    box.querySelectorAll('[data-day]').forEach(function (b) { b.setAttribute('aria-selected', String(b.getAttribute('data-day') === day)); });
+    box.querySelectorAll('[data-day-panel]').forEach(function (p) { p.hidden = p.getAttribute('data-day-panel') !== day; });
+  });
+  $(document.body).on('click', '[data-mcr-slots] [data-slot]', function () {
+    var box = this.closest('[data-mcr-slots]');
+    box.querySelectorAll('[data-slot]').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+    this.setAttribute('aria-pressed', 'true');
+    box.querySelector('[data-slot-input]').value = this.getAttribute('data-slot');
+    var chosen = box.querySelector('[data-slot-chosen]');
+    if (chosen) { chosen.hidden = false; chosen.textContent = (C.lang === 'en' ? 'Pickup: ' : 'Retrait : ') + this.getAttribute('data-slot-label'); }
+    box.classList.remove('is-missing');
+  });
+  // Clear reminder if the customer tries to order without a time.
+  $(document.body).on('checkout_error', function () {
+    var box = document.querySelector('[data-mcr-slots]');
+    if (box && !box.hidden && !box.querySelector('[data-slot-input]').value) { box.classList.add('is-missing'); box.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
   });
 
   function init() { attach('billing'); attach('shipping'); }

@@ -123,7 +123,7 @@ add_filter('woocommerce_form_field_mcr_mode', function ($field, $key, $args) {
         <button type="button" class="mcr-mode__opt" role="radio" aria-checked="false" data-mode="pickup">
           <span class="mcr-mode__ic"><?php echo function_exists('mcr_icon') ? mcr_icon('store', 22) : ''; ?></span>
           <span class="mcr-mode__txt"><strong><?php echo esc_html($en ? 'In-store pickup' : 'Retrait en magasin'); ?></strong>
-          <small><?php echo esc_html(($en ? 'Free · ' : 'Gratuit · ') . $store['street']); ?></small></span>
+          <small><?php echo esc_html(($en ? 'Free · ' : 'Gratuit · ') . $store['street'] . (function_exists('mcr_slots_enabled') && mcr_slots_enabled() ? ($en ? ' · choose your time' : ' · choisissez l’heure') : '')); ?></small></span>
         </button>
         <?php endif; ?>
       </div>
