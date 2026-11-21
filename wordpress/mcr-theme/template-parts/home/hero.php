@@ -55,7 +55,7 @@ $shop = mcr_shop_url();
         </span>
         <span class="hside__img"><?php echo mcrt_cat_image('perruques', 'medium', ['loading' => 'eager']); ?></span>
       </a>
-      <a class="hside hside--gold" href="<?php echo esc_url(add_query_arg('promotions', '1', $shop)); ?>">
+      <a class="hside hside--gold" href="<?php echo esc_url(mcrt_promos_url()); ?>">
         <span class="hside__txt">
           <span class="eyebrow"><?php echo esc_html($en ? 'Deals of the week' : 'Promotions de la semaine'); ?></span>
           <strong><?php echo $best > 0 ? esc_html(($en ? 'Up to ' : 'Jusqu’à ') . '-' . $best . ' %') : esc_html($en ? 'Our deals' : 'Nos promotions'); ?></strong>

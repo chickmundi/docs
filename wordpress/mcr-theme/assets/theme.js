@@ -390,4 +390,22 @@
     wrap.classList.add('is-auto');
   });
 
+  // ---------- Live countdowns (only for real sale end dates) ----------
+  var counters = $$('[data-countdown]');
+  if (counters.length) {
+    var cdEn = C.lang === 'en';
+    var cdFmt = function (left) {
+      if (left <= 0) return cdEn ? 'ended' : 'terminée';
+      var d = Math.floor(left / 86400), h = Math.floor(left % 86400 / 3600), m = Math.floor(left % 3600 / 60), s = left % 60;
+      if (d >= 7) return d + (cdEn ? ' days' : ' jours');
+      if (d > 0) return d + (cdEn ? ' d ' : ' j ') + h + ' h ' + (m < 10 ? '0' : '') + m + ' min';
+      return (h ? h + ' h ' : '') + (h && m < 10 ? '0' : '') + m + ' min ' + (s < 10 ? '0' : '') + s + ' s';
+    };
+    var cdTick = function () {
+      var now = Date.now() / 1000;
+      counters.forEach(function (el) { el.textContent = cdFmt(Math.round(+el.getAttribute('data-countdown') - now)); });
+    };
+    cdTick();
+    setInterval(cdTick, 1000);
+  }
 })();

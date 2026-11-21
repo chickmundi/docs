@@ -168,7 +168,10 @@ function mcr_wa_requested_lines(array $in)
             return new WP_Error('empty', 'empty');
         }
         foreach (WC()->cart->get_cart() as $ci) {
-            $lines[] = [$ci['data'], (int) $ci['quantity'], (array) ($ci['variation'] ?? [])];
+            $fresh = wc_get_product($ci['variation_id'] ?: $ci['product_id']);
+            if ($fresh) {
+                $lines[] = [$fresh, (int) $ci['quantity'], (array) ($ci['variation'] ?? [])];
+            }
         }
         return $lines;
     }
@@ -300,6 +303,9 @@ function mcr_wa_create_order(array $in)
     }
     foreach ($lines as [$p, $qty, $variation]) {
         $order->add_product($p, $qty, $variation ? ['variation' => $variation] : []);
+    }
+    if (function_exists('mcr_deals_apply_to_order')) {
+        mcr_deals_apply_to_order($order); // "2 pour 5 $", kits
     }
     $parts = preg_split('/\s+/', $name, 2);
     $user = wp_get_current_user();

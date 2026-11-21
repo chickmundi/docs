@@ -4,7 +4,7 @@
  */
 defined('ABSPATH') || exit;
 
-define('MCRT_VERSION', '1.2.9');
+define('MCRT_VERSION', '1.3.2');
 define('MCRT_DIR', get_template_directory());
 define('MCRT_URL', get_template_directory_uri());
 
@@ -404,3 +404,34 @@ add_filter('body_class', function ($classes) {
     }
     return $classes;
 });
+
+// ---------- Product page: savings, real end date with countdown, deals ----------
+add_action('woocommerce_single_product_summary', function () {
+    global $product;
+    if (!$product instanceof WC_Product) {
+        return;
+    }
+    $en = mcr_is_en();
+    $save = mcrt_saving($product);
+    $end = mcrt_sale_end($product);
+    $deals = function_exists('mcr_product_deals') ? mcr_product_deals($product) : [];
+    if ($save <= 0 && !$deals) {
+        return;
+    }
+    echo '<div class="pp-promo">';
+    if ($save > 0) {
+        echo '<p class="pp-promo__save">' . mcr_icon('badge-percent', 18) . ' ' . wp_kses_post(sprintf($product->is_type('variable') ? ($en ? 'Save up to <strong>%s</strong>' : 'Économisez jusqu’à <strong>%s</strong>') : ($en ? 'You save <strong>%s</strong>' : 'Vous économisez <strong>%s</strong>'), wc_price($save))) . '</p>';
+    }
+    if ($end > time()) {
+        echo '<p class="pp-promo__ends">' . mcr_icon('clock', 16) . ' ' . esc_html($en ? 'Sale ends in' : 'Fin de la promo dans') . ' <strong data-countdown="' . (int) $end . '">' . esc_html(mcrt_end_label($end)) . '</strong> <small>(' . esc_html(wp_date($en ? 'F j' : 'j F', $end, mcrt_tz())) . ')</small></p>';
+    }
+    foreach ($deals as $d) {
+        $kit = $d['type'] === 'bundle';
+        echo '<p class="pp-promo__deal"><span class="badge badge--deal">' . esc_html(mcr_promo_label($d)) . '</span> ' . esc_html($kit ? (mcr_promo_title($d) . ($en ? ': this product is part of a kit.' : ' : ce produit fait partie d’un kit.')) : ($en ? 'Price applied automatically in the cart.' : 'Prix appliqué automatiquement au panier.'));
+        if ($kit) {
+            echo ' <a href="' . esc_url(mcrt_promos_url()) . '#h-bundles">' . esc_html($en ? 'See the kit' : 'Voir le kit') . '</a>';
+        }
+        echo '</p>';
+    }
+    echo '</div>';
+}, 11);

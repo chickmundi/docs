@@ -31,7 +31,7 @@ $shop_cats = array_slice(array_values(array_filter(mcr_top_categories(), fn($c) 
       <h3><?php echo esc_html($en ? 'Shop' : 'Magasiner'); ?></h3>
       <ul class="footer__links">
         <?php foreach ($shop_cats as $c) : ?><li><a href="<?php echo esc_url(get_term_link($c)); ?>"><?php echo esc_html($c->name); ?></a></li><?php endforeach; ?>
-        <li><a href="<?php echo esc_url(add_query_arg('promotions', '1', mcr_shop_url())); ?>"><?php mcr_e('Promotions'); ?></a></li>
+        <li><a href="<?php echo esc_url(mcrt_promos_url()); ?>"><?php mcr_e('Promotions'); ?></a></li>
       </ul>
     </div>
     <div>

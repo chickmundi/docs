@@ -27,6 +27,9 @@ if ($product->is_type('variable')) {
 $reviews = (int) $product->get_review_count();
 $low = $product->managing_stock() && $in_stock && $product->get_stock_quantity() !== null && $product->get_stock_quantity() <= (int) get_option('woocommerce_notify_low_stock_amount', 2);
 $eager = !empty($args['eager']);
+$deal_labels = mcrt_deal_labels($product);
+$end_label = $pct ? mcrt_end_label(mcrt_sale_end($product)) : '';
+$saving = !empty($args['show_saving']) && $pct ? mcrt_saving($product) : 0;
 ?>
 <article class="pcard<?php echo $in_stock ? '' : ' is-out'; ?>" data-reveal>
   <div class="pcard__media">
@@ -35,6 +38,8 @@ $eager = !empty($args['eager']);
     </a>
     <span class="pcard__badges">
       <?php if ($pct > 0) : ?><span class="badge badge--sale">-<?php echo (int) $pct; ?> %</span><?php endif; ?>
+      <?php foreach ($deal_labels as $dl) : ?><span class="badge badge--deal"><?php echo esc_html($dl); ?></span><?php endforeach; ?>
+      <?php if ($end_label) : ?><span class="badge badge--time"><?php echo esc_html($end_label); ?></span><?php endif; ?>
       <?php if ($is_new && !$pct) : ?><span class="badge badge--new"><?php echo esc_html($en ? 'New' : 'Nouveau'); ?></span><?php endif; ?>
       <?php if (!$in_stock) : ?><span class="badge badge--muted"><?php mcr_e('Épuisé'); ?></span><?php endif; ?>
     </span>
@@ -48,6 +53,7 @@ $eager = !empty($args['eager']);
         <span class="stars" style="--r:<?php echo esc_attr($avg / 5 * 100); ?>%"></span><small>(<?php echo (int) $reviews; ?>)</small>
       </p>
     <?php endif; ?>
+    <?php if ($saving > 0) : ?><p class="pcard__save"><?php echo wp_kses_post(sprintf($en ? 'You save %s' : 'Économisez %s', wc_price($saving))); ?></p><?php endif; ?>
     <p class="pcard__meta">
       <?php if ($hint) : ?><span><?php echo esc_html($hint); ?></span><?php elseif ($unit) : ?><span><?php echo esc_html($en ? str_replace('par ', 'per ', $unit) : $unit); ?></span><?php endif; ?>
       <?php if ($low) : ?><span class="pcard__low"><?php echo esc_html(sprintf($en ? 'Only %d left' : 'Plus que %d', $product->get_stock_quantity())); ?></span>

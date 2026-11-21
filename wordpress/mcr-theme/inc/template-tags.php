@@ -245,3 +245,76 @@ function mcrt_area_map(float $radius_km, array $places, string $id = 'map'): str
     <?php
     return (string) ob_get_clean();
 }
+
+// ---------- Promotions ----------
+
+/** Address of the Promotions page (falls back to the shop filter). */
+function mcrt_promos_url(): string
+{
+    return function_exists('mcr_promotions_url') ? mcr_promotions_url() : add_query_arg('promotions', '1', mcr_shop_url());
+}
+
+/** Money saved on a product on sale (largest saving for variable products). */
+function mcrt_saving(WC_Product $p): float
+{
+    if (!$p->is_on_sale()) {
+        return 0.0;
+    }
+    if ($p->is_type('variable')) {
+        $prices = $p->get_variation_prices(true);
+        $best = 0.0;
+        foreach ($prices['regular_price'] as $vid => $reg) {
+            $best = max($best, (float) $reg - (float) ($prices['sale_price'][$vid] ?? $reg));
+        }
+        return $best;
+    }
+    return max(0, (float) wc_get_price_to_display($p, ['price' => $p->get_regular_price()]) - (float) wc_get_price_to_display($p));
+}
+
+/** Real end of the sale (timestamp) or 0 when the sale has no end date. */
+function mcrt_sale_end(WC_Product $p): int
+{
+    if (!$p->is_on_sale()) {
+        return 0;
+    }
+    $items = $p->is_type('variable') ? array_filter(array_map('wc_get_product', $p->get_visible_children())) : [$p];
+    $end = 0;
+    foreach ($items as $v) {
+        $to = $v->is_on_sale() ? $v->get_date_on_sale_to() : null;
+        if ($to) {
+            $end = $end ? min($end, $to->getTimestamp()) : $to->getTimestamp();
+        }
+    }
+    return $end;
+}
+
+/** "Encore 2 j" / "Jusqu’au 15 déc." for a sale end, or ''. */
+function mcrt_end_label(int $end, bool $short = true): string
+{
+    if (!$end || $end < time()) {
+        return '';
+    }
+    $en = mcr_is_en();
+    $left = $end - time();
+    if ($left < DAY_IN_SECONDS) {
+        $h = max(1, (int) floor($left / HOUR_IN_SECONDS));
+        return $en ? sprintf('Ends in %d h', $h) : sprintf('Fin dans %d h', $h);
+    }
+    if ($left < 7 * DAY_IN_SECONDS) {
+        $d = max(1, (int) floor($left / DAY_IN_SECONDS));
+        return $en ? sprintf('%d day%s left', $d, $d > 1 ? 's' : '') : sprintf('Encore %d j', $d);
+    }
+    return ($en ? 'Until ' : 'Jusqu’au ') . wp_date($en ? 'M j' : 'j M', $end, mcrt_tz());
+}
+
+/** Deal labels for a product ("2 pour 5,00 $", "Kit 24,99 $"). */
+function mcrt_deal_labels(WC_Product $p): array
+{
+    return function_exists('mcr_product_deals') ? array_map(fn($d) => mcr_promo_label($d), mcr_product_deals($p)) : [];
+}
+
+/** Store time zone (WordPress setting, or Montréal when it is left on UTC). */
+function mcrt_tz(): DateTimeZone
+{
+    return function_exists('mcr_store_tz') ? mcr_store_tz() : wp_timezone();
+}

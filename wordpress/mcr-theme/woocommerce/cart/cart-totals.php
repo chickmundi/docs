@@ -26,7 +26,7 @@ $taxes = (float) $cart->get_cart_contents_tax();
   <?php if ($free_min > 0) : ?>
     <div class="cartx__free<?php echo $left <= 0 ? ' is-done' : ''; ?>">
       <p><?php echo mcr_icon($left <= 0 ? 'circle-check' : 'truck', 18); ?>
-        <?php
+        <span><?php
         if ($left <= 0) {
             echo esc_html($en ? sprintf('Free delivery unlocked (within %s km)!', (float) $free_km) : sprintf('Livraison gratuite débloquée (jusqu’à %s km) !', (float) $free_km));
         } else {
@@ -34,7 +34,7 @@ $taxes = (float) $cart->get_cart_contents_tax();
                 ? sprintf('Add <strong>%s</strong> more for free delivery.', wc_price($left))
                 : sprintf('Plus que <strong>%s</strong> pour la livraison gratuite.', wc_price($left)));
         }
-        ?>
+        ?></span>
       </p>
       <div class="cartx__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?php echo (int) $pct; ?>"><i style="width:<?php echo (int) $pct; ?>%"></i></div>
     </div>

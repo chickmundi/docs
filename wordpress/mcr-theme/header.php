@@ -121,7 +121,7 @@ $logged = is_user_logged_in();
       <?php endforeach; ?>
     </ul>
     <ul class="nav__end">
-      <li><a class="nav__promo" href="<?php echo esc_url(add_query_arg('promotions', '1', mcr_shop_url())); ?>"><?php echo mcr_icon('badge-percent', 17); ?> <?php mcr_e('Promotions'); ?></a></li>
+      <li><a class="nav__promo" href="<?php echo esc_url(mcrt_promos_url()); ?>"><?php echo mcr_icon('badge-percent', 17); ?> <?php mcr_e('Promotions'); ?></a></li>
       <li><a href="<?php echo esc_url(add_query_arg('orderby', 'date', mcr_shop_url())); ?>"><?php echo mcr_icon('sparkles', 17); ?> <?php mcr_e('Nouveautés'); ?></a></li>
     </ul>
   </div>
@@ -136,7 +136,7 @@ $logged = is_user_logged_in();
     </div>
     <div class="drawer__body">
       <ul class="drawer__quick">
-        <li><a href="<?php echo esc_url(add_query_arg('promotions', '1', mcr_shop_url())); ?>"><?php echo mcr_icon('badge-percent', 20); ?> <?php mcr_e('Promotions'); ?></a></li>
+        <li><a href="<?php echo esc_url(mcrt_promos_url()); ?>"><?php echo mcr_icon('badge-percent', 20); ?> <?php mcr_e('Promotions'); ?></a></li>
         <li><a href="<?php echo esc_url(add_query_arg('orderby', 'date', mcr_shop_url())); ?>"><?php echo mcr_icon('sparkles', 20); ?> <?php mcr_e('Nouveautés'); ?></a></li>
         <li><a href="<?php echo esc_url($account_url); ?>"><?php echo mcr_icon('user', 20); ?> <?php mcr_e('Mon compte'); ?></a></li>
       </ul>
