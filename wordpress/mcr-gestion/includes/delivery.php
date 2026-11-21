@@ -487,3 +487,49 @@ add_filter('gettext_woocommerce', function ($translation, $text) {
     }
     return ($translation === $text && isset($fr[$text])) ? $fr[$text] : $translation;
 }, 10, 2);
+
+// ---------------------------------------------------------------- Address check (delivery page)
+
+/**
+ * Public price check for the delivery page: address in, distance and fee out.
+ * Limited to 20 checks per visitor every 10 minutes; results are cached by mcr_geocode().
+ */
+function mcr_ajax_delivery_quote(): void
+{
+    $ip = preg_replace('/[^0-9a-f:.]/i', '', (string) ($_SERVER['REMOTE_ADDR'] ?? ''));
+    $key = 'mcr_dq_' . md5($ip);
+    $n = (int) get_transient($key);
+    if ($n >= 20) {
+        wp_send_json_error(['message' => 'limit'], 429);
+    }
+    set_transient($key, $n + 1, 10 * MINUTE_IN_SECONDS);
+    $lat = isset($_REQUEST['lat']) ? (float) $_REQUEST['lat'] : 0.0; // phpcs:ignore WordPress.Security.NonceVerification -- public, read-only.
+    $lon = isset($_REQUEST['lon']) ? (float) $_REQUEST['lon'] : 0.0; // phpcs:ignore WordPress.Security.NonceVerification
+    if (!$lat || !$lon) {
+        $address = sanitize_text_field(wp_unslash($_REQUEST['address'] ?? '')); // phpcs:ignore WordPress.Security.NonceVerification
+        if (mb_strlen($address) < 5) {
+            wp_send_json_error(['message' => 'short']);
+        }
+        $found = mcr_geocode($address . (stripos($address, 'qc') === false && stripos($address, 'québec') === false ? ', QC, Canada' : ''));
+        if (!$found) {
+            wp_send_json_error(['message' => 'notfound']);
+        }
+        [$lat, $lon] = [$found['lat'], $found['lon']];
+    }
+    if ($lat < 40 || $lat > 63 || $lon < -80 || $lon > -55) {
+        wp_send_json_error(['message' => 'notfound']);
+    }
+    $km = mcr_distance_km($lat, $lon);
+    $q = mcr_delivery_quote($km, 0);
+    $free = (float) mcr_setting('delivery', 'free_min_subtotal');
+    wp_send_json_success([
+        'km' => $q['km'],
+        'km_label' => mcr_format_km($q['km']),
+        'ok' => $q['ok'],
+        'fee' => $q['ok'] ? round($q['fee'], 2) : null,
+        'free_from' => $free,
+        'free_eligible' => $q['ok'] && $q['km'] <= (float) mcr_setting('delivery', 'free_radius_km'),
+    ]);
+}
+add_action('wp_ajax_mcr_delivery_quote', 'mcr_ajax_delivery_quote');
+add_action('wp_ajax_nopriv_mcr_delivery_quote', 'mcr_ajax_delivery_quote');
