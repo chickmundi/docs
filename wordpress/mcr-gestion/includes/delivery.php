@@ -533,3 +533,9 @@ function mcr_ajax_delivery_quote(): void
 }
 add_action('wp_ajax_mcr_delivery_quote', 'mcr_ajax_delivery_quote');
 add_action('wp_ajax_nopriv_mcr_delivery_quote', 'mcr_ajax_delivery_quote');
+
+// In-store pickup is taxed at the store's address (Québec), like WooCommerce's own local pickup.
+add_filter('woocommerce_local_pickup_methods', function ($methods) {
+    $methods[] = 'mcr_pickup';
+    return $methods;
+});

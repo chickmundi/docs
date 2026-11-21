@@ -228,6 +228,11 @@ function mcr_import_product(array $p): string
     if (!empty($p['unit'])) {
         update_post_meta($id, '_mcr_unit_label', $p['unit']);
     }
+    // Tax status and class from the current site (data/tax.json).
+    if (function_exists('mcr_tax_for_original') && ($t = mcr_tax_for_original((int) $p['id']))) {
+        $product->set_tax_status($t['status']);
+        $product->set_tax_class($t['class']);
+    }
     if ($p['type'] === 'external' && !empty($p['external_url'])) {
         $product->set_product_url($p['external_url']);
     }
