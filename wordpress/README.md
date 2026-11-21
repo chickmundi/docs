@@ -49,3 +49,11 @@ The test-site import (*Import (essai)*) refuses to run on a site that already ha
 - Type: Plus Jakarta Sans (interface and headings), Fraunces (display headlines in the hero, banners and promotions).
 - Components: `template-parts/card.php` (one product card everywhere), `template-parts/home/*.php` (homepage sections), `template-parts/sidebar.php` (shop filters), header with mega menu and live search (WooCommerce Store API).
 - Homepage text, banners and section order: *MCR Gestion > Paramètres > Page d'accueil*.
+
+## MCR Commandes (phone app for the team)
+
+- Address: `https://<site>/mcr-app/` (sign-in required; accounts that can manage orders).
+- Install: Android Chrome → "Installer l'application"; iPhone Safari → Partager → "Sur l'écran d'accueil" (iOS 16.4+), then open it from the Home Screen and tap "Activer les notifications".
+- Push: standard Web Push (VAPID keys created once in the option `mcr_vapid`; subscriptions in `mcr_push_subs`). Sent when an order becomes "En cours"/"En attente" (paid or pay-on-delivery) and when an open order is cancelled, after the customer's page has been returned.
+- Admin page: MCR Gestion > Application mobile (devices, test notification, last send result).
+- Files: `mcr-gestion/includes/app.php`, `includes/webpush.php`, `assets/app/` (app.js, app.css, sw.js, icons).
