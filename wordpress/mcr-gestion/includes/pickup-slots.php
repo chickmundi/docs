@@ -168,27 +168,74 @@ function mcr_slot_picker_html(): string
     }
     $en = mcr_is_en();
     $days = mcr_pickup_slots();
+    // Earliest free slot, offered as a one-tap choice.
+    $first = null;
+    foreach ($days as $d) {
+        foreach ($d['slots'] as $s) {
+            if (!$s['full']) {
+                $first = ['value' => $s['value'], 'label' => $d['label'] . ', ' . $s['label']];
+                break 2;
+            }
+        }
+    }
+    $periods = [
+        'am' => [$en ? 'Morning' : 'Matin', 0, 12],
+        'pm' => [$en ? 'Afternoon' : 'Après-midi', 12, 17],
+        'ev' => [$en ? 'Evening' : 'Soir', 17, 24],
+    ];
     ob_start();
     ?>
     <div class="mcr-slots" data-mcr-slots hidden>
-      <p class="mcr-slots__title"><?php echo esc_html($en ? 'When will you pick up your order?' : 'Quand viendrez-vous chercher votre commande ?'); ?> <abbr class="required" title="<?php echo esc_attr($en ? 'required' : 'obligatoire'); ?>">*</abbr></p>
       <input type="hidden" name="mcr_pickup_slot" value="" data-slot-input>
-      <?php if (!$days) : ?>
+      <?php if (!$days || !$first) : ?>
         <p class="mcr-slots__none"><?php echo esc_html($en ? 'No pickup time is available right now. Please call us.' : 'Aucune plage de retrait n’est disponible pour le moment. Appelez-nous.'); ?></p>
       <?php else : ?>
-        <div class="mcr-slots__days" role="tablist" aria-label="<?php echo esc_attr($en ? 'Day' : 'Jour'); ?>">
-          <?php foreach ($days as $i => $d) : ?>
-            <button type="button" role="tab" class="mcr-slots__day" data-day="<?php echo esc_attr($d['date']); ?>" aria-selected="<?php echo $i === 0 ? 'true' : 'false'; ?>"><?php echo esc_html($d['label']); ?></button>
-          <?php endforeach; ?>
+        <div class="mcr-slots__summary" data-slot-summary hidden>
+          <span class="mcr-slots__summary-ic" aria-hidden="true">🕒</span>
+          <span><small><?php echo esc_html($en ? 'Pickup time' : 'Heure de retrait'); ?></small><strong data-slot-chosen></strong></span>
+          <button type="button" class="mcr-slots__edit" data-slot-edit><?php echo esc_html($en ? 'Change' : 'Modifier'); ?></button>
         </div>
-        <?php foreach ($days as $i => $d) : ?>
-          <div class="mcr-slots__grid" data-day-panel="<?php echo esc_attr($d['date']); ?>" <?php echo $i === 0 ? '' : 'hidden'; ?>>
-            <?php foreach ($d['slots'] as $s) : ?>
-              <button type="button" class="mcr-slots__slot" data-slot="<?php echo esc_attr($s['value']); ?>" data-slot-label="<?php echo esc_attr($d['label'] . ', ' . $s['label']); ?>" aria-pressed="false" <?php disabled($s['full']); ?>><?php echo esc_html($s['label']); ?><?php echo $s['full'] ? '<small>' . esc_html($en ? 'Full' : 'Complet') . '</small>' : ''; ?></button>
+        <div class="mcr-slots__body" data-slot-body>
+          <p class="mcr-slots__title"><?php echo esc_html($en ? 'Pickup time' : 'Heure de retrait'); ?> <abbr class="required" title="<?php echo esc_attr($en ? 'required' : 'obligatoire'); ?>">*</abbr></p>
+          <button type="button" class="mcr-slots__asap" data-slot="<?php echo esc_attr($first['value']); ?>" data-slot-label="<?php echo esc_attr($first['label']); ?>">
+            <span>⚡</span><span><strong><?php echo esc_html($en ? 'As soon as possible' : 'Le plus tôt possible'); ?></strong><small><?php echo esc_html($first['label']); ?></small></span>
+          </button>
+          <details class="mcr-slots__more">
+            <summary><?php echo esc_html($en ? 'Choose another time' : 'Choisir une autre heure'); ?></summary>
+            <div class="mcr-slots__days" role="tablist" aria-label="<?php echo esc_attr($en ? 'Day' : 'Jour'); ?>">
+              <?php foreach ($days as $i => $d) : ?>
+                <button type="button" role="tab" class="mcr-slots__day" data-day="<?php echo esc_attr($d['date']); ?>" aria-selected="<?php echo $i === 0 ? 'true' : 'false'; ?>"><?php echo esc_html($d['label']); ?></button>
+              <?php endforeach; ?>
+            </div>
+            <?php foreach ($days as $i => $d) :
+                $groups = [];
+                foreach ($d['slots'] as $s) {
+                    $h = (int) substr($s['value'], 11, 2);
+                    foreach ($periods as $key => [, $from, $to]) {
+                        if ($h >= $from && $h < $to) {
+                            $groups[$key][] = $s;
+                        }
+                    }
+                }
+                $firstKey = array_key_first($groups);
+                ?>
+              <div class="mcr-slots__panel" data-day-panel="<?php echo esc_attr($d['date']); ?>" <?php echo $i === 0 ? '' : 'hidden'; ?>>
+                <div class="mcr-slots__periods">
+                  <?php foreach ($groups as $key => $list) : ?>
+                    <button type="button" class="mcr-slots__period" data-period="<?php echo esc_attr($key); ?>" aria-pressed="<?php echo $key === $firstKey ? 'true' : 'false'; ?>"><?php echo esc_html($periods[$key][0]); ?></button>
+                  <?php endforeach; ?>
+                </div>
+                <?php foreach ($groups as $key => $list) : ?>
+                  <div class="mcr-slots__times" data-period-panel="<?php echo esc_attr($key); ?>" <?php echo $key === $firstKey ? '' : 'hidden'; ?>>
+                    <?php foreach ($list as $s) : $start = trim(explode('–', $s['label'])[0]); ?>
+                      <button type="button" class="mcr-slots__slot" data-slot="<?php echo esc_attr($s['value']); ?>" data-slot-label="<?php echo esc_attr($d['label'] . ', ' . $s['label']); ?>" aria-label="<?php echo esc_attr($s['label']); ?>" aria-pressed="false" <?php disabled($s['full']); ?>><?php echo esc_html($start); ?></button>
+                    <?php endforeach; ?>
+                  </div>
+                <?php endforeach; ?>
+              </div>
             <?php endforeach; ?>
-          </div>
-        <?php endforeach; ?>
-        <p class="mcr-slots__chosen" data-slot-chosen hidden></p>
+          </details>
+        </div>
       <?php endif; ?>
     </div>
     <?php

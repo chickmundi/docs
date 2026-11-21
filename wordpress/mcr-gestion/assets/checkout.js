@@ -192,22 +192,34 @@
   });
 
   // ---------- Pickup time slots ----------
+  function slotBox(el) { return el.closest('[data-mcr-slots]'); }
+  function chooseSlot(box, btn) {
+    box.querySelectorAll('[data-slot]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-slot') === btn.getAttribute('data-slot'))); });
+    box.querySelector('[data-slot-input]').value = btn.getAttribute('data-slot');
+    box.querySelector('[data-slot-chosen]').textContent = btn.getAttribute('data-slot-label');
+    box.querySelector('[data-slot-summary]').hidden = false;
+    box.querySelector('[data-slot-body]').hidden = true;
+    box.classList.remove('is-missing');
+    box.classList.add('is-set');
+  }
+  $(document.body).on('click', '[data-mcr-slots] [data-slot]', function () { chooseSlot(slotBox(this), this); });
+  $(document.body).on('click', '[data-mcr-slots] [data-slot-edit]', function () {
+    var box = slotBox(this);
+    box.querySelector('[data-slot-summary]').hidden = true;
+    box.querySelector('[data-slot-body]').hidden = false;
+    box.classList.remove('is-set');
+  });
   $(document.body).on('click', '[data-mcr-slots] [data-day]', function () {
-    var box = this.closest('[data-mcr-slots]');
-    var day = this.getAttribute('data-day');
+    var box = slotBox(this), day = this.getAttribute('data-day');
     box.querySelectorAll('[data-day]').forEach(function (b) { b.setAttribute('aria-selected', String(b.getAttribute('data-day') === day)); });
     box.querySelectorAll('[data-day-panel]').forEach(function (p) { p.hidden = p.getAttribute('data-day-panel') !== day; });
   });
-  $(document.body).on('click', '[data-mcr-slots] [data-slot]', function () {
-    var box = this.closest('[data-mcr-slots]');
-    box.querySelectorAll('[data-slot]').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
-    this.setAttribute('aria-pressed', 'true');
-    box.querySelector('[data-slot-input]').value = this.getAttribute('data-slot');
-    var chosen = box.querySelector('[data-slot-chosen]');
-    if (chosen) { chosen.hidden = false; chosen.textContent = (C.lang === 'en' ? 'Pickup: ' : 'Retrait : ') + this.getAttribute('data-slot-label'); }
-    box.classList.remove('is-missing');
+  $(document.body).on('click', '[data-mcr-slots] [data-period]', function () {
+    var panel = this.closest('[data-day-panel]'), key = this.getAttribute('data-period');
+    panel.querySelectorAll('[data-period]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-period') === key)); });
+    panel.querySelectorAll('[data-period-panel]').forEach(function (p) { p.hidden = p.getAttribute('data-period-panel') !== key; });
   });
-  // Clear reminder if the customer tries to order without a time.
+  // Remind the customer if they try to order without a time.
   $(document.body).on('checkout_error', function () {
     var box = document.querySelector('[data-mcr-slots]');
     if (box && !box.hidden && !box.querySelector('[data-slot-input]').value) { box.classList.add('is-missing'); box.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
