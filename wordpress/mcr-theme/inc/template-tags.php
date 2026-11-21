@@ -195,3 +195,53 @@ function mcrt_distinct_count(WP_Term $term): int
     }
     return (int) $n;
 }
+
+/**
+ * Illustrated area map around the store (rivers and nearby places from real coordinates).
+ * $radius_km: how far the map reaches from the store.
+ */
+function mcrt_area_map(float $radius_km, array $places, string $id = 'map'): string
+{
+    $W = 640; $C = 320; $s = 280 / max($radius_km, .5);
+    $lat0 = (float) mcrt_store('lat', 46.3629863);
+    $lon0 = (float) mcrt_store('lon', -72.5258898);
+    $pt = fn(float $la, float $lo) => [$C + ($lo - $lon0) * 76.7 * $s, $C - ($la - $lat0) * 111.2 * $s];
+    $path = function (array $pts) use ($pt): string {
+        $o = '';
+        foreach ($pts as $i => [$la, $lo]) { [$x, $y] = $pt($la, $lo); $o .= ($i ? ' L' : 'M') . round($x, 1) . ' ' . round($y, 1); }
+        return $o;
+    };
+    $river = [[46.290, -72.660], [46.318, -72.600], [46.333, -72.555], [46.343, -72.530], [46.355, -72.510], [46.372, -72.478], [46.400, -72.430], [46.455, -72.330]];
+    $maurice = [[46.440, -72.580], [46.410, -72.566], [46.385, -72.552], [46.366, -72.543], [46.352, -72.538], [46.343, -72.532]];
+    $en = mcr_is_en();
+    ob_start(); ?>
+    <svg viewBox="0 0 <?php echo $W; ?> <?php echo $W; ?>" role="img" aria-labelledby="<?php echo esc_attr($id); ?>-t">
+      <title id="<?php echo esc_attr($id); ?>-t"><?php echo esc_html(($en ? 'Map: ' : 'Plan : ') . mcrt_store('street') . ', ' . mcrt_store('city')); ?></title>
+      <defs>
+        <pattern id="<?php echo esc_attr($id); ?>-grid" width="40" height="40" patternUnits="userSpaceOnUse"><rect width="40" height="40" fill="#f3eee2"/><path d="M40 0H0V40" fill="none" stroke="#e6dece" stroke-width="1"/></pattern>
+        <clipPath id="<?php echo esc_attr($id); ?>-clip"><rect width="<?php echo $W; ?>" height="<?php echo $W; ?>" rx="28"/></clipPath>
+        <filter id="<?php echo esc_attr($id); ?>-sh" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity=".28"/></filter>
+      </defs>
+      <g clip-path="url(#<?php echo esc_attr($id); ?>-clip)">
+        <rect width="<?php echo $W; ?>" height="<?php echo $W; ?>" fill="url(#<?php echo esc_attr($id); ?>-grid)"/>
+        <circle cx="<?php echo $C; ?>" cy="<?php echo $C; ?>" r="<?php echo round(1 * $s); ?>" fill="#174b35" fill-opacity=".08" stroke="#174b35" stroke-opacity=".25" stroke-dasharray="6 6"/>
+        <path d="<?php echo esc_attr($path($river)); ?>" fill="none" stroke="#a9cfe2" stroke-width="<?php echo round(min(.85 * $s, 110)); ?>" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="<?php echo esc_attr($path($maurice)); ?>" fill="none" stroke="#a9cfe2" stroke-width="<?php echo round(min(.3 * $s, 40)); ?>" stroke-linecap="round" stroke-linejoin="round"/>
+        <?php foreach ($places as [$name, $la, $lo, $kind]) : [$x, $y] = $pt($la, $lo); if ($x < 16 || $x > $W - 16 || $y < 16 || $y > $W - 16) { continue; } ?>
+          <g class="amap__place amap__place--<?php echo esc_attr($kind); ?>"><circle cx="<?php echo round($x); ?>" cy="<?php echo round($y); ?>" r="<?php echo $kind === 'river' ? 0 : 4; ?>"/><text x="<?php echo round($x + ($kind === 'river' ? 0 : 8)); ?>" y="<?php echo round($y + 4); ?>"><?php echo esc_html($name); ?></text></g>
+        <?php endforeach; ?>
+        <g filter="url(#<?php echo esc_attr($id); ?>-sh)">
+          <path d="M<?php echo $C; ?> <?php echo $C + 4; ?> c-14 -18 -26 -30 -26 -46 a26 26 0 1 1 52 0 c0 16 -12 28 -26 46z" fill="#c96b43"/>
+          <circle cx="<?php echo $C; ?>" cy="<?php echo $C - 42; ?>" r="11" fill="#fff"/>
+        </g>
+        <g class="amap__label" filter="url(#<?php echo esc_attr($id); ?>-sh)">
+          <rect x="<?php echo $C - 110; ?>" y="<?php echo $C + 14; ?>" width="220" height="48" rx="14" fill="#174b35"/>
+          <text x="<?php echo $C; ?>" y="<?php echo $C + 35; ?>" text-anchor="middle" class="amap__name"><?php echo esc_html(mcrt_store('name', 'Marché Chemin-du-Roy')); ?></text>
+          <text x="<?php echo $C; ?>" y="<?php echo $C + 53; ?>" text-anchor="middle" class="amap__addr"><?php echo esc_html(mcrt_store('street')); ?></text>
+        </g>
+        <g class="amap__north" transform="translate(<?php echo $W - 44; ?> 44)"><circle r="20" fill="#fff"/><path d="M0 -12 L6 6 L0 2 L-6 6z" fill="#174b35"/><text y="-24" text-anchor="middle">N</text></g>
+      </g>
+    </svg>
+    <?php
+    return (string) ob_get_clean();
+}
