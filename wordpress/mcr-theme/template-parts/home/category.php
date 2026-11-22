@@ -7,7 +7,8 @@ if (!$term) {
     return;
 }
 $l = mcr_is_en() ? 'en' : 'fr';
-$products = mcrt_products(['category' => [$term->slug], 'limit' => 10, 'orderby' => 'popularity']);
+// A different 10 among the aisle's 30 best sellers on each visit.
+$products = mcrt_pick(mcrt_products(['category' => [$term->slug], 'limit' => 30, 'orderby' => 'popularity']), 10, 'cat-' . $term->slug);
 if (!$products) {
     return;
 }

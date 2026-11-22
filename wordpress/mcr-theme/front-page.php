@@ -9,7 +9,7 @@ get_header();
 $home = function_exists('mcr_setting') ? mcr_setting('home') : [];
 get_template_part('template-parts/home/hero', null, ['home' => $home]);
 
-mcrt_cached('home-sections', function () use ($home) {
+mcrt_cached('home-sections-' . mcrt_home_variant(), function () use ($home) { // 8 shuffled versions
     foreach (mcrt_home_sections() as $i => $sec) {
         if (empty($sec['on'])) {
             continue;

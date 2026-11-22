@@ -14,7 +14,7 @@ foreach ($needs as [$slug, $icon, $title, $text]) {
     if (!$term) {
         continue;
     }
-    $products = mcrt_products(['category' => [$slug], 'limit' => 3, 'orderby' => 'popularity']);
+    $products = mcrt_pick(mcrt_products(['category' => [$slug], 'limit' => 12, 'orderby' => 'popularity']), 3, 'need-' . $slug);
     if (count($products) < 1) {
         continue;
     }

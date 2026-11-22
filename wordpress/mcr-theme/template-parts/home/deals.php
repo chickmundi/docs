@@ -7,12 +7,11 @@ if (!$ids) {
     return;
 }
 $products = mcrt_products(['include' => array_slice($ids, 0, 60), 'limit' => 60]);
-usort($products, fn($a, $b) => mcrt_discount($b) <=> mcrt_discount($a));
-$products = array_slice($products, 0, 10);
 if (!$products) {
     return;
 }
-$best = mcrt_discount($products[0]);
+$best = max(array_map('mcrt_discount', $products));
+$products = mcrt_pick($products, 10, 'deals'); // a different 10 deals on each visit
 $banner = function_exists('mcr_promo_banners') ? (mcr_promo_banners()[0] ?? null) : null;
 $week = function_exists('mcr_promo_of_week') ? mcr_promo_of_week() : null;
 ?>

@@ -2,7 +2,8 @@
 /** "Nouveautés": the latest products added to the store. */
 defined('ABSPATH') || exit;
 $en = mcr_is_en();
-$products = mcrt_products(['limit' => 10, 'orderby' => 'date', 'order' => 'DESC']);
+// The 30 newest products, a different 10 on each visit.
+$products = mcrt_pick(mcrt_products(['limit' => 30, 'orderby' => 'date', 'order' => 'DESC']), 10, 'new');
 if (!$products) {
     return;
 }

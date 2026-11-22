@@ -16,11 +16,11 @@ foreach ($tabs as $key => [$label, $cats]) {
     if ($key !== 'all' && !$cats) {
         continue;
     }
-    $args = ['limit' => 8, 'orderby' => 'popularity', 'order' => 'DESC'];
+    $args = ['limit' => 24, 'orderby' => 'popularity', 'order' => 'DESC'];
     if ($cats) {
         $args['category'] = $cats;
     }
-    $products = mcrt_products($args);
+    $products = mcrt_pick(mcrt_products($args), 8, 'pop-' . $key); // 8 of the 24 best sellers, different each visit
     if ($products) {
         $panels[$key] = [$label, $products];
     }

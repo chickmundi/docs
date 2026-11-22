@@ -4,7 +4,7 @@
  */
 defined('ABSPATH') || exit;
 
-define('MCRT_VERSION', '1.4.0');
+define('MCRT_VERSION', '1.4.1');
 define('MCRT_DIR', get_template_directory());
 define('MCRT_URL', get_template_directory_uri());
 
@@ -223,6 +223,7 @@ add_action('woocommerce_update_product', function () {
 
 require_once MCRT_DIR . '/inc/template-tags.php';
 require_once MCRT_DIR . '/inc/speed.php';
+require_once MCRT_DIR . '/inc/shuffle.php';
 
 // ---------- Shop filters ----------
 // ?promotions=1 : only products on sale.

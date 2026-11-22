@@ -13,7 +13,7 @@ if (!function_exists('wc_get_product_ids_on_sale')) {
 $en = mcr_is_en();
 
 // Products on sale, best discount first (cached a few minutes).
-$best = get_transient('mcrt_popup_sale');
+$best = get_transient('mcrt_popup_sale2');
 if (!is_array($best)) {
     $ids = array_values(array_filter(wc_get_product_ids_on_sale(), fn($id) => get_post_type($id) === 'product' && get_post_status($id) === 'publish'));
     $rows = [];
@@ -24,8 +24,8 @@ if (!is_array($best)) {
         }
     }
     arsort($rows);
-    $best = ['count' => count($rows), 'ids' => array_slice(array_keys($rows), 0, 4)];
-    set_transient('mcrt_popup_sale', $best, 10 * MINUTE_IN_SECONDS);
+    $best = ['count' => count($rows), 'ids' => array_slice(array_keys($rows), 0, 10)];
+    set_transient('mcrt_popup_sale2', $best, 10 * MINUTE_IN_SECONDS);
 }
 
 $week = function_exists('mcr_promo_of_week') ? mcr_promo_of_week() : null;
@@ -38,7 +38,7 @@ if (!$week && !$banner && !$best['count']) {
 $url = mcrt_promos_url();
 $count = (int) $best['count'];
 $thumbs = array_values(array_filter(array_map('wc_get_product', array_diff($best['ids'], $week ? [$week->get_id()] : [])), fn($p) => $p instanceof WC_Product));
-$thumbs = array_slice($thumbs, 0, 3);
+$thumbs = mcrt_pick($thumbs, 3, 'popup'); // 3 of the 10 biggest discounts
 $end = 0;
 if ($week) {
     $end = mcrt_sale_end($week);
