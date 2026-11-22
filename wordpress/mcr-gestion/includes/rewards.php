@@ -16,7 +16,7 @@
  */
 defined('ABSPATH') || exit;
 
-const MCR_RW_DB = 1;
+const MCR_RW_DB = 2;
 const MCR_RW_TOKEN = 'mcr_rw';      // secret token of the visitor's reward row (httponly)
 const MCR_RW_SPUN = 'mcr_spun';     // readable flag: this browser already spun
 const MCR_RW_PENDING = 'mcr_pc';    // coupon waiting to be applied when the cart allows it
@@ -76,9 +76,13 @@ add_action('init', function () {
   coupon varchar(40) NOT NULL DEFAULT '',
   expires_at datetime NULL,
   referred_by varchar(12) NOT NULL DEFAULT '',
+  device varchar(40) NOT NULL DEFAULT '',
+  ip varchar(64) NOT NULL DEFAULT '',
   created_at datetime NOT NULL,
   PRIMARY KEY  (id),
   UNIQUE KEY phone (phone),
+  KEY device (device),
+  KEY ip (ip),
   UNIQUE KEY ref_code (ref_code),
   KEY token (token)
 ) $c;");
@@ -255,24 +259,12 @@ add_filter('woocommerce_cart_totals_coupon_label', function ($label, $coupon) {
 /** Digits of a phone number, with the North American "1". */
 function mcr_rw_norm_phone(string $p): string
 {
-    return function_exists('mcr_wag_phone') ? mcr_wag_phone($p) : preg_replace('/\D+/', '', $p);
+    return mcr_phone_digits($p);
 }
 
 /** Has this customer (email or phone) already ordered? */
-function mcr_rw_has_ordered(string $email, string $phone, int $exclude = 0): bool
-{
-    $statuses = array_merge(['processing', 'completed', 'on-hold'], defined('MCR_WA_STATUS') ? [str_replace('wc-', '', MCR_WA_STATUS)] : []);
-    foreach (array_filter(['billing_email' => $email, 'billing_phone' => $phone]) as $k => $v) {
-        $ids = wc_get_orders([$k => $v, 'status' => $statuses, 'limit' => 2, 'return' => 'ids', 'exclude' => $exclude ? [$exclude] : []]);
-        if ($ids) {
-            return true;
-        }
-    }
-    return false;
-}
-
 /** Why a reward coupon can't be used by this customer ('' = fine). */
-function mcr_rw_check(WC_Coupon $c, string $email, string $phone, bool $en, int $exclude = 0): string
+function mcr_rw_check(WC_Coupon $c, string $email, string $phone, bool $en, int $exclude = 0, string $addr = ''): string
 {
     $kind = $c->get_meta('_mcr_reward');
     if (!$kind) {
@@ -289,8 +281,10 @@ function mcr_rw_check(WC_Coupon $c, string $email, string $phone, bool $en, int 
         }
     }
     $first = $kind === 'friend' || ($kind === 'wheel' && !empty(mcr_rw_settings()['first_only']));
-    if ($first && (mcr_rw_has_ordered($email, $phone, $exclude) || ($digits !== '' && (mcr_rw_has_ordered('', $digits, $exclude) || mcr_rw_has_ordered('', '+' . $digits, $exclude))))) {
-        return $en ? 'This gift is for a first order only.' : 'Ce cadeau est réservé à une première commande.';
+    $seen = $first ? mcr_customer_seen($email, $digits, $addr, $exclude) : '';
+    if ($seen !== '') {
+        $what = ['phone' => $en ? 'this phone number' : 'ce numéro de téléphone', 'email' => $en ? 'this email address' : 'cette adresse courriel', 'address' => $en ? 'this delivery address' : 'cette adresse de livraison'][$seen];
+        return sprintf($en ? 'This gift is for a first order only, and an order already exists with %s. Thank you for your loyalty!' : 'Ce cadeau est réservé à une première commande, et une commande existe déjà avec %s. Merci de votre fidélité !', $what);
     }
     return '';
 }
@@ -302,7 +296,7 @@ add_action('woocommerce_after_checkout_validation', function ($data, $errors) {
     }
     $en = mcr_is_en();
     foreach (WC()->cart->get_coupons() as $code => $c) {
-        $why = mcr_rw_check($c, (string) ($data['billing_email'] ?? ''), (string) ($data['billing_phone'] ?? ''), $en);
+        $why = mcr_rw_check($c, (string) ($data['billing_email'] ?? ''), (string) ($data['billing_phone'] ?? ''), $en, 0, mcr_checkout_addr_key($data));
         if ($why !== '') {
             WC()->cart->remove_coupon($code);
             $errors->add('mcr_reward', $why);
@@ -317,7 +311,7 @@ function mcr_rw_apply_to_order(WC_Order $order, WC_Order_Item_Shipping $ship, bo
         return;
     }
     foreach (WC()->cart->get_coupons() as $code => $c) {
-        $why = mcr_rw_check($c, $order->get_billing_email(), $order->get_billing_phone(), $order->get_meta('_mcr_lang') === 'en' || mcr_is_en(), $order->get_id());
+        $why = mcr_rw_check($c, $order->get_billing_email(), $order->get_billing_phone(), $order->get_meta('_mcr_lang') === 'en' || mcr_is_en(), $order->get_id(), mcr_order_addr_key($order));
         if ($why !== '') {
             $order->add_order_note('Cadeau non appliqué (' . $code . ') : ' . $why);
             continue;
@@ -439,13 +433,31 @@ add_action('wc_ajax_mcr_rw_spin', function () {
     $ip = preg_replace('/[^0-9a-f:.]/i', '', (string) ($_SERVER['REMOTE_ADDR'] ?? ''));
     $key = 'mcr_rw_ip_' . md5($ip);
     $n = (int) get_transient($key);
-    if ($n >= 6) {
+    if ($n >= 8) {
         $err('Trop d’essais, réessayez demain.', 'Too many attempts, please try again tomorrow.', 429);
     }
     set_transient($key, $n + 1, DAY_IN_SECONDS);
-    $phone = function_exists('mcr_wag_phone') ? mcr_wag_phone((string) wp_unslash($_POST['phone'] ?? '')) : '';
-    if ($phone === '') {
-        $err('Entrez un numéro WhatsApp valide, par ex. 819 555-1234.', 'Please enter a valid WhatsApp number, e.g. 819 555-1234.');
+    $phone = mcr_phone_digits((string) wp_unslash($_POST['phone'] ?? ''));
+    if ($phone === '' || !mcr_phone_plausible($phone)) {
+        $err('Ce numéro ne semble pas valide. Entrez votre vrai numéro WhatsApp, par ex. 819 372-1234.', 'This number does not look valid. Please enter your real WhatsApp number, e.g. 819 372-1234.');
+    }
+    global $wpdb;
+    $known = mcr_rw_row_by('phone', $phone);
+    if (!$known || $known->prize === '') {
+        // New spin: one per device and at most 3 per internet connection in 30 days.
+        $dev = preg_replace('/[^a-z0-9]/i', '', (string) ($_POST['dev'] ?? ($_COOKIE['mcr_dev'] ?? '')));
+        $mine = mcr_rw_row_by('token', preg_replace('/[^A-Za-z0-9]/', '', (string) ($_COOKIE[MCR_RW_TOKEN] ?? '')));
+        if (($mine && $mine->prize !== '' && $mine->phone !== $phone) || ($dev !== '' && $wpdb->get_var($wpdb->prepare('SELECT COUNT(*) FROM ' . mcr_rw_table() . " WHERE device = %s AND prize <> '' AND phone <> %s", $dev, $phone)))) { // phpcs:ignore
+            $err('La roue a déjà été tournée sur cet appareil : un seul essai par personne.', 'The wheel has already been spun on this device: one spin per person.');
+        }
+        $ip_hash = md5($ip . wp_salt('auth'));
+        if ((int) $wpdb->get_var($wpdb->prepare('SELECT COUNT(*) FROM ' . mcr_rw_table() . " WHERE ip = %s AND prize <> '' AND created_at > %s", $ip_hash, gmdate('Y-m-d H:i:s', time() - 30 * DAY_IN_SECONDS))) >= 3) { // phpcs:ignore
+            $err('Trop d’essais depuis cette connexion. Réessayez plus tard ou passez nous voir en magasin.', 'Too many spins from this connection. Please try later or visit us in store.');
+        }
+        // The wheel is a welcome gift: not for numbers that already ordered.
+        if (!empty(mcr_rw_settings()['first_only']) && mcr_customer_seen('', $phone, '') !== '') {
+            $err('Ce numéro a déjà commandé chez nous : la roue de bienvenue est réservée aux nouveaux clients. Merci de votre fidélité ! Invitez plutôt vos amis pour gagner des récompenses.', 'This number has already ordered with us: the welcome wheel is for new customers. Thank you for your loyalty! Invite your friends instead to earn rewards.');
+        }
     }
     if (empty($_POST['consent'])) {
         $err('Cochez la case pour accepter nos messages WhatsApp.', 'Please tick the box to accept our WhatsApp messages.');
@@ -453,6 +465,9 @@ add_action('wc_ajax_mcr_rw_spin', function () {
     $name = mb_substr(sanitize_text_field(wp_unslash($_POST['name'] ?? '')), 0, 120);
     $ref = strtoupper(preg_replace('/[^A-Z0-9]/i', '', (string) ($_COOKIE[MCR_RW_REF] ?? '')));
     $row = mcr_rw_ensure_row($phone, $name, $en ? 'en' : 'fr', $ref);
+    if ($row && $row->prize === '') {
+        $wpdb->update(mcr_rw_table(), ['device' => substr(preg_replace('/[^a-z0-9]/i', '', (string) ($_POST['dev'] ?? '')), 0, 40), 'ip' => md5($ip . wp_salt('auth'))], ['id' => $row->id]); // phpcs:ignore
+    }
     if (!$row) {
         $err('Erreur, réessayez.', 'Error, please try again.', 500);
     }

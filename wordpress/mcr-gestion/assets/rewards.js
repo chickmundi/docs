@@ -12,6 +12,15 @@
   var friend = document.getElementById('rw-friend');
   var fab = root.querySelector('[data-rw-open]');
   var state = null, timerId = null;
+  // A random id for this device (one spin per device).
+  function device() {
+    var id = ck('mcr_dev');
+    try { id = id || localStorage.getItem('mcr_dev') || ''; } catch (x) {}
+    if (!id) id = (Date.now().toString(36) + Math.random().toString(36).slice(2, 12));
+    try { localStorage.setItem('mcr_dev', id); } catch (x) {}
+    setCk('mcr_dev', id, 2 * 365 * 86400);
+    return id;
+  }
 
   // ---------- Confetti (canvas inside the open window) ----------
   function confetti(d) {
@@ -137,6 +146,7 @@
       dlg.classList.add('is-spinning');
       var body = new URLSearchParams(new FormData(form));
       body.append('lang', en ? 'en' : 'fr');
+      body.append('dev', device());
       fetch(root.getAttribute('data-ajax-spin'), { method: 'POST', body: body, credentials: 'same-origin' })
         .then(function (r) { return r.json(); })
         .then(function (r) {
