@@ -4,7 +4,7 @@
  */
 defined('ABSPATH') || exit;
 
-define('MCRT_VERSION', '1.3.8');
+define('MCRT_VERSION', '1.4.0');
 define('MCRT_DIR', get_template_directory());
 define('MCRT_URL', get_template_directory_uri());
 
@@ -83,7 +83,6 @@ function mcr_category_icon(WP_Term $term): string
 
 // ---------- Assets: one stylesheet, one small script, nothing else ----------
 add_action('wp_enqueue_scripts', function () {
-    wp_enqueue_style('mcr-fonts', 'https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap', [], null);
     wp_enqueue_style('mcr', MCRT_URL . '/assets/theme.css', [], MCRT_VERSION);
     wp_enqueue_script('mcr', MCRT_URL . '/assets/theme.js', [], MCRT_VERSION, ['strategy' => 'defer', 'in_footer' => true]);
     wp_localize_script('mcr', 'MCR', [
@@ -103,14 +102,6 @@ add_action('wp_enqueue_scripts', function () {
         ],
     ]);
 }, 20);
-
-add_filter('wp_resource_hints', function ($urls, $type) {
-    if ($type === 'preconnect') {
-        $urls[] = ['href' => 'https://fonts.gstatic.com', 'crossorigin' => 'anonymous'];
-        $urls[] = 'https://fonts.googleapis.com';
-    }
-    return $urls;
-}, 10, 2);
 
 // Remove what this design does not use.
 add_filter('woocommerce_enqueue_styles', '__return_empty_array');
@@ -231,6 +222,7 @@ add_action('woocommerce_update_product', function () {
 });
 
 require_once MCRT_DIR . '/inc/template-tags.php';
+require_once MCRT_DIR . '/inc/speed.php';
 
 // ---------- Shop filters ----------
 // ?promotions=1 : only products on sale.
@@ -510,9 +502,9 @@ add_action('woocommerce_single_product_summary', function () {
     echo '</div>';
 }, 11);
 
-// ---------- Homepage promotions pop-up (before the icon sprite, which prints at priority 10) ----------
+// ---------- Homepage promotions pop-up (before the icon sprite, which prints at wp_footer priority 1) ----------
 add_action('wp_footer', function () {
     if (is_front_page() && !is_customize_preview()) {
         get_template_part('template-parts/promo-popup');
     }
-}, 5);
+}, 0);

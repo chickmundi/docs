@@ -9,21 +9,23 @@ get_header();
 $home = function_exists('mcr_setting') ? mcr_setting('home') : [];
 get_template_part('template-parts/home/hero', null, ['home' => $home]);
 
-foreach (mcrt_home_sections() as $i => $sec) {
-    if (empty($sec['on'])) {
-        continue;
+mcrt_cached('home-sections', function () use ($home) {
+    foreach (mcrt_home_sections() as $i => $sec) {
+        if (empty($sec['on'])) {
+            continue;
+        }
+        $type = sanitize_key($sec['type'] ?? '');
+        if ($type === 'promos') {
+            $type = 'deals';
+        } elseif ($type === 'visit') {
+            $type = 'community';
+        } elseif ($type === 'split') {
+            $type = 'banners';
+        }
+        if (locate_template("template-parts/home/{$type}.php")) {
+            get_template_part("template-parts/home/{$type}", null, ['home' => $home, 'section' => $sec, 'index' => $i]);
+        }
     }
-    $type = sanitize_key($sec['type'] ?? '');
-    if ($type === 'promos') {
-        $type = 'deals';
-    } elseif ($type === 'visit') {
-        $type = 'community';
-    } elseif ($type === 'split') {
-        $type = 'banners';
-    }
-    if (locate_template("template-parts/home/{$type}.php")) {
-        get_template_part("template-parts/home/{$type}", null, ['home' => $home, 'section' => $sec, 'index' => $i]);
-    }
-}
+});
 
 get_footer();

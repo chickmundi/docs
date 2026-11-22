@@ -75,7 +75,7 @@ $logged = is_user_logged_in();
   <div class="container mast__inner">
     <button class="mast__menu" type="button" data-drawer-open aria-controls="drawer" aria-expanded="false" aria-label="<?php echo esc_attr(mcr_t('Menu')); ?>"><?php echo mcr_icon('menu', 24); ?></button>
     <a href="<?php echo esc_url(home_url('/')); ?>" class="mast__logo" aria-label="<?php echo esc_attr(mcrt_store('name', 'Marché Chemin-du-Roy') . ($en ? ', home' : ', accueil')); ?>">
-      <img src="<?php echo esc_url(MCRT_URL . '/assets/MRC-logo-whit.png'); ?>" alt="<?php echo esc_attr(mcrt_store('name', 'Marché Chemin-du-Roy')); ?>" width="375" height="117" fetchpriority="high">
+      <img src="<?php echo esc_url(MCRT_URL . '/assets/MRC-logo-whit.png'); ?>" alt="<?php echo esc_attr(mcrt_store('name', 'Marché Chemin-du-Roy')); ?>" width="375" height="117">
     </a>
     <form class="hsearch" action="<?php echo esc_url(home_url('/')); ?>" role="search" data-search>
       <label for="q" class="sr-only"><?php mcr_e('Rechercher un produit'); ?></label>
