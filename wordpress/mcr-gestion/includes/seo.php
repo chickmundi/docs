@@ -283,3 +283,25 @@ add_action('admin_init', function () {
 add_action('update_option_mcr_store', 'mcr_llms_write');
 add_action('update_option_mcr_hours', 'mcr_llms_write');
 add_action('update_option_mcr_delivery', 'mcr_llms_write');
+
+// English image descriptions on /en/ pages.
+add_filter('wp_get_attachment_image_attributes', function ($attr, $attachment) {
+    if (function_exists('mcr_is_en') && mcr_is_en() && $attachment instanceof WP_Post) {
+        $en = trim((string) get_post_meta($attachment->ID, '_mcr_alt_en', true));
+        if ($en !== '' && (!isset($attr['alt']) || $attr['alt'] !== '')) {
+            $attr['alt'] = $en;
+        }
+    }
+    return $attr;
+}, 20, 2);
+
+// English product name in the page title (browser tab, Google) on /en/.
+add_filter('document_title_parts', function ($parts) {
+    if (function_exists('mcr_is_en') && mcr_is_en() && function_exists('is_product') && is_product()) {
+        $en = function_exists('mcr_en_meta') ? mcr_en_meta((int) get_queried_object_id(), 'title') : '';
+        if ($en !== '') {
+            $parts['title'] = $en;
+        }
+    }
+    return $parts;
+});

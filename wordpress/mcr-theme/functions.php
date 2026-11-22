@@ -4,7 +4,7 @@
  */
 defined('ABSPATH') || exit;
 
-define('MCRT_VERSION', '1.3.6');
+define('MCRT_VERSION', '1.3.7');
 define('MCRT_DIR', get_template_directory());
 define('MCRT_URL', get_template_directory_uri());
 
@@ -333,7 +333,7 @@ add_action('wp_head', function () {
     $img = wp_get_attachment_image_src($p->get_image_id(), 'woocommerce_single');
     $desc = wp_strip_all_tags($p->get_short_description() ?: $p->get_description());
     $desc = mb_substr(trim(preg_replace('/\s+/', ' ', $desc)), 0, 180);
-    $title = $p->get_name() . ' — ' . html_entity_decode(wp_strip_all_tags(wc_price(wc_get_price_to_display($p))));
+    $title = (mcr_is_en() && function_exists('mcr_en_meta') && mcr_en_meta($p->get_id(), 'title') !== '' ? mcr_en_meta($p->get_id(), 'title') : $p->get_name()) . ' — ' . html_entity_decode(wp_strip_all_tags(wc_price(wc_get_price_to_display($p))));
     echo "\n" . '<meta property="og:type" content="product">' . "\n";
     echo '<meta property="og:site_name" content="' . esc_attr((string) mcrt_store('name', get_bloginfo('name'))) . '">' . "\n";
     echo '<meta property="og:title" content="' . esc_attr($title) . '">' . "\n";
