@@ -305,3 +305,118 @@ add_filter('document_title_parts', function ($parts) {
     }
     return $parts;
 });
+
+// ---------------------------------------------------------------- Sitemap for Google (/wp-sitemap.xml)
+
+// Final addresses with the language (/fr/…), so Google never has to follow a redirect.
+/** Address of a page in a language, including the homepage (/fr/, /en/). */
+function mcr_sitemap_url(string $url, string $lang): string
+{
+    $home = untrailingslashit((string) get_option('home'));
+    return untrailingslashit($url) === $home ? $home . '/' . $lang . '/' : mcr_prefix_url($url, $lang);
+}
+add_filter('wp_sitemaps_posts_entry', fn($e) => ['loc' => mcr_sitemap_url($e['loc'], 'fr')] + $e, 20);
+add_filter('wp_sitemaps_posts_show_on_front_entry', fn($e) => ['loc' => mcr_sitemap_url($e['loc'], 'fr')] + $e, 20); // homepage: /fr/
+add_filter('wp_sitemaps_taxonomies_entry', fn($e) => ['loc' => mcr_prefix_url($e['loc'], 'fr')] + $e, 20);
+
+// Only pages worth finding on Google.
+add_filter('wp_sitemaps_add_provider', fn($provider, $name) => $name === 'users' ? false : $provider, 10, 2);
+add_filter('wp_sitemaps_post_types', function ($types) {
+    unset($types['post'], $types['attachment']);
+    return $types;
+});
+add_filter('wp_sitemaps_taxonomies', function ($tax) {
+    unset($tax['category'], $tax['post_tag'], $tax['post_format']);
+    return $tax;
+});
+function mcr_sitemap_excluded_pages(): array
+{
+    $ids = [];
+    foreach (['cart', 'checkout', 'myaccount'] as $p) {
+        $ids[] = (int) wc_get_page_id($p);
+    }
+    $wish = get_page_by_path('ma-liste');
+    if ($wish) {
+        $ids[] = (int) $wish->ID;
+    }
+    return array_values(array_filter($ids, fn($i) => $i > 0));
+}
+add_filter('wp_sitemaps_posts_query_args', function ($args, $type) {
+    if ($type === 'page') {
+        $args['post__not_in'] = array_merge((array) ($args['post__not_in'] ?? []), mcr_sitemap_excluded_pages());
+    }
+    if ($type === 'product') {
+        $args['tax_query'] = [['taxonomy' => 'product_visibility', 'field' => 'name', 'terms' => ['exclude-from-catalog', 'exclude-from-search'], 'operator' => 'NOT IN']];
+    }
+    return $args;
+}, 10, 2);
+
+// English versions (/en/…) in their own sitemap: products, categories and pages.
+add_action('init', function () {
+    if (!class_exists('WP_Sitemaps_Provider')) {
+        return;
+    }
+    class MCR_Sitemap_English extends WP_Sitemaps_Provider
+    {
+        public function __construct()
+        {
+            $this->name = 'en';
+            $this->object_type = 'en';
+        }
+        public function get_object_subtypes()
+        {
+            return ['product' => (object) ['name' => 'product'], 'page' => (object) ['name' => 'page'], 'product_cat' => (object) ['name' => 'product_cat']];
+        }
+        public function get_url_list($page_num, $subtype = '')
+        {
+            $per = wp_sitemaps_get_max_urls($this->object_type);
+            $out = [];
+            if ($subtype === 'product_cat') {
+                $terms = get_terms(['taxonomy' => 'product_cat', 'hide_empty' => true, 'number' => $per, 'offset' => ($page_num - 1) * $per]);
+                foreach (is_array($terms) ? $terms : [] as $t) {
+                    $out[] = ['loc' => mcr_prefix_url(get_term_link($t), 'en')];
+                }
+                return $out;
+            }
+            $q = new WP_Query(['post_type' => $subtype === 'page' ? 'page' : 'product', 'post_status' => 'publish', 'posts_per_page' => $per, 'paged' => $page_num, 'fields' => 'ids', 'no_found_rows' => true, 'orderby' => 'ID', 'order' => 'ASC',
+                'post__not_in' => $subtype === 'page' ? mcr_sitemap_excluded_pages() : [],
+                'tax_query' => $subtype === 'page' ? [] : [['taxonomy' => 'product_visibility', 'field' => 'name', 'terms' => ['exclude-from-catalog', 'exclude-from-search'], 'operator' => 'NOT IN']]]);
+            if ($subtype === 'page' && $page_num === 1) {
+                $out[] = ['loc' => mcr_sitemap_url((string) home_url('/'), 'en')]; // homepage: /en/
+            }
+            foreach ($q->posts as $id) {
+                $out[] = ['loc' => mcr_sitemap_url((string) get_permalink($id), 'en'), 'lastmod' => get_post_modified_time('c', true, $id)];
+            }
+            return $out;
+        }
+        public function get_max_num_pages($subtype = '')
+        {
+            $per = wp_sitemaps_get_max_urls($this->object_type);
+            if ($subtype === 'product_cat') {
+                return (int) ceil(wp_count_terms(['taxonomy' => 'product_cat', 'hide_empty' => true]) / $per);
+            }
+            return (int) ceil((int) wp_count_posts($subtype === 'page' ? 'page' : 'product')->publish / $per);
+        }
+    }
+    wp_register_sitemap_provider('en', new MCR_Sitemap_English());
+}, 20);
+
+// Canonical address for the homepage, shop and category pages (sorting/filter parameters removed).
+add_action('wp_head', function () {
+    if (is_singular() || is_search() || is_404() || defined('WPSEO_VERSION') || defined('RANK_MATH_VERSION') || defined('AIOSEO_VERSION')) {
+        return; // WordPress already prints it on single pages
+    }
+    $url = '';
+    if (is_front_page()) {
+        $url = home_url('/');
+    } elseif (function_exists('is_product_taxonomy') && (is_product_taxonomy() || is_shop())) {
+        $url = is_shop() ? get_permalink(wc_get_page_id('shop')) : get_term_link(get_queried_object());
+        $paged = (int) get_query_var('paged');
+        if ($paged > 1 && !is_wp_error($url)) {
+            $url = trailingslashit($url) . 'page/' . $paged . '/';
+        }
+    }
+    if ($url && !is_wp_error($url)) {
+        echo '<link rel="canonical" href="' . esc_url(mcr_sitemap_url((string) $url, mcr_lang())) . '" />' . "\n";
+    }
+}, 2);

@@ -33,7 +33,7 @@ function mcr_home_path(): string
 function mcr_is_technical_path(string $path): bool
 {
     $p = '/' . ltrim(strtok($path, '?') ?: '', '/');
-    return (bool) preg_match('#^/(wp-admin|wp-json|wp-content|wp-includes|wp-login\.php|xmlrpc\.php|wp-cron\.php|robots\.txt|wp-sitemap|sitemap[^/]*\.xml|favicon\.ico)#', $p);
+    return (bool) preg_match('#^/(wp-admin|wp-json|wp-content|wp-includes|wp-login\.php|xmlrpc\.php|wp-cron\.php|robots\.txt|llms\.txt|wp-sitemap|sitemap[^/]*\.xml|favicon\.ico)#', $p);
 }
 
 // 1. Read the language from the address, as early as possible (before WordPress parses the request).
@@ -91,7 +91,8 @@ add_filter('home_url', function ($url, $path) {
 
 // 4. Addresses without a language go to /fr/ (GET only), and the choice is remembered for AJAX calls.
 add_action('template_redirect', function () {
-    if (empty($GLOBALS['mcr_lang_in_url']) && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && !is_feed() && !is_robots() && !wp_doing_ajax() && empty($_GET['wc-ajax'])) {
+    if (empty($GLOBALS['mcr_lang_in_url']) && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && !is_feed() && !is_robots() && !wp_doing_ajax() && empty($_GET['wc-ajax'])
+        && !get_query_var('sitemap') && !mcr_is_technical_path(substr((string) ($_SERVER['REQUEST_URI'] ?? '/'), strlen(mcr_home_path())))) { // sitemaps stay at the root for Google
         $uri = $_SERVER['REQUEST_URI'] ?? '/';
         wp_safe_redirect(untrailingslashit(get_option('home')) . '/' . MCR_DEFAULT_LANG . substr($uri, strlen(mcr_home_path())), 301);
         exit;
