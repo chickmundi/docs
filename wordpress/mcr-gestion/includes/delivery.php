@@ -271,7 +271,7 @@ add_action('woocommerce_shipping_init', function () {
                 $this->add_rate([
                     'id' => $this->get_rate_id(),
                     'label' => $en ? 'Delivery (fee to be confirmed)' : 'Livraison (frais à confirmer)',
-                    'cost' => mcr_max_delivery_fee(),
+                    'cost' => function_exists('mcr_rw_cart_free_delivery') && mcr_rw_cart_free_delivery() ? 0 : mcr_max_delivery_fee(),
                     'package' => $package,
                     'meta_data' => [$en ? 'Distance' : 'Distance' => $en ? 'address not found, to be confirmed' : 'adresse non trouvée, à confirmer'],
                 ]);
@@ -283,8 +283,12 @@ add_action('woocommerce_shipping_init', function () {
             if (!$q['ok']) {
                 return;
             }
-            $label = $q['free']
-                ? ($en ? 'Free delivery' : 'Livraison gratuite')
+            $gift = function_exists('mcr_rw_cart_free_delivery') && mcr_rw_cart_free_delivery(); // welcome-wheel prize
+            if ($gift) {
+                $q['fee'] = 0;
+            }
+            $label = $q['free'] || $gift
+                ? ($en ? 'Free delivery' : 'Livraison gratuite') . ($gift && !$q['free'] ? ($en ? ' (gift)' : ' (cadeau)') : '')
                 : ($en ? 'Delivery' : 'Livraison');
             $this->add_rate([
                 'id' => $this->get_rate_id(),

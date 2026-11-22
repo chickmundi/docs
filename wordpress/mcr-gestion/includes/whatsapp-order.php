@@ -354,6 +354,9 @@ function mcr_wa_create_order(array $in)
     $order->set_payment_method_title($en ? 'Pay on delivery or at pickup (WhatsApp order)' : 'Paiement à la réception (commande WhatsApp)');
     $order->set_customer_ip_address(WC_Geolocation::get_ip_address());
     $order->set_customer_user_agent(wc_get_user_agent());
+    if (function_exists('mcr_rw_apply_to_order')) {
+        mcr_rw_apply_to_order($order, $ship, ($in['source'] ?? '') === 'cart'); // welcome-wheel / referral gifts in the cart
+    }
     $order->calculate_totals(true);
     $order->save();
     $order->update_status(MCR_WA_STATUS, 'Commande préparée par le client et envoyée sur WhatsApp.');

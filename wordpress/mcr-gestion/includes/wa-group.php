@@ -116,7 +116,7 @@ add_action('wc_ajax_mcr_wa_join', function () {
 // ---------------------------------------------------------------- The window (every page except cart, checkout, account)
 
 add_action('wp_footer', function () {
-    if (is_admin() || !mcr_wag_settings()['on'] || mcr_wag_joined()
+    if (is_admin() || !mcr_wag_settings()['on'] || mcr_wag_joined() || (function_exists('mcr_rw_wheel_on') && mcr_rw_wheel_on()) // the welcome wheel asks for the number instead
         || (function_exists('is_cart') && (is_cart() || is_checkout() || is_account_page()))) {
         return;
     }
