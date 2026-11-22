@@ -264,3 +264,15 @@ function mcr_expiring_lots(int $days = 14): array
     usort($out, fn($a, $b) => strcmp($a['expiry'], $b['expiry']));
     return $out;
 }
+
+// AVIF photos (a few products use them): accepted like JPEG/WebP; every current browser shows them.
+add_filter('upload_mimes', function ($m) {
+    $m['avif'] = 'image/avif';
+    return $m;
+});
+add_filter('wp_check_filetype_and_ext', function ($data, $file, $filename) {
+    if (empty($data['type']) && preg_match('/\.avif$/i', (string) $filename)) {
+        $data = ['ext' => 'avif', 'type' => 'image/avif', 'proper_filename' => $data['proper_filename'] ?? false];
+    }
+    return $data;
+}, 10, 3);
