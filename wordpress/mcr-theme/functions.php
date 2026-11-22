@@ -4,7 +4,7 @@
  */
 defined('ABSPATH') || exit;
 
-define('MCRT_VERSION', '1.3.5');
+define('MCRT_VERSION', '1.3.6');
 define('MCRT_DIR', get_template_directory());
 define('MCRT_URL', get_template_directory_uri());
 
