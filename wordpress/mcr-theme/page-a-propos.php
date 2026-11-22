@@ -19,7 +19,8 @@ $market = [
     ['perruques', $en ? 'Hair products' : 'Produits capillaires', $en ? 'Braiding hair, wigs, weaves, crochet, accessories and hair care.' : 'Mèches, perruques, tissages, crochets, accessoires et soins pour cheveux.'],
 ];
 ?>
-<section class="ab-hero">
+<section class="ab-hero has-pbg">
+  <?php echo mcrt_photo_bg('shop-staples', 'dark', true); ?>
   <div class="container ab-hero__grid">
     <div class="ab-hero__copy" data-reveal>
       <nav class="breadcrumbs breadcrumbs--light" aria-label="<?php echo esc_attr(mcr_t('Fil d’Ariane')); ?>"><a href="<?php echo esc_url(home_url('/')); ?>"><?php mcr_e('Accueil'); ?></a> <?php echo mcr_icon('chevron-right', 14); ?> <span><?php the_title(); ?></span></nav>
@@ -59,6 +60,19 @@ $market = [
     </ul>
   </section>
 
+  <section class="shopgal" aria-labelledby="h-shopgal">
+    <div class="container">
+      <?php mcrt_section_head($en ? 'In store' : 'En magasin', $en ? 'Step inside our store' : 'Entrez dans notre magasin', '', '', 'h-shopgal'); ?>
+      <ul class="shopgal__grid">
+        <?php $gi = 0; foreach (mcrt_store_photos() as $name => $cap) : ?>
+          <li class="shopgal__item shopgal__item--<?php echo (int) $gi; ?>" data-reveal style="--d:<?php echo esc_attr((string) ($gi * 0.06)); ?>s">
+            <?php echo mcrt_photo_img($name, '(min-width: 900px) 40vw, 90vw', false, $cap); ?>
+            <span class="shopgal__cap"><?php echo esc_html($cap); ?></span>
+          </li>
+        <?php $gi++; endforeach; ?>
+      </ul>
+    </div>
+  </section>
   <section class="ab-offer" aria-labelledby="h-offer">
     <?php mcrt_section_head($en ? 'What makes us unique' : 'Notre exclusivité', $en ? 'A convenience store and a market' : 'Un dépanneur et un marché', mcr_shop_url(), $en ? 'Browse every aisle' : 'Voir tous les rayons', 'h-offer'); ?>
     <div class="ab-offer__grid">
@@ -83,7 +97,8 @@ $market = [
   </section>
 </div>
 
-<section class="community" aria-labelledby="h-visit">
+<section class="community has-pbg" aria-labelledby="h-visit">
+  <?php echo mcrt_photo_bg('shop-pantry'); ?>
   <div class="container community__grid">
     <div class="community__copy" data-reveal>
       <p class="eyebrow eyebrow--gold"><?php echo esc_html($en ? 'Come and see us' : 'Venez nous voir'); ?></p>

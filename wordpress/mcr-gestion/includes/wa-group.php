@@ -93,6 +93,9 @@ add_action('wc_ajax_mcr_wa_join', function () {
     if ($phone === '') {
         wp_send_json_error(['message' => $en ? 'Please enter a valid WhatsApp number, e.g. 819 555-1234.' : 'Entrez un numéro WhatsApp valide, par ex. 819 555-1234.'], 400);
     }
+    if (!mcr_phone_canadian($phone)) {
+        wp_send_json_error(['message' => $en ? 'Only Canadian phone numbers are accepted (+1, e.g. 819 372-1234).' : 'Seuls les numéros canadiens sont acceptés (indicatif +1, par ex. 819 372-1234).'], 400);
+    }
     if (empty($_POST['consent'])) {
         wp_send_json_error(['message' => $en ? 'Please tick the box to agree to receive our messages.' : 'Cochez la case pour accepter de recevoir nos messages.'], 400);
     }
@@ -116,7 +119,7 @@ add_action('wc_ajax_mcr_wa_join', function () {
 // ---------------------------------------------------------------- The window (every page except cart, checkout, account)
 
 add_action('wp_footer', function () {
-    if (is_admin() || !mcr_wag_settings()['on'] || mcr_wag_joined() || (function_exists('mcr_rw_wheel_on') && mcr_rw_wheel_on()) // the welcome wheel asks for the number instead
+    if (is_admin() || !mcr_wa_allowed() || !mcr_wag_settings()['on'] || mcr_wag_joined() || (function_exists('mcr_rw_wheel_on') && mcr_rw_wheel_on()) // the welcome wheel asks for the number instead
         || (function_exists('is_cart') && (is_cart() || is_checkout() || is_account_page()))) {
         return;
     }

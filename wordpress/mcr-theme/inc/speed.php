@@ -44,7 +44,8 @@ function mcrt_cached(string $name, callable $render, int $ttl = 15 * MINUTE_IN_S
         $render();
         return;
     }
-    $key = 'mcrt_frag_' . md5($name . '|' . mcr_lang() . '|' . mcrt_cache_ver() . '|' . MCRT_VERSION);
+    $wa = function_exists('mcr_wa_allowed') && mcr_wa_allowed() ? 'wa' : 'nowa'; // WhatsApp links only for visitors in Canada
+    $key = 'mcrt_frag_' . md5($name . '|' . mcr_lang() . '|' . mcrt_cache_ver() . '|' . MCRT_VERSION . '|' . $wa);
     $hit = get_transient($key);
     if (is_array($hit) && isset($hit['html'])) {
         echo '<!-- mcr-cache: hit -->';

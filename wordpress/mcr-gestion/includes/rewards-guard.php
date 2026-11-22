@@ -157,3 +157,4 @@ function mcr_checkout_addr_key(array $data): string
     return mcr_addr_key($street, $street2, $pc);
 }
 
+

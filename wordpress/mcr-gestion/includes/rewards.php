@@ -441,6 +441,9 @@ add_action('wc_ajax_mcr_rw_spin', function () {
     if ($phone === '' || !mcr_phone_plausible($phone)) {
         $err('Ce numéro ne semble pas valide. Entrez votre vrai numéro WhatsApp, par ex. 819 372-1234.', 'This number does not look valid. Please enter your real WhatsApp number, e.g. 819 372-1234.');
     }
+    if (!mcr_phone_canadian($phone)) {
+        $err('Seuls les numéros canadiens sont acceptés (indicatif +1, par ex. 819 372-1234).', 'Only Canadian phone numbers are accepted (+1, e.g. 819 372-1234).');
+    }
     global $wpdb;
     $known = mcr_rw_row_by('phone', $phone);
     if (!$known || $known->prize === '') {
@@ -629,7 +632,7 @@ function mcr_rw_share_block(string $code, bool $en): string
 
 add_action('wp_enqueue_scripts', function () {
     $s = mcr_rw_settings();
-    if (!mcr_rw_wheel_on() && empty($s['ref'])) {
+    if ((!mcr_rw_wheel_on() && empty($s['ref'])) || !mcr_wa_allowed()) {
         return;
     }
     wp_enqueue_script('mcr-rewards', MCR_URL . 'assets/rewards.js', [], MCR_VERSION, ['strategy' => 'defer', 'in_footer' => true]);
@@ -637,7 +640,7 @@ add_action('wp_enqueue_scripts', function () {
 
 add_action('wp_footer', function () {
     $s = mcr_rw_settings();
-    if (is_admin() || (!mcr_rw_wheel_on() && empty($s['ref']))) {
+    if (is_admin() || (!mcr_rw_wheel_on() && empty($s['ref'])) || !mcr_wa_allowed()) { // Canada only
         return;
     }
     $en = mcr_is_en();

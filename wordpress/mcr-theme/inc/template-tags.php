@@ -318,3 +318,58 @@ function mcrt_tz(): DateTimeZone
 {
     return function_exists('mcr_store_tz') ? mcr_store_tz() : wp_timezone();
 }
+
+// ---------- Photos of the store (assets/photos), used as backgrounds with a gradient fade ----------
+
+/** The five store photos, with what they show. */
+function mcrt_store_photos(): array
+{
+    $en = mcr_is_en();
+    return [
+        'shop-spices' => $en ? 'Spices, sauces and peanut butters' : 'Épices, sauces et pâtes d’arachide',
+        'shop-breakfast' => $en ? 'Breakfast and snacks' : 'Petit-déjeuner et collations',
+        'shop-pantry' => $en ? 'Canned goods, pasta and sauces' : 'Conserves, pâtes et sauces',
+        'shop-staples' => $en ? 'Everyday essentials' : 'Les essentiels du quotidien',
+        'shop-beauty' => $en ? 'Beauty and hair care' : 'Beauté et soins capillaires',
+    ];
+}
+
+/** <img> of a store photo (720 / 1280 px versions). */
+function mcrt_photo_img(string $name, string $sizes = '100vw', bool $eager = false, string $alt = ''): string
+{
+    $base = MCRT_URL . '/assets/photos/' . sanitize_file_name($name);
+    if (!is_readable(MCRT_DIR . '/assets/photos/' . sanitize_file_name($name) . '-720.webp')) {
+        return '';
+    }
+    return sprintf('<img src="%1$s-720.webp" srcset="%1$s-720.webp 720w, %1$s-1280.webp 1280w" sizes="%2$s" alt="%3$s" loading="%4$s" decoding="async">', esc_url($base), esc_attr($sizes), esc_attr($alt), $eager ? 'eager' : 'lazy');
+}
+
+/** Full-size background photo with a gradient fade. $tone: dark (green sections) or light (pale headers). */
+function mcrt_photo_bg(string $name, string $tone = 'dark', bool $eager = false): string
+{
+    $img = mcrt_photo_img($name, '100vw', $eager);
+    return $img ? '<span class="pbg pbg--' . esc_attr($tone) . '" aria-hidden="true">' . $img . '</span>' : '';
+}
+
+/** Which store photo goes with a product category (by the category or its top-level parent); '' if none fits. */
+function mcrt_cat_photo(?WP_Term $term): string
+{
+    $map = [
+        'soins-capillaires' => 'shop-beauty', 'soins-corporels' => 'shop-beauty', 'perruques' => 'shop-beauty', 'extensions-capillaires' => 'shop-beauty', 'beaute' => 'shop-beauty', 'cosmetiques' => 'shop-beauty',
+        'petit-dejeuner' => 'shop-breakfast', 'collations' => 'shop-breakfast', 'boissons' => 'shop-breakfast', 'biscuits' => 'shop-breakfast',
+        'conserves' => 'shop-pantry', 'pates-et-riz' => 'shop-pantry', 'sauces' => 'shop-pantry',
+        'garde-manger' => 'shop-staples', 'huiles' => 'shop-staples', 'riz' => 'shop-staples',
+        'epices-et-condiments' => 'shop-spices', 'farines' => 'shop-spices', 'epicerie' => 'shop-spices',
+    ];
+    if (!$term) {
+        return 'shop-staples';
+    }
+    for ($t = $term, $i = 0; $t && $i < 4; $i++) {
+        if (isset($map[$t->slug])) {
+            return $map[$t->slug];
+        }
+        $t = $t->parent ? get_term($t->parent, 'product_cat') : null;
+        $t = $t instanceof WP_Term ? $t : null;
+    }
+    return ''; // meat, fish, frozen, fresh produce: no matching store photo
+}

@@ -3,7 +3,8 @@
 defined('ABSPATH') || exit;
 $en = mcr_is_en();
 ?>
-<section class="community" aria-labelledby="h-comm">
+<section class="community has-pbg" aria-labelledby="h-comm">
+  <?php echo mcrt_photo_bg('shop-spices'); ?>
   <div class="container community__grid">
     <div class="community__copy" data-reveal>
       <p class="eyebrow eyebrow--gold"><?php echo esc_html($en ? 'More than a grocery store' : 'Bien plus qu’une épicerie'); ?></p>

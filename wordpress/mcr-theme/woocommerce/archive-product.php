@@ -38,7 +38,9 @@ if ($promo && ($term || is_search())) {
     $active[] = [esc_html(mcr_t('Promotions')), remove_query_arg('promotions', $base)];
 }
 ?>
-<section class="phead<?php echo $img ? ' phead--img' : ''; ?>">
+<?php $photo = is_search() ? '' : mcrt_cat_photo($term); ?>
+<section class="phead<?php echo $img ? ' phead--img' : ''; ?><?php echo $photo ? ' has-pbg' : ''; ?>">
+  <?php echo $photo ? mcrt_photo_bg($photo, 'light', true) : ''; // store photo fading into the header ?>
   <div class="container phead__in">
     <div class="phead__copy">
       <?php woocommerce_breadcrumb(); ?>

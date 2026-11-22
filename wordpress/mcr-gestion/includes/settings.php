@@ -11,8 +11,8 @@ function mcr_default_settings(): array
             'name' => 'Marché Chemin-du-Roy',
             'phone' => '+1 819-372-9966',
             'email' => 'sc@marchecheminduroy.com',
-            'whatsapp' => '15145787442',
-            'whatsapp_display' => '+1 514-578-7442',
+            'whatsapp' => '18193808250',
+            'whatsapp_display' => '+1 819-380-8250',
             'street' => '65 Rue Notre-Dame E',
             'city' => 'Trois-Rivières',
             'region' => 'QC',
@@ -119,7 +119,75 @@ function mcr_setting(string $group, ?string $key = null)
         $saved = get_option("mcr_{$group}", []);
         $cache[$group] = is_array($saved) ? array_replace($defaults, $saved) : $defaults;
     }
-    return $key === null ? $cache[$group] : ($cache[$group][$key] ?? null);
+    $values = $cache[$group];
+    // The store's WhatsApp number is only shown to visitors in Canada (fewer spam messages).
+    if ($group === 'store' && !mcr_wa_allowed()) {
+        $values['whatsapp'] = '';
+        $values['whatsapp_display'] = '';
+    }
+    return $key === null ? $values : ($values[$key] ?? null);
+}
+
+/** Country of the visitor ('CA', 'US'… or '' if unknown), from WooCommerce's geolocation. */
+function mcr_visitor_country(): string
+{
+    static $cc = null;
+    if ($cc !== null) {
+        return $cc;
+    }
+    $cc = '';
+    // Staging only: ?mcr_geo_test=CA lets us test both cases.
+    if (!empty($_GET['mcr_geo_test']) && str_contains((string) home_url(), 'staging.')) { // phpcs:ignore WordPress.Security.NonceVerification
+        return $cc = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', (string) $_GET['mcr_geo_test']), 0, 2)); // phpcs:ignore
+    }
+    // Remembered for 30 days in a signed cookie, so the lookup happens once per visitor.
+    $c = (string) ($_COOKIE['mcr_cc'] ?? '');
+    if (preg_match('/^([A-Z]{2})\.([a-f0-9]{12})$/', $c, $m) && hash_equals(substr(hash_hmac('sha256', $m[1], wp_salt('nonce')), 0, 12), $m[2])) {
+        return $cc = $m[1];
+    }
+    if (class_exists('WC_Geolocation')) {
+        // Local MaxMind database when installed, otherwise WooCommerce's online lookup (cached a week per address).
+        $geo = WC_Geolocation::geolocate_ip('', true, true);
+        $cc = strtoupper((string) ($geo['country'] ?? ''));
+    }
+    if ($cc !== '' && !headers_sent()) {
+        setcookie('mcr_cc', $cc . '.' . substr(hash_hmac('sha256', $cc, wp_salt('nonce')), 0, 12), ['expires' => time() + 30 * DAY_IN_SECONDS, 'path' => COOKIEPATH ?: '/', 'secure' => is_ssl(), 'httponly' => true, 'samesite' => 'Lax']);
+    }
+    return $cc;
+}
+
+// Look the country up before the page starts (so the cookie can be set).
+add_action('template_redirect', function () {
+    if (!is_admin() && !(is_user_logged_in() && current_user_can('edit_shop_orders'))) {
+        mcr_visitor_country();
+    }
+}, 0);
+
+/**
+ * May this visitor see the store's WhatsApp number? Visitors in Canada, staff, background tasks,
+ * and visitors whose country is unknown (so real customers are never blocked by mistake).
+ */
+function mcr_wa_allowed(): bool
+{
+    static $ok = null;
+    if ($ok !== null) {
+        return $ok;
+    }
+    if ((defined('WP_CLI') && WP_CLI) || wp_doing_cron() || !did_action('init') || (is_admin() && !wp_doing_ajax())) {
+        return true; // not cached: too early to know who is visiting
+    }
+    if (is_user_logged_in() && current_user_can('edit_shop_orders')) {
+        return $ok = true;
+    }
+    $cc = mcr_visitor_country();
+    return $ok = (bool) apply_filters('mcr_wa_allowed', $cc === '' || in_array($cc, ['CA'], true), $cc);
+}
+
+/** Canadian mobile/landline numbers only (+1 with a Canadian area code). */
+function mcr_phone_canadian(string $digits): bool
+{
+    static $areas = [204, 226, 236, 249, 250, 257, 263, 289, 306, 343, 354, 365, 367, 368, 382, 387, 403, 416, 418, 428, 431, 437, 438, 450, 460, 468, 474, 506, 514, 519, 548, 579, 581, 584, 587, 604, 613, 639, 647, 672, 683, 705, 709, 742, 753, 778, 780, 782, 807, 819, 825, 867, 873, 879, 902, 905, 942];
+    return strlen($digits) === 11 && $digits[0] === '1' && in_array((int) substr($digits, 1, 3), $areas, true);
 }
 
 function mcr_settings_install_defaults(): void

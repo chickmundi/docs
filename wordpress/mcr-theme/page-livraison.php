@@ -52,7 +52,8 @@ $path = function (array $pts) use ($pt): string {
 };
 $ajax = admin_url('admin-ajax.php');
 ?>
-<section class="phead phead--page dl-head">
+<section class="phead phead--page dl-head has-pbg">
+  <?php echo mcrt_photo_bg('shop-staples', 'light', true); ?>
   <div class="container phead__in">
     <div class="phead__copy">
       <nav class="breadcrumbs" aria-label="<?php echo esc_attr(mcr_t('Fil d’Ariane')); ?>"><a href="<?php echo esc_url(home_url('/')); ?>"><?php mcr_e('Accueil'); ?></a> <?php echo mcr_icon('chevron-right', 14); ?> <span><?php the_title(); ?></span></nav>

@@ -221,6 +221,9 @@ function mcr_wa_create_order(array $in)
     if (strlen($digits) < 10) {
         return $err('Indiquez un numéro de téléphone valide.', 'Please enter a valid phone number.');
     }
+    if (!mcr_phone_canadian(mcr_phone_digits($digits))) {
+        return $err('Seuls les numéros canadiens sont acceptés (indicatif +1, par ex. 819 372-1234).', 'Only Canadian phone numbers are accepted (+1, e.g. 819 372-1234).'); // Canada only: avoids spam and orders we cannot deliver
+    }
     // North American numbers as 819-555-0123.
     if (strlen($digits) === 10 || (strlen($digits) === 11 && $digits[0] === '1')) {
         $d10 = substr($digits, -10);

@@ -30,7 +30,8 @@ $fmt = function (string $t) use ($en): string {
     return $en ? date('g', mktime($h, $m)) . ($m ? date(':i', mktime($h, $m)) : '') . ' ' . date('a', mktime($h, $m)) : $h . ' h' . ($m ? sprintf(' %02d', $m) : '');
 };
 ?>
-<section class="phead phead--page">
+<section class="phead phead--page has-pbg">
+  <?php echo mcrt_photo_bg('shop-beauty', 'light', true); ?>
   <div class="container phead__in">
     <div class="phead__copy">
       <nav class="breadcrumbs" aria-label="<?php echo esc_attr(mcr_t('Fil d’Ariane')); ?>"><a href="<?php echo esc_url(home_url('/')); ?>"><?php mcr_e('Accueil'); ?></a> <?php echo mcr_icon('chevron-right', 14); ?> <span><?php the_title(); ?></span></nav>

@@ -392,3 +392,27 @@ function mcr_home_section_types(): array
         'category' => 'Rangée de catégorie',
     ];
 }
+
+
+// One-time: the store's new WhatsApp number (+1 819-380-8250) in the settings and in page texts.
+add_action('admin_init', function () {
+    if (get_option('mcr_wa_number_v2') || !current_user_can('manage_woocommerce')) {
+        return;
+    }
+    $store = (array) get_option('mcr_store', []);
+    if (in_array(preg_replace('/\D/', '', (string) ($store['whatsapp'] ?? '')), ['', '15145787442', '5145787442'], true)) {
+        $store['whatsapp'] = '18193808250';
+        $store['whatsapp_display'] = '+1 819-380-8250';
+        update_option('mcr_store', $store);
+    }
+    global $wpdb;
+    foreach (['+1 514-578-7442' => '+1 819-380-8250', '514-578-7442' => '819-380-8250', '514 578 7442' => '819 380 8250', '15145787442' => '18193808250', '5145787442' => '8193808250'] as $old => $new) {
+        $wpdb->query($wpdb->prepare("UPDATE {$wpdb->posts} SET post_content = REPLACE(post_content, %s, %s) WHERE post_type IN ('page','post','product') AND post_content LIKE %s", $old, $new, '%' . $wpdb->esc_like($old) . '%')); // phpcs:ignore
+        $wpdb->query($wpdb->prepare("UPDATE {$wpdb->postmeta} SET meta_value = REPLACE(meta_value, %s, %s) WHERE meta_key LIKE %s AND meta_value LIKE %s", $old, $new, '_mcr_%', '%' . $wpdb->esc_like($old) . '%')); // phpcs:ignore
+    }
+    wp_cache_flush();
+    update_option('mcr_wa_number_v2', time(), false);
+    if (function_exists('mcr_llms_write')) {
+        mcr_llms_write();
+    }
+});
