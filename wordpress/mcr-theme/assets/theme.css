@@ -1761,3 +1761,8 @@ html.wa-open { overflow: hidden; }
 @keyframes wag-draw { to { stroke-dashoffset: 0; } }
 .wag__done p { margin: 0; color: var(--ink-2); }
 @media (prefers-reduced-motion: reduce) { .wag[open], .wag[open]::backdrop, .wag *, .wag *::after { animation: none !important; } .wag__bubble { opacity: 1; } .wag__tick circle, .wag__tick path { stroke-dashoffset: 0; } }
+
+/* Product page: "Vous aimerez aussi" as a slider, arrows on the heading line */
+.related, .upsells { position: relative; min-width: 0; }
+.related > h2, .upsells > h2 { padding-right: 84px; }
+.related .prow-nav, .upsells .prow-nav { position: absolute; right: 0; top: -52px; margin: 0; }

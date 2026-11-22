@@ -4,7 +4,7 @@
  */
 defined('ABSPATH') || exit;
 
-define('MCRT_VERSION', '1.4.1');
+define('MCRT_VERSION', '1.4.2');
 define('MCRT_DIR', get_template_directory());
 define('MCRT_URL', get_template_directory_uri());
 
@@ -418,7 +418,7 @@ add_filter('woocommerce_product_tabs', function ($tabs) {
     unset($tabs['reviews']);
     return $tabs;
 });
-add_filter('woocommerce_output_related_products_args', fn($a) => array_merge($a, ['posts_per_page' => 5, 'columns' => 5]));
+add_filter('woocommerce_output_related_products_args', fn($a) => array_merge($a, ['posts_per_page' => 10, 'columns' => 5])); // shown as a slider
 
 // Product page: aisle above the title, availability under the price.
 add_action('woocommerce_single_product_summary', function () {
