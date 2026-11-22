@@ -408,4 +408,25 @@
     cdTick();
     setInterval(cdTick, 1000);
   }
+
+  // ---------- Homepage promotions pop-up: at most once every 5 minutes per visitor ----------
+  var pop = document.querySelector('[data-promo-popup]');
+  if (pop && typeof pop.showModal === 'function') {
+    var POP_KEY = 'mcr_promo_pop', POP_GAP = 300; // seconds
+    var seen = document.cookie.split('; ').some(function (c) { return c.indexOf(POP_KEY + '=') === 0; });
+    var remember = function () { document.cookie = POP_KEY + '=1; path=/; max-age=' + POP_GAP + '; SameSite=Lax'; };
+    var closePop = function () { if (pop.open) pop.close(); };
+    pop.addEventListener('click', function (e) {
+      if (e.target === pop || e.target.closest('[data-ppop-close]')) closePop(); // backdrop, ×, "Plus tard", add to cart
+    });
+    if (!seen && !/[?&]mcr_nopop\b/.test(location.search)) {
+      setTimeout(function () {
+        if (document.querySelector('dialog[open]') || document.hidden) return; // never on top of another window
+        remember();
+        pop.showModal();
+        var first = pop.querySelector('.btn');
+        if (first) first.focus({ preventScroll: true });
+      }, 3500);
+    }
+  }
 })();

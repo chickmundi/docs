@@ -4,7 +4,7 @@
  */
 defined('ABSPATH') || exit;
 
-define('MCRT_VERSION', '1.3.7');
+define('MCRT_VERSION', '1.3.8');
 define('MCRT_DIR', get_template_directory());
 define('MCRT_URL', get_template_directory_uri());
 
@@ -509,3 +509,10 @@ add_action('woocommerce_single_product_summary', function () {
     }
     echo '</div>';
 }, 11);
+
+// ---------- Homepage promotions pop-up (before the icon sprite, which prints at priority 10) ----------
+add_action('wp_footer', function () {
+    if (is_front_page() && !is_customize_preview()) {
+        get_template_part('template-parts/promo-popup');
+    }
+}, 5);
