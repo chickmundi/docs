@@ -71,3 +71,6 @@ State root: `.omc/` by default, or `$OMC_STATE_DIR/{project-id}/` when `OMC_STAT
 Say "setup omc" or run `/oh-my-claudecode:omc-setup`.
 
 <!-- OMC:END -->
+
+## Client PDFs (rule)
+Build every PDF with `node presentation/tools/topdf.cjs page.html out.pdf` (see `presentation/tools/README.md`); it must print "PDF safe". Never use shadows, filters or see-through gradients in PDF pages: the iPhone viewer shows them as gray boxes around images.
