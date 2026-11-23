@@ -638,11 +638,12 @@
   // ============================================================ SHOP
   VIEWS.shop = function (v) {
     var body = '';
-    if (CAPS.shop) {
+    if (CAPS.shop || CAPS.insights) {
       if (!v.data && !v.loading && !v.err) loadInto(v, 'shop');
       var d = v.data;
       if (!d) body += v.err ? errBox(v) : '<div class="tiles"><div class="skel skel--tile"></div><div class="skel skel--tile"></div></div>' + skel(3);
       else {
+       if (d.sales) {
         var s = d.sales, max = Math.max.apply(null, s.days.map(function (x) { return x.total; }).concat([1]));
         body += '<div class="tiles"><div class="tile tile--hero"><small>Aujourd’hui</small><strong>' + esc(s.today.total) + '</strong><span>' + s.today.count + ' commande' + (s.today.count > 1 ? 's' : '') + '</span></div>' +
           '<div class="tile"><small>7 derniers jours</small><strong>' + esc(s.week.total) + '</strong><span>' + s.week.count + ' commandes · panier moyen ' + esc(s.week.avg) + '</span></div></div>';
@@ -653,7 +654,9 @@
           row({ act: 'stockout', icon: 'alert', tone: 'red', title: 'En rupture', value: '<b>' + d.stock.out + '</b>', chev: true }),
           row({ act: 'stocklow', icon: 'box', tone: 'orange', title: 'Stock bas', sub: d.stock.low_at + ' unités ou moins', value: '<b>' + d.stock.low + '</b>', chev: true }),
         ]);
-        if (s.best.length) body += group('Meilleures ventes · 7 jours', s.best.map(function (b, i) { return row({ act: 'prod', id: b.id, img: b.image || '', title: '<b class="rank">' + (i + 1) + '</b>' + esc(b.name), value: b.qty + ' vendus', chev: true }); }));
+        if (s.best.length) body += group('Meilleures ventes · 7 jours', s.best.map(function (b, i) { return row({ act: CAPS.products ? 'prod' : '', id: b.id, img: b.image || '', title: '<b class="rank">' + (i + 1) + '</b>' + esc(b.name), value: b.qty + ' vendus', chev: CAPS.products }); }));
+       } else body += upsell('Premium', 'Tableau de bord des ventes', ['Ventes du jour et des 7 derniers jours', 'Panier moyen et graphique', 'Meilleures ventes et alertes de stock']);
+       if (d.manage) {
         body += group('Service', [
           toggle('delivery', d.delivery, 'Livraison', d.delivery ? 'Les clients peuvent se faire livrer' : 'Désactivée sur le site', 'truck', 'blue'),
           toggle('pickup', d.pickup, 'Retrait en magasin', d.pickup ? 'Les clients peuvent passer chercher' : 'Désactivé sur le site', 'store', 'orange'),
@@ -664,7 +667,10 @@
           '<label class="row row--area"><span class="row__label">Français</span><textarea data-f="ann_fr" rows="2">' + esc(a.text_fr) + '</textarea></label>',
           '<label class="row row--area"><span class="row__label">Anglais</span><textarea data-f="ann_en" rows="2">' + esc(a.text_en) + '</textarea></label>',
         ]) + '<div class="pad"><button class="btn btn--gray" data-act="annsave"' + (v.annDirty ? '' : ' disabled') + '>Enregistrer le bandeau</button></div>';
+       }
       }
+    } else {
+      body += upsell('Croissance', 'Gérez toute la boutique ici', ['Produits : prix, promos, stock et photos', 'Promotions et ventes éclair', 'Livraison, retrait et bandeau d’annonce']);
     }
     body += group('Notifications', notifRows(), notifFoot());
     var links = [];
@@ -673,6 +679,11 @@
     body += group('', links) + group('', [row({ icon: 'out', tone: 'red', title: 'Se déconnecter', href: C.logout, cls: 'is-danger' })], 'Connecté : ' + esc(C.user) + ' · ' + esc(C.store || ''));
     return { title: 'Boutique', body: body };
   };
+  // What a higher plan adds (shown instead of a locked section).
+  function upsell(plan, title, items) {
+    return '<div class="upsell"><span class="upsell__tag">Forfait ' + plan + '</span><strong>' + title + '</strong><ul>' + items.map(function (i) { return '<li>' + ic('check', 15, 2.6) + i + '</li>'; }).join('') + '</ul>' +
+      (C.license ? '<a class="btn btn--tint" href="' + esc(C.license) + '" target="_blank" rel="noopener">Voir les forfaits</a>' : '<p>Parlez-en au gérant du magasin.</p>') + '</div>';
+  }
   function notifRows() {
     if (state_push()) return [row({ icon: 'bell', tone: 'red', title: 'Alertes de commandes', value: 'Activées' }), row({ act: 'push-test', icon: 'check', tone: 'green', title: 'Envoyer une notification test' }), row({ act: 'push-off', icon: 'x', tone: 'gray', title: 'Désactiver sur ce téléphone' })];
     return [row({ act: 'push-on', icon: 'bell', tone: 'red', title: 'Activer les alertes de commandes', sub: 'Une alerte sonne dès qu’une commande arrive', chev: true })];

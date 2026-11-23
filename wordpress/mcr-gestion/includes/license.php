@@ -25,6 +25,8 @@ function mcr_modules(): array
         'wagroup' => ['Groupe WhatsApp', 'Invitation au groupe « Nouveaux arrivages » et liste des numéros.'],
         'rewards' => ['Roue de bienvenue et parrainage', 'Roue animée avec cadeaux, liens de parrainage, protection contre les abus.'],
         'ai' => ['Optimiseur IA', 'Améliorer les fiches produits avec l’IA.'],
+        'app_manage' => ['App : gestion de la boutique', 'Dans l’app MCR Gestion : produits (prix, stock, photos, nouveaux produits), promotions et ventes éclair, livraison, retrait et bandeau.'],
+        'app_insights' => ['App : tableau de bord des ventes', 'Ventes du jour et des 7 derniers jours, panier moyen, meilleures ventes, alertes de stock.'],
     ];
 }
 
@@ -284,7 +286,7 @@ function mcr_render_license_page(): void
   <table class="widefat striped" style="max-width:980px">
     <thead><tr><th>Module</th><th>Ce qu’il fait</th><th>État</th></tr></thead>
     <tbody>
-      <tr><td><strong>Boutique</strong></td><td>Catalogue, panier, caisse, livraison, retrait, commandes WhatsApp, application commandes, référencement, protection des images.</td><td><span style="color:#00a32a">● Toujours inclus</span></td></tr>
+      <tr><td><strong>Boutique</strong></td><td>Catalogue, panier, caisse, livraison, retrait, commandes WhatsApp, référencement, protection des images, et l’app MCR Gestion pour suivre les commandes avec alertes sur le téléphone.</td><td><span style="color:#00a32a">● Toujours inclus</span></td></tr>
       <?php foreach (mcr_modules() as $id => [$name, $desc]) : $on = mcr_module_on($id); ?>
         <tr><td><strong><?php echo esc_html($name); ?></strong></td><td><?php echo esc_html($desc); ?></td><td><?php echo $on ? '<span style="color:#00a32a">● Actif</span>' : '<span style="color:#d63638">● En pause</span>'; ?></td></tr>
       <?php endforeach; ?>

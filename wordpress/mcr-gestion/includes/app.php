@@ -105,6 +105,7 @@ function mcr_app_render(): void
         'caps' => function_exists('mcr_app_caps') ? mcr_app_caps() : ['orders' => true],
         'currency' => get_woocommerce_currency_symbol(),
         'today' => wp_date('Y-m-d'),
+        'license' => current_user_can('manage_options') ? admin_url('admin.php?page=mcr-license') : '',
     ];
     $v = MCR_VERSION;
     ?><!doctype html>

@@ -2,14 +2,14 @@
 /**
  * Plugin Name: Chick Licences
  * Description: Abonnements mensuels des modules MCR Gestion : clients, forfaits, essai gratuit de 30 jours, paiement par virement Interac (ou Stripe), rappels et reçus. À installer sur le site de CHICK Service (pas chez le client).
- * Version: 1.1.0
+ * Version: 1.2.0
  * Author: CHICK Service
  * Requires PHP: 8.0
  * Text Domain: chick-licences
  */
 defined('ABSPATH') || exit;
 
-const CHICK_LIC_VERSION = '1.1.0';
+const CHICK_LIC_VERSION = '1.2.0';
 const CHICK_LIC_DB = 2;
 
 // ---------------------------------------------------------------- Storage
@@ -85,6 +85,8 @@ function chick_lic_modules(): array
         'wagroup' => 'Groupe WhatsApp',
         'rewards' => 'Roue de bienvenue et parrainage',
         'ai' => 'Optimiseur IA',
+        'app_manage' => 'App : produits, promos et boutique',
+        'app_insights' => 'App : tableau de bord des ventes',
     ];
 }
 
@@ -96,7 +98,7 @@ function chick_lic_settings(): array
         'trial_plan' => 'premium',
         'plans' => [
             'essentiel' => ['name' => 'Essentiel', 'price' => '29 $', 'modules' => [], 'price_id' => '', 'link' => ''],
-            'croissance' => ['name' => 'Croissance', 'price' => '69 $', 'modules' => ['promotions', 'flash', 'fbt', 'reminders', 'wagroup'], 'price_id' => '', 'link' => ''],
+            'croissance' => ['name' => 'Croissance', 'price' => '69 $', 'modules' => ['promotions', 'flash', 'fbt', 'reminders', 'wagroup', 'app_manage'], 'price_id' => '', 'link' => ''],
             'premium' => ['name' => 'Premium', 'price' => '99 $', 'modules' => $all, 'price_id' => '', 'link' => ''],
         ],
         'stripe_secret' => '',
@@ -113,6 +115,23 @@ function chick_lic_settings(): array
     $s['plans'] = array_replace($defaults['plans'], (array) $s['plans']);
     return $s;
 }
+
+// One time: plans saved before the app modules existed get them (Croissance: app_manage, Premium: both).
+add_action('plugins_loaded', function () {
+    if (get_option('chick_lic_mods_v2')) {
+        return;
+    }
+    $s = get_option('chick_lic_settings', []);
+    if (is_array($s) && !empty($s['plans'])) {
+        foreach (['croissance' => ['app_manage'], 'premium' => ['app_manage', 'app_insights']] as $plan => $add) {
+            if (isset($s['plans'][$plan])) {
+                $s['plans'][$plan]['modules'] = array_values(array_unique(array_merge((array) ($s['plans'][$plan]['modules'] ?? []), $add)));
+            }
+        }
+        update_option('chick_lic_settings', $s);
+    }
+    update_option('chick_lic_mods_v2', 1);
+});
 
 function chick_lic_get(string $field, string $value): ?object
 {

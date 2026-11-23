@@ -19,8 +19,9 @@ function mcr_app_caps(): array
 {
     return [
         'orders' => mcr_app_can(),
-        'products' => current_user_can('edit_products'),
-        'shop' => current_user_can('manage_woocommerce'),
+        'products' => current_user_can('edit_products') && mcr_module_on('app_manage'),
+        'shop' => current_user_can('manage_woocommerce') && mcr_module_on('app_manage'),
+        'insights' => current_user_can('manage_woocommerce') && mcr_module_on('app_insights'),
         'promotions' => function_exists('mcr_promo_upsert'),
         'flash' => function_exists('mcr_flash_upsert'),
     ];
@@ -247,8 +248,10 @@ function mcr_app_promos_data(): array
 }
 
 add_action('rest_api_init', function () {
-    $products = fn() => current_user_can('edit_products');
-    $shop = fn() => current_user_can('manage_woocommerce');
+    // Each part of the app is included in a plan (MCR Gestion > Abonnement).
+    $products = fn() => current_user_can('edit_products') && mcr_module_on('app_manage');
+    $shop = fn() => current_user_can('manage_woocommerce') && mcr_module_on('app_manage');
+    $insights = fn() => current_user_can('manage_woocommerce') && (mcr_module_on('app_manage') || mcr_module_on('app_insights'));
     $route = fn(string $path, string $method, callable $cb, callable $perm) => register_rest_route('mcr/v1', '/app/' . $path, ['methods' => $method, 'permission_callback' => $perm, 'callback' => $cb]);
 
     // ----- Shop dashboard and quick settings
@@ -260,16 +263,18 @@ add_action('rest_api_init', function () {
             "SELECT COUNT(*) FROM {$wpdb->posts} p JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = '_stock' JOIN {$wpdb->postmeta} s ON s.post_id = p.ID AND s.meta_key = '_manage_stock' AND s.meta_value = 'yes'
              WHERE p.post_type IN ('product','product_variation') AND p.post_status = 'publish' AND CAST(m.meta_value AS SIGNED) BETWEEN 1 AND %d", $low));
         $a = mcr_setting('announcement');
+        $full = mcr_module_on('app_insights');
         return [
-            'sales' => mcr_app_sales(),
-            'stock' => ['out' => $out, 'low' => $lowc, 'low_at' => $low],
+            'sales' => $full ? mcr_app_sales() : null,
+            'stock' => $full ? ['out' => $out, 'low' => $lowc, 'low_at' => $low] : null,
             'announcement' => ['enabled' => !empty($a['enabled']), 'text_fr' => (string) $a['text_fr'], 'text_en' => (string) $a['text_en']],
             'delivery' => !empty(mcr_setting('delivery', 'enabled')),
             'pickup' => !empty(mcr_setting('pickup', 'enabled')),
             'site' => home_url('/'),
             'admin' => admin_url(),
+            'manage' => mcr_module_on('app_manage'),
         ];
-    }, $shop);
+    }, $insights);
     $route('shop', 'POST', function (WP_REST_Request $r) {
         if ($r->has_param('announcement')) {
             $a = (array) $r->get_param('announcement');

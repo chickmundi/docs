@@ -227,6 +227,16 @@ button.row:active, a.row:active { background: var(--fill2); transition: none; }
 .chart__col.is-today .chart__l { color: var(--tint); font-weight: 600; }
 @keyframes grow { from { transform: scaleY(0); } }
 
+/* Plan upgrade card */
+.upsell { margin: 0 16px; padding: 18px 18px 16px; border-radius: 16px; background: linear-gradient(160deg, #fff, #eef6f1); border: 1px solid rgb(29 122 79 / 16%); display: grid; gap: 6px; }
+.upsell__tag { justify-self: start; padding: 3px 9px; border-radius: 10px; background: var(--tint-soft); color: var(--tint); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.upsell strong { font-size: 20px; font-weight: 700; }
+.upsell ul { list-style: none; margin: 4px 0 10px; padding: 0; display: grid; gap: 6px; font-size: 15px; color: var(--label2); }
+.upsell li { display: flex; align-items: center; gap: 8px; }
+.upsell li .i { color: var(--tint); }
+.upsell p { margin: 0; font-size: 13px; color: var(--label2); }
+.upsell + .ghead, .upsell + .group { margin-top: 22px; }
+
 /* ---------- Empty, skeletons ---------- */
 .empty { padding: 26px 32px; text-align: center; color: var(--label2); }
 .empty p { margin: 6px 0 0; font-size: 15px; }
