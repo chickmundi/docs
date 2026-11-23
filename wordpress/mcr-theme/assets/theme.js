@@ -403,7 +403,12 @@
     };
     var cdTick = function () {
       var now = Date.now() / 1000;
-      counters.forEach(function (el) { el.textContent = cdFmt(Math.round(+el.getAttribute('data-countdown') - now)); });
+      counters.forEach(function (el) {
+        var left = Math.round(+el.getAttribute('data-countdown') - now);
+        el.textContent = cdFmt(left);
+        // Flash sales: when one starts or ends, reload once so prices and buttons are up to date.
+        if (left <= 0 && left > -5 && el.hasAttribute('data-countdown-reload') && !window.__mcrReloaded) { window.__mcrReloaded = true; setTimeout(function () { location.reload(); }, 1500); }
+      });
     };
     cdTick();
     setInterval(cdTick, 1000);

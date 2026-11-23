@@ -25,7 +25,9 @@ if ($product->is_type('variable')) {
     }
 }
 $reviews = (int) $product->get_review_count();
-$low = $product->managing_stock() && $in_stock && $product->get_stock_quantity() !== null && $product->get_stock_quantity() <= (int) get_option('woocommerce_notify_low_stock_amount', 2);
+$low = function_exists('mcr_low_stock_qty') ? mcr_low_stock_qty($product) : 0; // real stock only
+$flash = function_exists('mcr_flash_for_product') ? mcr_flash_for_product($product->get_id()) : null;
+$sold30 = function_exists('mcr_sold30_label') ? mcr_sold30_label($product) : '';
 $eager = !empty($args['eager']);
 $deal_labels = mcrt_deal_labels($product);
 $end_label = $pct ? mcrt_end_label(mcrt_sale_end($product)) : '';
@@ -37,6 +39,7 @@ $saving = !empty($args['show_saving']) && $pct ? mcrt_saving($product) : 0;
       <?php echo $product->get_image('woocommerce_thumbnail', ['loading' => $eager ? 'eager' : 'lazy', 'alt' => '', 'decoding' => 'async']); ?>
     </a>
     <span class="pcard__badges">
+      <?php if ($flash) : ?><span class="badge badge--flash"><?php echo mcr_icon('zap', 12); ?> <?php echo esc_html($en ? 'Flash sale' : 'Vente éclair'); ?></span><?php endif; ?>
       <?php if ($pct > 0) : ?><span class="badge badge--sale">-<?php echo (int) $pct; ?> %</span><?php endif; ?>
       <?php foreach ($deal_labels as $dl) : ?><span class="badge badge--deal"><?php echo esc_html($dl); ?></span><?php endforeach; ?>
       <?php if ($end_label) : ?><span class="badge badge--time"><?php echo esc_html($end_label); ?></span><?php endif; ?>
@@ -54,9 +57,10 @@ $saving = !empty($args['show_saving']) && $pct ? mcrt_saving($product) : 0;
       </p>
     <?php endif; ?>
     <?php if ($saving > 0) : ?><p class="pcard__save"><?php echo wp_kses_post(sprintf($en ? 'You save %s' : 'Économisez %s', wc_price($saving))); ?></p><?php endif; ?>
+    <?php if ($sold30) : ?><p class="pcard__hot"><?php echo mcr_icon('flame', 13); ?> <?php echo esc_html($sold30); ?></p><?php endif; ?>
     <p class="pcard__meta">
       <?php if ($hint) : ?><span><?php echo esc_html($hint); ?></span><?php elseif ($unit) : ?><span><?php echo esc_html($en ? str_replace('par ', 'per ', $unit) : $unit); ?></span><?php endif; ?>
-      <?php if ($low) : ?><span class="pcard__low"><?php echo esc_html(sprintf($en ? 'Only %d left' : 'Plus que %d', $product->get_stock_quantity())); ?></span>
+      <?php if ($low) : ?><span class="pcard__low"><?php echo esc_html(sprintf($en ? 'Only %d left' : 'Plus que %d', $low)); ?></span>
       <?php elseif ($in_stock) : ?><span class="pcard__stock"><?php echo esc_html($en ? 'In stock' : 'En stock'); ?></span><?php endif; ?>
     </p>
     <div class="pcard__foot">

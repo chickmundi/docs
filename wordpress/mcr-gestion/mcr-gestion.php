@@ -2,7 +2,7 @@
 /**
  * Plugin Name: MCR Gestion
  * Description: Fonctions propres au Marché Chemin-du-Roy : français et anglais, livraison selon la distance, retrait en magasin, lots et péremption, attributs épicerie et cheveux, WhatsApp, rapports par département, page d'accueil.
- * Version: 1.0.0
+ * Version: 1.1.0
  * Author: Marché Chemin-du-Roy
  * Text Domain: mcr
  * Requires at least: 6.5
@@ -12,7 +12,7 @@
 
 defined('ABSPATH') || exit;
 
-define('MCR_VERSION', '1.0.0');
+define('MCR_VERSION', '1.1.0');
 define('MCR_FILE', __FILE__);
 define('MCR_DIR', plugin_dir_path(__FILE__));
 define('MCR_URL', plugin_dir_url(__FILE__));
@@ -43,6 +43,7 @@ add_action('plugins_loaded', function () {
     require_once MCR_DIR . 'includes/webpush.php';
     require_once MCR_DIR . 'includes/app.php';
     require_once MCR_DIR . 'includes/promotions.php';
+    require_once MCR_DIR . 'includes/flash.php';
     require_once MCR_DIR . 'includes/seo.php';
     require_once MCR_DIR . 'includes/fbt.php';
     require_once MCR_DIR . 'includes/reminders.php';
@@ -59,6 +60,7 @@ add_action('plugins_loaded', function () {
         require_once MCR_DIR . 'includes/content-import.php';
         require_once MCR_DIR . 'includes/tax-import.php';
         require_once MCR_DIR . 'includes/promotions-admin.php';
+        require_once MCR_DIR . 'includes/flash-admin.php';
         require_once MCR_DIR . 'includes/reminders-admin.php';
         require_once MCR_DIR . 'includes/ai-optimizer.php';
         require_once MCR_DIR . 'includes/translations.php';

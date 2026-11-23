@@ -4,7 +4,7 @@
  */
 defined('ABSPATH') || exit;
 
-define('MCRT_VERSION', '1.4.5');
+define('MCRT_VERSION', '1.5.0');
 define('MCRT_DIR', get_template_directory());
 define('MCRT_URL', get_template_directory_uri());
 
@@ -509,3 +509,35 @@ add_action('wp_footer', function () {
         get_template_part('template-parts/promo-popup');
     }
 }, 0);
+
+// ---------- Product page: flash sale (countdown, units sold), low stock, ordered this month ----------
+add_action('woocommerce_single_product_summary', function () {
+    global $product;
+    if (!$product instanceof WC_Product || !function_exists('mcr_flash_for_product')) {
+        return;
+    }
+    $en = mcr_is_en();
+    $d = mcr_flash_for_product($product->get_id());
+    if ($d) {
+        [, $end] = mcr_flash_window($d);
+        $sold = (int) ($d['sold'] ?? 0);
+        $qty = max(1, (int) $d['qty']);
+        $per = (int) ($d['per_order'] ?? 0);
+        echo '<div class="pp-flash"><p class="pp-flash__k">' . mcr_icon('zap', 18) . ' ' . esc_html($en ? 'Flash sale' : 'Vente éclair') . '</p>'
+            . '<p class="pp-flash__time">' . esc_html($en ? 'Ends in' : 'Se termine dans') . ' <b data-countdown="' . (int) $end . '" data-countdown-reload>' . esc_html(mcrt_end_label($end)) . '</b></p>'
+            . '<div class="fcard__bar"><span style="width:' . max(6, (int) round($sold / $qty * 100)) . '%"></span></div>'
+            . '<p class="pp-flash__sold">' . esc_html(sprintf($en ? '%1$d sold out of %2$d' : '%1$d vendus sur %2$d', $sold, $qty)) . ($per ? ' · ' . esc_html(sprintf($en ? 'max %d per order' : 'max %d par commande', $per)) : '') . '</p></div>';
+    }
+    $low = mcr_low_stock_qty($product);
+    $hot = mcr_sold30_label($product);
+    if ($low || $hot) {
+        echo '<p class="pp-proof">';
+        if ($low) {
+            echo '<span class="pp-proof__low">' . esc_html(sprintf($en ? 'Only %d left in stock' : 'Plus que %d en stock', $low)) . '</span>';
+        }
+        if ($hot) {
+            echo '<span class="pp-proof__hot">' . mcr_icon('flame', 15) . ' ' . esc_html($hot) . '</span>';
+        }
+        echo '</p>';
+    }
+}, 10);
