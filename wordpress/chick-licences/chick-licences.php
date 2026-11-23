@@ -95,9 +95,9 @@ function chick_lic_settings(): array
         'trial_days' => 30,
         'trial_plan' => 'premium',
         'plans' => [
-            'essentiel' => ['name' => 'Essentiel', 'price' => '59 $', 'modules' => [], 'price_id' => '', 'link' => ''],
-            'croissance' => ['name' => 'Croissance', 'price' => '149 $', 'modules' => ['promotions', 'flash', 'fbt', 'reminders', 'wagroup'], 'price_id' => '', 'link' => ''],
-            'premium' => ['name' => 'Premium', 'price' => '279 $', 'modules' => $all, 'price_id' => '', 'link' => ''],
+            'essentiel' => ['name' => 'Essentiel', 'price' => '29 $', 'modules' => [], 'price_id' => '', 'link' => ''],
+            'croissance' => ['name' => 'Croissance', 'price' => '69 $', 'modules' => ['promotions', 'flash', 'fbt', 'reminders', 'wagroup'], 'price_id' => '', 'link' => ''],
+            'premium' => ['name' => 'Premium', 'price' => '99 $', 'modules' => $all, 'price_id' => '', 'link' => ''],
         ],
         'stripe_secret' => '',
         'webhook_secret' => '',
