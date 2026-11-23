@@ -68,7 +68,7 @@ function mcr_seo_store_schema(): array
     ];
     if ($logo) {
         $store['logo'] = $logo;
-        $store['image'] = $logo;
+        $store['image'] = array_values(array_filter([$logo, is_readable(get_stylesheet_directory() . '/assets/photos/shop-spices-1280.webp') ? get_stylesheet_directory_uri() . '/assets/photos/shop-spices-1280.webp' : '']));
     }
     if (!empty($d['enabled'])) {
         $store['areaServed'] = ['@type' => 'GeoCircle', 'geoMidpoint' => $store['geo'], 'geoRadius' => (int) round((float) $d['max_km'] * 1000)];
@@ -326,7 +326,7 @@ add_filter('wp_sitemaps_post_types', function ($types) {
     return $types;
 });
 add_filter('wp_sitemaps_taxonomies', function ($tax) {
-    unset($tax['category'], $tax['post_tag'], $tax['post_format']);
+    unset($tax['category'], $tax['post_tag'], $tax['post_format'], $tax['product_tag']); // tag pages: near-copies of categories
     return $tax;
 });
 function mcr_sitemap_excluded_pages(): array
@@ -420,3 +420,13 @@ add_action('wp_head', function () {
         echo '<link rel="canonical" href="' . esc_url(mcr_sitemap_url((string) $url, mcr_lang())) . '" />' . "\n";
     }
 }, 2);
+
+// Product tag pages (~800) repeat the categories: Google should follow their links but not list them.
+add_filter('wp_robots', function ($robots) {
+    if (function_exists('is_product_tag') && is_product_tag()) {
+        $robots['noindex'] = true;
+        $robots['follow'] = true;
+        unset($robots['max-image-preview']);
+    }
+    return $robots;
+});

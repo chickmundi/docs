@@ -657,7 +657,7 @@ div.product > .onsale { position: absolute; z-index: 3; left: 16px; top: 16px; d
 .flex-control-thumbs img { width: 76px; height: 76px; object-fit: contain; border-radius: var(--radius-sm); border: 2px solid var(--line); background: #fff; cursor: pointer; opacity: .75; transition: border-color var(--t), opacity var(--t); }
 .flex-control-thumbs img.flex-active, .flex-control-thumbs img:hover { border-color: var(--green-600); opacity: 1; }
 .summary { display: flex; flex-direction: column; gap: 4px; }
-.pp-cat { align-self: flex-start; font-size: .76rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--terra-600); text-decoration: none; }
+.pp-cat { align-self: flex-start; font-size: .76rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--terra-700); text-decoration: none; }
 .product_title { font-size: clamp(1.6rem, 1.3rem + 1.2vw, 2.3rem); margin: 4px 0 8px; }
 .summary .price { margin: 0 0 6px; font-size: 1.6rem; font-weight: 800; color: var(--ink); display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
 .summary .price del { font-size: 1.05rem; font-weight: 500; color: var(--muted); order: 2; }

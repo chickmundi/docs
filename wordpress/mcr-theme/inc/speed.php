@@ -167,3 +167,40 @@ add_filter('woocommerce_gallery_image_html_attachment_image_params', function ($
     }
     return $params;
 }, 10, 4);
+
+// ---------- Browser cache: photos, fonts, styles and scripts kept a year (theme files are versioned) ----------
+add_action('init', function () {
+    if (get_option('mcrt_htaccess_cache') === '1') {
+        return;
+    }
+    if (!function_exists('insert_with_markers')) {
+        require_once ABSPATH . 'wp-admin/includes/misc.php';
+    }
+    $file = ABSPATH . '.htaccess';
+    if (!is_writable($file)) {
+        return;
+    }
+    $rules = [
+        '<IfModule mod_expires.c>',
+        'ExpiresActive On',
+        'ExpiresByType image/webp "access plus 1 year"',
+        'ExpiresByType image/avif "access plus 1 year"',
+        'ExpiresByType image/jpeg "access plus 1 year"',
+        'ExpiresByType image/png "access plus 1 year"',
+        'ExpiresByType image/gif "access plus 1 year"',
+        'ExpiresByType image/svg+xml "access plus 1 year"',
+        'ExpiresByType font/woff2 "access plus 1 year"',
+        'ExpiresByType text/css "access plus 1 year"',
+        'ExpiresByType application/javascript "access plus 1 year"',
+        'ExpiresByType text/javascript "access plus 1 year"',
+        '</IfModule>',
+        '<IfModule mod_headers.c>',
+        '<FilesMatch "\\.(webp|avif|jpe?g|png|gif|svg|ico|woff2|css|js)$">',
+        'Header set Cache-Control "public, max-age=31536000"',
+        '</FilesMatch>',
+        '</IfModule>',
+    ];
+    if (insert_with_markers($file, 'MCR browser cache', $rules)) {
+        update_option('mcrt_htaccess_cache', '1', true);
+    }
+}, 20);

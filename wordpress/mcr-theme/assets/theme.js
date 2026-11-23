@@ -423,13 +423,16 @@
       if (e.target === pop || e.target.closest('[data-ppop-close]')) closePop(); // backdrop, ×, "Plus tard", add to cart
     });
     if (!seen && !/[?&]mcr_nopop\b/.test(location.search)) {
-      setTimeout(function () {
+      // Opens once the page has finished loading and the browser is idle (keeps the page fast).
+      var later = function (fn) { window.requestIdleCallback ? requestIdleCallback(fn, { timeout: 2000 }) : setTimeout(fn, 200); };
+      var whenLoaded = function (fn) { if (document.readyState === 'complete') fn(); else window.addEventListener('load', fn, { once: true }); };
+      whenLoaded(function () { later(function () { setTimeout(function () {
         if (document.querySelector('dialog[open]') || document.hidden) return; // never on top of another window
         remember();
         pop.showModal();
         var h = pop.querySelector('h2');
         if (h) h.focus({ preventScroll: true }); // keyboard users start at the title, no ring on the buttons
-      }, 3500);
+      }, 2500); }); });
     }
   }
 })();
