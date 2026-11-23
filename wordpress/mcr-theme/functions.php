@@ -4,7 +4,7 @@
  */
 defined('ABSPATH') || exit;
 
-define('MCRT_VERSION', '1.5.0');
+define('MCRT_VERSION', '1.5.1');
 define('MCRT_DIR', get_template_directory());
 define('MCRT_URL', get_template_directory_uri());
 
@@ -505,7 +505,7 @@ add_action('woocommerce_single_product_summary', function () {
 
 // ---------- Homepage promotions pop-up (before the icon sprite, which prints at wp_footer priority 1) ----------
 add_action('wp_footer', function () {
-    if (is_front_page() && !is_customize_preview()) {
+    if (is_front_page() && !is_customize_preview() && function_exists('mcr_promo_banners')) { // Promotions module on
         get_template_part('template-parts/promo-popup');
     }
 }, 0);

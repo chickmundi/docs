@@ -157,4 +157,21 @@ function mcr_checkout_addr_key(array $data): string
     return mcr_addr_key($street, $street2, $pc);
 }
 
+// Phone helpers shared by the WhatsApp group, wheel and referral modules.
+/** Digits only, with the country code; North American 10-digit numbers get "1". Empty if invalid. */
+function mcr_wag_phone(string $raw): string
+{
+    $d = preg_replace('/\D+/', '', $raw);
+    if (str_starts_with(trim($raw), '00')) {
+        $d = substr($d, 2);
+    }
+    if (strlen($d) === 10) {
+        $d = '1' . $d;
+    }
+    return strlen($d) >= 11 && strlen($d) <= 15 ? $d : '';
+}
 
+function mcr_wag_pretty(string $d): string
+{
+    return strlen($d) === 11 && $d[0] === '1' ? sprintf('+1 %s-%s-%s', substr($d, 1, 3), substr($d, 4, 3), substr($d, 7)) : '+' . $d;
+}

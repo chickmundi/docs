@@ -2,7 +2,7 @@
 /**
  * Plugin Name: MCR Gestion
  * Description: Fonctions propres au Marché Chemin-du-Roy : français et anglais, livraison selon la distance, retrait en magasin, lots et péremption, attributs épicerie et cheveux, WhatsApp, rapports par département, page d'accueil.
- * Version: 1.1.0
+ * Version: 1.2.0
  * Author: Marché Chemin-du-Roy
  * Text Domain: mcr
  * Requires at least: 6.5
@@ -12,7 +12,7 @@
 
 defined('ABSPATH') || exit;
 
-define('MCR_VERSION', '1.1.0');
+define('MCR_VERSION', '1.2.0');
 define('MCR_FILE', __FILE__);
 define('MCR_DIR', plugin_dir_path(__FILE__));
 define('MCR_URL', plugin_dir_url(__FILE__));
@@ -36,22 +36,39 @@ add_action('plugins_loaded', function () {
         });
         return;
     }
+    // Shop core: always on.
+    require_once MCR_DIR . 'includes/license.php';
     require_once MCR_DIR . 'includes/delivery.php';
     require_once MCR_DIR . 'includes/orders.php';
     require_once MCR_DIR . 'includes/checkout.php';
     require_once MCR_DIR . 'includes/pickup-slots.php';
     require_once MCR_DIR . 'includes/webpush.php';
     require_once MCR_DIR . 'includes/app.php';
-    require_once MCR_DIR . 'includes/promotions.php';
-    require_once MCR_DIR . 'includes/flash.php';
     require_once MCR_DIR . 'includes/seo.php';
-    require_once MCR_DIR . 'includes/fbt.php';
-    require_once MCR_DIR . 'includes/reminders.php';
     require_once MCR_DIR . 'includes/whatsapp-order.php';
     require_once MCR_DIR . 'includes/image-protect.php';
-    require_once MCR_DIR . 'includes/wa-group.php';
     require_once MCR_DIR . 'includes/rewards-guard.php';
-    require_once MCR_DIR . 'includes/rewards.php';
+    // Extra modules: switched on by the subscription (MCR Gestion > Abonnement).
+    $modules = [
+        'promotions' => ['promotions.php', 'promotions-admin.php'],
+        'flash' => ['flash.php', 'flash-admin.php'],
+        'fbt' => ['fbt.php', ''],
+        'reminders' => ['reminders.php', 'reminders-admin.php'],
+        'wagroup' => ['wa-group.php', ''],
+        'rewards' => ['rewards.php', 'rewards-admin.php'],
+        'ai' => ['', 'ai-optimizer.php'],
+    ];
+    foreach ($modules as $id => [$front, $admin]) {
+        if (!mcr_module_on($id)) {
+            continue;
+        }
+        if ($front) {
+            require_once MCR_DIR . 'includes/' . $front;
+        }
+        if ($admin && is_admin()) {
+            require_once MCR_DIR . 'includes/' . $admin;
+        }
+    }
     if (is_admin()) {
         require_once MCR_DIR . 'includes/admin-settings.php';
         require_once MCR_DIR . 'includes/import.php';
@@ -59,12 +76,7 @@ add_action('plugins_loaded', function () {
         require_once MCR_DIR . 'includes/english-import.php';
         require_once MCR_DIR . 'includes/content-import.php';
         require_once MCR_DIR . 'includes/tax-import.php';
-        require_once MCR_DIR . 'includes/promotions-admin.php';
-        require_once MCR_DIR . 'includes/flash-admin.php';
-        require_once MCR_DIR . 'includes/reminders-admin.php';
-        require_once MCR_DIR . 'includes/ai-optimizer.php';
         require_once MCR_DIR . 'includes/translations.php';
-        require_once MCR_DIR . 'includes/rewards-admin.php';
     }
 }, 20);
 
