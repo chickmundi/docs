@@ -50,9 +50,20 @@ add_action('admin_post_chick_lic', function () {
         // Manual payment (e-transfer, cash): active one more month from the later of today / current end.
         $l = chick_lic_get('id', (string) absint($in['id'] ?? 0));
         if ($l) {
-            $from = max(time(), chick_lic_ts($l->period_end));
-            chick_lic_update((int) $l->id, ['status' => 'active', 'plan' => sanitize_key($in['plan'] ?? $l->plan) ?: 'croissance', 'period_end' => gmdate('Y-m-d H:i:s', strtotime('+1 month', $from))]);
+            $months = in_array((int) ($in['months'] ?? 1), [1, 3, 6, 12], true) ? (int) $in['months'] : 1;
+            $plan = sanitize_key($in['plan'] ?? $l->plan) ?: 'croissance';
+            // Starts today, or at the end of the time already paid (or of the trial) if later.
+            $from = max(time(), chick_lic_ts($l->period_end), $l->status === 'trial' ? chick_lic_ts($l->trial_end) : 0);
+            $until = strtotime('+' . $months . ' month', $from);
+            chick_lic_update((int) $l->id, ['status' => 'active', 'plan' => $plan, 'period_end' => gmdate('Y-m-d H:i:s', $until), 'req_plan' => '', 'req_months' => 0, 'req_at' => null, 'req_note' => '', 'reminded' => '']);
+            if (!empty($in['receipt'])) {
+                chick_lic_send_receipt($l, $plan, $months, $until);
+            }
+            $back = admin_url('admin.php?page=chick-lic&edit=' . (int) $l->id . '&done=1');
         }
+    } elseif ($do === 'clear_request') {
+        chick_lic_update(absint($in['id'] ?? 0), ['req_plan' => '', 'req_months' => 0, 'req_at' => null, 'req_note' => '']);
+        $back = admin_url('admin.php?page=chick-lic&edit=' . absint($in['id'] ?? 0) . '&done=1');
     } elseif ($do === 'delete') {
         $wpdb->delete(chick_lic_table(), ['id' => absint($in['id'] ?? 0)]); // phpcs:ignore
     } elseif ($do === 'settings') {
@@ -72,6 +83,11 @@ add_action('admin_post_chick_lic', function () {
             'trial_plan' => array_key_exists($in['trial_plan'] ?? '', $plans) ? $in['trial_plan'] : 'premium',
             'plans' => $plans,
             'support_url' => esc_url_raw($in['support_url'] ?? ''),
+            'pay_mode' => ($in['pay_mode'] ?? '') === 'stripe' ? 'stripe' : 'interac',
+            'interac_email' => sanitize_email($in['interac_email'] ?? ''),
+            'interac_name' => sanitize_text_field($in['interac_name'] ?? 'CHICK Service'),
+            'interac_note' => sanitize_textarea_field($in['interac_note'] ?? ''),
+            'notify_email' => sanitize_email($in['notify_email'] ?? ''),
             'stripe_secret' => trim((string) ($in['stripe_secret'] ?? '')) !== '' ? trim((string) $in['stripe_secret']) : $s['stripe_secret'],
             'webhook_secret' => trim((string) ($in['webhook_secret'] ?? '')) !== '' ? trim((string) $in['webhook_secret']) : $s['webhook_secret'],
         ];
@@ -139,7 +155,7 @@ function chick_lic_render_list(): void
         <td><code style="user-select:all"><?php echo esc_html($r->lkey); ?></code></td>
         <td><?php echo esc_html($r->site); ?></td>
         <td><?php echo esc_html($e['plan_name']); ?><?php echo $r->stripe_sub ? '<br><span style="color:#646970;font-size:12px">Stripe</span>' : ''; ?></td>
-        <td><?php echo chick_lic_badge($e['status']); // phpcs:ignore ?></td>
+        <td><?php echo chick_lic_badge($e['status']); // phpcs:ignore ?><?php if ($r->req_plan) : ?><br><span style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:10px;background:#dba617;color:#fff;font-size:12px">Paiement à confirmer</span><?php endif; ?></td>
         <td><?php echo $e['until'] ? esc_html(wp_date('j M Y', $e['until'])) : '–'; ?></td>
         <td><?php echo $r->last_seen ? esc_html(wp_date('j M H:i', chick_lic_ts($r->last_seen))) . '<br><span style="color:#646970;font-size:12px">v' . esc_html($r->last_version) . '</span>' : 'jamais'; ?></td>
         <td><a class="button button-small" href="<?php echo esc_url(admin_url('admin.php?page=chick-lic&edit=' . (int) $r->id)); ?>">Gérer</a></td>
@@ -171,16 +187,28 @@ function chick_lic_render_edit(object $l): void
     <tr><th>Forfait</th><td><select name="plan"><?php foreach ($s['plans'] as $id => $p) : ?><option value="<?php echo esc_attr($id); ?>" <?php selected($l->plan, $id); ?>><?php echo esc_html($p['name'] . ' — ' . $p['price']); ?></option><?php endforeach; ?></select></td></tr>
     <tr><th>État</th><td><select name="status"><?php foreach (['trial' => 'Essai', 'active' => 'Actif', 'past_due' => 'Paiement en retard', 'canceled' => 'Annulé', 'suspended' => 'Suspendu'] as $k => $v) : ?><option value="<?php echo esc_attr($k); ?>" <?php selected($l->status, $k); ?>><?php echo esc_html($v); ?></option><?php endforeach; ?></select></td></tr>
     <tr><th>Fin de l’essai</th><td><input type="date" name="trial_end" value="<?php echo esc_attr($d($l->trial_end)); ?>"></td></tr>
-    <tr><th>Payé jusqu’au</th><td><input type="date" name="period_end" value="<?php echo esc_attr($d($l->period_end)); ?>"> <span class="description">Mis à jour automatiquement par Stripe.</span></td></tr>
+    <tr><th>Payé jusqu’au</th><td><input type="date" name="period_end" value="<?php echo esc_attr($d($l->period_end)); ?>"> <span class="description">Mis à jour quand vous enregistrez un paiement.</span></td></tr>
     <tr><th>Modules en plus du forfait</th><td><?php foreach (chick_lic_modules() as $id => $name) : ?><label style="display:inline-block;margin-right:14px"><input type="checkbox" name="extra[]" value="<?php echo esc_attr($id); ?>" <?php checked(in_array($id, $extra, true)); ?>> <?php echo esc_html($name); ?></label><?php endforeach; ?></td></tr>
     <tr><th>Notes</th><td><textarea name="notes" rows="3" class="large-text"><?php echo esc_textarea((string) $l->notes); ?></textarea></td></tr>
   </table>
   <?php submit_button('Enregistrer'); ?>
   </form>
-  <h2>Paiement reçu hors Stripe</h2>
+  <?php if ($l->req_plan) : ?>
+    <div style="background:#fcf9e8;border:1px solid #dba617;border-left:5px solid #dba617;border-radius:6px;padding:14px 18px;margin:16px 0;max-width:900px">
+      <h2 style="margin-top:0">Virement Interac annoncé par le client</h2>
+      <p><?php echo esc_html(wp_date('j M Y H:i', chick_lic_ts($l->req_at))); ?> — forfait <strong><?php echo esc_html($s['plans'][$l->req_plan]['name'] ?? $l->req_plan); ?></strong>, <strong><?php echo (int) $l->req_months; ?> mois</strong>, montant attendu <strong><?php echo esc_html(chick_lic_money(chick_lic_amount($l->req_plan, (int) $l->req_months))); ?></strong><?php echo $l->req_note ? ' · message : « ' . esc_html($l->req_note) . ' »' : ''; ?></p>
+      <p>Vérifiez que le virement est bien arrivé dans votre compte, puis confirmez :</p>
+      <?php chick_lic_form('paid', ['id' => $l->id, 'plan' => $l->req_plan, 'months' => $l->req_months, 'receipt' => 1]); ?><?php submit_button('Confirmer le paiement et envoyer le reçu', 'primary', 'submit', false); ?></form>
+      <?php chick_lic_form('clear_request', ['id' => $l->id]); ?><button class="button-link" style="margin-left:12px">Effacer la demande (virement non reçu)</button></form>
+    </div>
+  <?php endif; ?>
+  <h2>Enregistrer un paiement (Interac, comptant…)</h2>
   <?php chick_lic_form('paid', ['id' => $l->id]); ?>
     <select name="plan"><?php foreach ($s['plans'] as $id => $p) : ?><option value="<?php echo esc_attr($id); ?>" <?php selected($l->plan, $id); ?>><?php echo esc_html($p['name'] . ' — ' . $p['price']); ?></option><?php endforeach; ?></select>
-    <?php submit_button('Marquer payé pour 1 mois (virement Interac, comptant…)', 'secondary', 'submit', false); ?>
+    <select name="months"><?php foreach ([1, 3, 6, 12] as $m) : ?><option value="<?php echo (int) $m; ?>"><?php echo (int) $m; ?> mois</option><?php endforeach; ?></select>
+    <label style="margin:0 10px"><input type="checkbox" name="receipt" value="1" checked> Envoyer un reçu au client</label>
+    <?php submit_button('Enregistrer le paiement', 'secondary', 'submit', false); ?>
+    <p class="description">La période commence aujourd’hui, ou à la fin de la période déjà payée (ou de l’essai) si elle est plus tard.</p>
   </form>
   <p style="margin-top:30px"><?php chick_lic_form('delete', ['id' => $l->id]); ?><button class="button-link button-link-delete" onclick="return confirm('Supprimer cette licence ? Les modules du client seront mis en pause.')">Supprimer la licence</button></form></p>
   <p style="color:#646970">Stripe : client <code><?php echo esc_html($l->stripe_customer ?: '–'); ?></code>, abonnement <code><?php echo esc_html($l->stripe_sub ?: '–'); ?></code></p>
@@ -202,7 +230,7 @@ function chick_lic_render_settings(): void
     <select name="trial_plan"><?php foreach ($s['plans'] as $id => $p) : ?><option value="<?php echo esc_attr($id); ?>" <?php selected($s['trial_plan'], $id); ?>><?php echo esc_html($p['name']); ?></option><?php endforeach; ?></select></p>
   <h2>Forfaits</h2>
   <table class="widefat" style="max-width:1200px">
-    <thead><tr><th>Forfait</th><th>Prix affiché</th><th>Modules inclus</th><th>Stripe : ID du prix (price_…)</th><th>Stripe : lien de paiement (buy.stripe.com/…)</th></tr></thead>
+    <thead><tr><th>Forfait</th><th>Prix affiché</th><th>Modules inclus</th><th>Stripe (facultatif) : ID du prix</th><th>Stripe (facultatif) : lien de paiement</th></tr></thead>
     <tbody>
     <?php foreach ($s['plans'] as $id => $p) : ?>
       <tr>
@@ -215,7 +243,15 @@ function chick_lic_render_settings(): void
     <?php endforeach; ?>
     </tbody>
   </table>
-  <h2>Stripe</h2>
+  <h2>Paiement</h2>
+  <table class="form-table" role="presentation">
+    <tr><th>Mode de paiement</th><td><label><input type="radio" name="pay_mode" value="interac" <?php checked($s['pay_mode'], 'interac'); ?>> Virement Interac (confirmé à la main)</label><br><label><input type="radio" name="pay_mode" value="stripe" <?php checked($s['pay_mode'], 'stripe'); ?>> Carte avec Stripe (automatique)</label></td></tr>
+    <tr><th>Courriel Interac</th><td><input type="email" name="interac_email" value="<?php echo esc_attr($s['interac_email']); ?>" class="regular-text" placeholder="paiements@chickservice.com"> <span class="description">Adresse où les clients envoient les virements.</span></td></tr>
+    <tr><th>Nom du bénéficiaire</th><td><input type="text" name="interac_name" value="<?php echo esc_attr($s['interac_name']); ?>" class="regular-text"></td></tr>
+    <tr><th>Instructions</th><td><textarea name="interac_note" rows="3" class="large-text"><?php echo esc_textarea($s['interac_note']); ?></textarea></td></tr>
+    <tr><th>Me prévenir à</th><td><input type="email" name="notify_email" value="<?php echo esc_attr($s['notify_email']); ?>" class="regular-text" placeholder="<?php echo esc_attr((string) get_option('admin_email')); ?>"> <span class="description">Courriel qui reçoit « virement à confirmer ».</span></td></tr>
+  </table>
+  <details <?php echo $s['pay_mode'] === 'stripe' ? 'open' : ''; ?>><summary style="cursor:pointer;font-size:1.2em;font-weight:600;margin:14px 0">Stripe (facultatif)</summary>
   <table class="form-table" role="presentation">
     <tr><th>Clé secrète (restricted key conseillée)</th><td><input type="password" name="stripe_secret" value="" class="regular-text" placeholder="<?php echo $s['stripe_secret'] ? 'Enregistrée — laisser vide pour la garder' : 'rk_live_… ou sk_live_…'; ?>" autocomplete="off">
       <p class="description">Sert au portail client et à lire les abonnements. Droits nécessaires : Customers, Subscriptions, Customer portal.</p></td></tr>
@@ -223,6 +259,7 @@ function chick_lic_render_settings(): void
       <p class="description">Dans Stripe › Développeurs › Webhooks, ajoutez l’adresse <code><?php echo esc_html(rest_url('chick/v1/stripe')); ?></code> avec les événements : checkout.session.completed, customer.subscription.created, customer.subscription.updated, customer.subscription.deleted, invoice.paid, invoice.payment_failed.</p></td></tr>
     <tr><th>Page d’aide (si pas de Stripe)</th><td><input type="url" name="support_url" value="<?php echo esc_attr($s['support_url']); ?>" class="regular-text" placeholder="https://chickservice.com/contact"></td></tr>
   </table>
+  </details>
   <?php submit_button('Enregistrer'); ?>
   </form>
   <h2>Signature</h2>

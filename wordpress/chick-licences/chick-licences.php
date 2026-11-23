@@ -1,16 +1,16 @@
 <?php
 /**
  * Plugin Name: Chick Licences
- * Description: Abonnements mensuels des modules MCR Gestion : clients, forfaits, essai gratuit de 30 jours, paiement Stripe, portail client. À installer sur le site de CHICK Service (pas chez le client).
- * Version: 1.0.0
+ * Description: Abonnements mensuels des modules MCR Gestion : clients, forfaits, essai gratuit de 30 jours, paiement par virement Interac (ou Stripe), rappels et reçus. À installer sur le site de CHICK Service (pas chez le client).
+ * Version: 1.1.0
  * Author: CHICK Service
  * Requires PHP: 8.0
  * Text Domain: chick-licences
  */
 defined('ABSPATH') || exit;
 
-const CHICK_LIC_VERSION = '1.0.0';
-const CHICK_LIC_DB = 1;
+const CHICK_LIC_VERSION = '1.1.0';
+const CHICK_LIC_DB = 2;
 
 // ---------------------------------------------------------------- Storage
 
@@ -41,6 +41,11 @@ function chick_lic_install(): void
   last_site varchar(255) NOT NULL DEFAULT '',
   last_version varchar(20) NOT NULL DEFAULT '',
   notes text NULL,
+  req_plan varchar(30) NOT NULL DEFAULT '',
+  req_months smallint NOT NULL DEFAULT 0,
+  req_at datetime NULL,
+  req_note varchar(255) NOT NULL DEFAULT '',
+  reminded varchar(40) NOT NULL DEFAULT '',
   created datetime NOT NULL,
   PRIMARY KEY  (id),
   UNIQUE KEY lkey (lkey),
@@ -97,6 +102,11 @@ function chick_lic_settings(): array
         'stripe_secret' => '',
         'webhook_secret' => '',
         'support_url' => '',
+        'pay_mode' => 'interac',
+        'interac_email' => '',
+        'interac_name' => 'CHICK Service',
+        'interac_note' => 'Indiquez votre clé de licence dans le message du virement. Le dépôt automatique est activé : aucune question de sécurité.',
+        'notify_email' => '',
     ];
     $s = get_option('chick_lic_settings', []);
     $s = is_array($s) ? array_replace($defaults, $s) : $defaults;
@@ -177,6 +187,7 @@ add_action('rest_api_init', function () {
     register_rest_route('chick/v1', '/check', ['methods' => 'POST', 'permission_callback' => '__return_true', 'callback' => 'chick_lic_rest_check']);
     register_rest_route('chick/v1', '/portal', ['methods' => 'GET', 'permission_callback' => '__return_true', 'callback' => 'chick_lic_rest_portal']);
     register_rest_route('chick/v1', '/stripe', ['methods' => 'POST', 'permission_callback' => '__return_true', 'callback' => 'chick_lic_rest_stripe']);
+    register_rest_route('chick/v1', '/request', ['methods' => 'POST', 'permission_callback' => '__return_true', 'callback' => 'chick_lic_rest_request']);
 });
 
 function chick_lic_rest_check(WP_REST_Request $r)
@@ -214,6 +225,8 @@ function chick_lic_rest_check(WP_REST_Request $r)
         'until' => $e['until'],
         'plans' => $plans,
         'portal' => $l->stripe_customer ? rest_url('chick/v1/portal') . '?key=' . rawurlencode($l->lkey) : ($s['support_url'] ?: ''),
+        'interac' => $s['pay_mode'] === 'interac' && $s['interac_email'] ? ['email' => $s['interac_email'], 'name' => $s['interac_name'], 'note' => $s['interac_note'], 'request' => rest_url('chick/v1/request')] : null,
+        'pending' => $l->req_plan ? ['plan' => $l->req_plan, 'months' => (int) $l->req_months, 'at' => chick_lic_ts($l->req_at)] : null,
         'server_time' => time(),
     ]);
     $k = chick_lic_keys();
@@ -331,6 +344,93 @@ function chick_lic_rest_stripe(WP_REST_Request $r)
     }
     return new WP_REST_Response(['received' => true], 200);
 }
+
+
+
+// ---------------------------------------------------------------- Interac (manual payments)
+
+/** Plan price as a number ("149 $" -> 149.0). */
+function chick_lic_amount(string $plan, int $months = 1): float
+{
+    $p = chick_lic_settings()['plans'][$plan]['price'] ?? '0';
+    return round((float) str_replace(',', '.', preg_replace('/[^0-9.,]/', '', (string) $p)) * max(1, $months), 2);
+}
+
+function chick_lic_money(float $v): string
+{
+    return number_format($v, 2, ',', ' ') . ' $';
+}
+
+function chick_lic_admin_email(): string
+{
+    $s = chick_lic_settings();
+    return $s['notify_email'] ?: (string) get_option('admin_email');
+}
+
+/** The client says "I sent the Interac transfer": keep the request and tell the admin. */
+function chick_lic_rest_request(WP_REST_Request $r)
+{
+    $l = chick_lic_get('lkey', strtoupper(preg_replace('/[^A-Za-z0-9-]/', '', (string) $r->get_param('key'))));
+    if (!$l) {
+        return new WP_REST_Response(['message' => 'Clé de licence inconnue.'], 404);
+    }
+    $key = 'chick_lic_req_' . $l->id;
+    if (get_transient($key)) {
+        return new WP_REST_Response(['message' => 'Demande déjà reçue, merci. Elle sera confirmée dès réception du virement.'], 200);
+    }
+    $plans = chick_lic_settings()['plans'];
+    $plan = sanitize_key((string) $r->get_param('plan'));
+    $months = (int) $r->get_param('months');
+    if (!isset($plans[$plan]) || !in_array($months, [1, 3, 6, 12], true)) {
+        return new WP_REST_Response(['message' => 'Forfait ou durée invalide.'], 400);
+    }
+    $note = mb_substr(sanitize_text_field((string) $r->get_param('note')), 0, 250);
+    chick_lic_update((int) $l->id, ['req_plan' => $plan, 'req_months' => $months, 'req_at' => gmdate('Y-m-d H:i:s'), 'req_note' => $note]);
+    set_transient($key, 1, 10 * MINUTE_IN_SECONDS);
+    $amount = chick_lic_money(chick_lic_amount($plan, $months));
+    wp_mail(chick_lic_admin_email(), 'Virement Interac à confirmer — ' . $l->client,
+        "Le client {$l->client} indique avoir envoyé un virement Interac.\n\nForfait : {$plans[$plan]['name']}\nDurée : {$months} mois\nMontant attendu : {$amount}\nClé : {$l->lkey}\nMessage : {$note}\n\nAprès réception, confirmez ici :\n" . admin_url('admin.php?page=chick-lic&edit=' . (int) $l->id));
+    return new WP_REST_Response(['message' => 'Merci ! Votre paiement sera confirmé dès réception du virement.'], 200);
+}
+
+/** Receipt to the client after a confirmed payment. */
+function chick_lic_send_receipt(object $l, string $plan, int $months, int $until): void
+{
+    if (!is_email($l->email)) {
+        return;
+    }
+    $s = chick_lic_settings();
+    $name = $s['plans'][$plan]['name'] ?? $plan;
+    $amount = chick_lic_money(chick_lic_amount($plan, $months));
+    wp_mail($l->email, 'Reçu — abonnement ' . $name . ' (' . $s['interac_name'] . ')',
+        "Bonjour,\n\nNous avons bien reçu votre paiement de {$amount} par virement Interac. Merci !\n\nForfait : {$name}\nDurée : {$months} mois\nActif jusqu’au : " . wp_date('j F Y', $until) . "\nClé : {$l->lkey}\n\nVos modules sont actifs. Aucune action n’est nécessaire de votre part.\n\n— " . $s['interac_name']);
+}
+
+// Reminder 7 days before the end of the trial or of the paid period (once per period).
+add_action('chick_lic_daily', function () {
+    global $wpdb;
+    $s = chick_lic_settings();
+    foreach ($wpdb->get_results('SELECT * FROM ' . chick_lic_table()) as $l) { // phpcs:ignore
+        $e = chick_lic_effective($l);
+        $until = (int) $e['until'];
+        $left = $until - time();
+        $tag = (string) $until;
+        if (!$until || $left > 7 * DAY_IN_SECONDS || $left < -DAY_IN_SECONDS || $l->reminded === $tag || !is_email($l->email) || in_array($e['status'], ['canceled', 'suspended'], true)) {
+            continue;
+        }
+        $plan = $l->plan ?: 'croissance';
+        $amount = chick_lic_money(chick_lic_amount($plan));
+        $what = $e['status'] === 'trial' ? 'Votre essai gratuit se termine' : 'Votre abonnement arrive à échéance';
+        $how = $s['interac_email'] ? "Pour continuer, envoyez un virement Interac de {$amount} (forfait " . ($s['plans'][$plan]['name'] ?? $plan) . ", 1 mois) à {$s['interac_email']}, avec votre clé {$l->lkey} dans le message.\nVous pouvez aussi choisir un autre forfait ou payer plusieurs mois d’avance depuis MCR Gestion › Abonnement." : 'Pour continuer, rendez-vous dans MCR Gestion › Abonnement.';
+        wp_mail($l->email, $what . ' le ' . wp_date('j F Y', $until), "Bonjour,\n\n{$what} le " . wp_date('j F Y', $until) . ".\n\n{$how}\n\nSans paiement, les modules (promotions, ventes éclair, roue…) seront mis en pause 14 jours après cette date. Votre boutique, elle, continue de fonctionner normalement.\n\n— {$s['interac_name']}");
+        chick_lic_update((int) $l->id, ['reminded' => $tag]);
+    }
+});
+add_action('init', function () {
+    if (!wp_next_scheduled('chick_lic_daily')) {
+        wp_schedule_event(time() + 600, 'daily', 'chick_lic_daily');
+    }
+});
 
 if (is_admin()) {
     require_once __DIR__ . '/admin.php';

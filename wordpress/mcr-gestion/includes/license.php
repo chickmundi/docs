@@ -183,6 +183,22 @@ add_action('admin_post_mcr_license', function () {
         mcr_license_check();
     } elseif ($do === 'check') {
         mcr_license_check();
+    } elseif ($do === 'request' && $l['key'] && $l['server']) {
+        // "I sent the Interac transfer": tell the licence server, which notifies the provider.
+        $months = (int) ($_POST['months'] ?? 1);
+        $res = wp_remote_post($l['server'] . '/wp-json/chick/v1/request', [
+            'timeout' => 15,
+            'body' => [
+                'key' => $l['key'],
+                'plan' => sanitize_key($_POST['plan'] ?? ''),
+                'months' => in_array($months, [1, 3, 6, 12], true) ? $months : 1,
+                'note' => sanitize_text_field(wp_unslash($_POST['note'] ?? '')),
+            ],
+        ]);
+        $body = is_wp_error($res) ? [] : (array) json_decode((string) wp_remote_retrieve_body($res), true);
+        $ok = !is_wp_error($res) && wp_remote_retrieve_response_code($res) === 200;
+        set_transient('mcr_license_msg', [$ok, $body['message'] ?? ($ok ? 'Demande envoyée.' : 'Le serveur de licences est injoignable. Réessayez plus tard.')], 300);
+        mcr_license_check();
     } elseif ($do === 'reset' && str_starts_with(strtolower((string) parse_url(home_url(), PHP_URL_HOST)), 'staging.')) {
         // Test sites only: forget the licence, everything back on.
         delete_option('mcr_license');
@@ -202,7 +218,13 @@ add_action('admin_notices', function () {
     $until = mcr_license_until();
     $link = '<a href="' . esc_url(admin_url('admin.php?page=mcr-license')) . '">Voir mon abonnement</a>';
     $days = (int) ceil(($until - time()) / DAY_IN_SECONDS);
-    if ($state === 'trial' && $days <= 7) {
+    $d = mcr_license_data();
+    if (!empty($d['pending'])) {
+        return; // Payment announced, waiting for confirmation: no reminder.
+    }
+    if ($state === 'active' && $days <= 7 && !empty($d['interac'])) {
+        echo '<div class="notice notice-info"><p><strong>Abonnement :</strong> votre période payée se termine dans ' . (int) max(0, $days) . ' jour(s). Pensez à renouveler par virement Interac. ' . $link . '</p></div>'; // phpcs:ignore
+    } elseif ($state === 'trial' && $days <= 7) {
         echo '<div class="notice notice-info"><p><strong>Essai gratuit :</strong> plus que ' . (int) $days . ' jour(s). Choisissez un forfait pour garder vos modules. ' . $link . '</p></div>'; // phpcs:ignore
     } elseif ($state === 'grace') {
         $left = (int) ceil(($until + MCR_LICENSE_GRACE_DAYS * DAY_IN_SECONDS - time()) / DAY_IN_SECONDS);
@@ -249,6 +271,15 @@ function mcr_render_license_page(): void
     <?php endif; ?>
   </div>
 
+  <?php $msg = get_transient('mcr_license_msg'); if ($msg) : delete_transient('mcr_license_msg'); ?>
+    <div class="notice <?php echo $msg[0] ? 'notice-success' : 'notice-error'; ?>"><p><?php echo esc_html((string) $msg[1]); ?></p></div>
+  <?php endif; ?>
+  <?php if ($d && !empty($d['pending'])) : $pp = $d['pending']; $pname = ''; foreach ((array) ($d['plans'] ?? []) as $p) { if (($p['id'] ?? '') === $pp['plan']) { $pname = $p['name']; } } ?>
+    <div style="background:#fcf9e8;border:1px solid #dba617;border-left:5px solid #dba617;border-radius:8px;padding:14px 18px;max-width:940px">
+      <strong>Paiement en attente de confirmation</strong> — forfait <?php echo esc_html($pname ?: $pp['plan']); ?>, <?php echo (int) $pp['months']; ?> mois, annoncé le <?php echo esc_html(wp_date('j F Y', (int) $pp['at'], $tz)); ?>. Vos modules restent actifs; la confirmation arrive dès réception du virement, avec un reçu par courriel.
+    </div>
+  <?php endif; ?>
+
   <h2>Modules</h2>
   <table class="widefat striped" style="max-width:980px">
     <thead><tr><th>Module</th><th>Ce qu’il fait</th><th>État</th></tr></thead>
@@ -271,7 +302,26 @@ function mcr_render_license_page(): void
             <li>Boutique, mises à jour et support</li>
             <?php foreach ((array) ($p['modules'] ?? []) as $m) : ?><li><?php echo esc_html(mcr_modules()[$m][0] ?? $m); ?></li><?php endforeach; ?>
           </ul>
-          <?php if ($current) : ?><span class="button" disabled>Forfait actuel</span>
+          <?php if (!empty($d['interac'])) : $ia = $d['interac']; $unit = (float) str_replace(',', '.', preg_replace('/[^0-9.,]/', '', (string) $p['price'])); ?>
+            <details>
+              <summary class="button <?php echo $current ? '' : 'button-primary'; ?>" style="list-style:none"><?php echo $current ? 'Renouveler' : 'Choisir ce forfait'; ?></summary>
+              <div style="margin-top:12px;font-size:13px;line-height:1.6">
+                <strong>Payer par virement Interac</strong>
+                <ol style="margin:6px 0 10px 18px">
+                  <li>Destinataire : <strong><?php echo esc_html((string) $ia['name']); ?></strong><br><code style="user-select:all"><?php echo esc_html((string) $ia['email']); ?></code></li>
+                  <li>Montant : <?php foreach ([1, 3, 6, 12] as $m) : ?><span style="white-space:nowrap"><?php echo (int) $m; ?> mois = <strong><?php echo esc_html(number_format($unit * $m, 2, ',', ' ')); ?> $</strong></span><?php echo $m < 12 ? ' · ' : ''; ?><?php endforeach; ?></li>
+                  <li>Message du virement : <code style="user-select:all"><?php echo esc_html($l['key']); ?></code></li>
+                </ol>
+                <?php if (!empty($ia['note'])) : ?><p style="color:#646970;margin:0 0 10px"><?php echo esc_html((string) $ia['note']); ?></p><?php endif; ?>
+                <?php $form('request'); ?>
+                  <input type="hidden" name="plan" value="<?php echo esc_attr((string) $p['id']); ?>">
+                  <label>Durée payée <select name="months"><?php foreach ([1, 3, 6, 12] as $m) : ?><option value="<?php echo (int) $m; ?>"><?php echo (int) $m; ?> mois</option><?php endforeach; ?></select></label><br>
+                  <input type="text" name="note" maxlength="250" placeholder="Note (facultatif)" style="width:100%;margin:6px 0">
+                  <?php submit_button('J’ai envoyé le virement', 'primary', 'submit', false); ?>
+                </form>
+              </div>
+            </details>
+          <?php elseif ($current) : ?><span class="button" disabled>Forfait actuel</span>
           <?php elseif (!empty($p['checkout'])) : ?><a class="button button-primary" href="<?php echo esc_url($p['checkout']); ?>" target="_blank" rel="noopener">Choisir ce forfait</a><?php endif; ?>
         </div>
       <?php endforeach; ?>
