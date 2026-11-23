@@ -103,6 +103,69 @@ function mcr_flash_showcase(): array
     return ['active' => $active, 'next' => $next];
 }
 
+/** Create or update a flash sale from raw input (admin form or the store app). Returns its ID or a WP_Error. */
+function mcr_flash_upsert(array $in)
+{
+    $all = mcr_flash_all();
+    $pid = absint($in['product'] ?? 0);
+    $p = $pid ? wc_get_product($pid) : null;
+    $date = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) ($in['date'] ?? '')) ? $in['date'] : '';
+    $time = preg_match('/^\d{2}:\d{2}$/', (string) ($in['time'] ?? '')) ? $in['time'] : '';
+    $value = (float) str_replace(',', '.', (string) ($in['value'] ?? 0));
+    if (!$p) {
+        return new WP_Error('mcr_flash', 'Choisissez un produit.', ['status' => 400]);
+    }
+    if (!$date || !$time) {
+        return new WP_Error('mcr_flash', 'Indiquez la date et l’heure de début.', ['status' => 400]);
+    }
+    if ($value <= 0) {
+        return new WP_Error('mcr_flash', 'Indiquez la réduction ou le prix éclair.', ['status' => 400]);
+    }
+    if ((int) ($in['qty'] ?? 0) < 1) {
+        return new WP_Error('mcr_flash', 'Indiquez la quantité disponible.', ['status' => 400]);
+    }
+    $id = sanitize_key($in['id'] ?? '') ?: 'f' . substr(md5(uniqid('', true)), 0, 8);
+    $all[$id] = [
+        'product' => $pid,
+        'mode' => ($in['mode'] ?? '') === 'price' ? 'price' : 'percent',
+        'value' => $value,
+        'start' => $date . ' ' . $time,
+        'hours' => max(0.25, min(72, (float) str_replace(',', '.', (string) ($in['hours'] ?? 3)))),
+        'qty' => max(1, (int) $in['qty']),
+        'per_order' => max(0, (int) ($in['per_order'] ?? 0)),
+        'sold' => (int) ($all[$id]['sold'] ?? 0),
+    ];
+    mcr_flash_save($all);
+    wc_delete_product_transients($pid);
+    return $id;
+}
+
+/** stop (end now, keep history), delete, or tomorrow (same sale again, next day). Returns the new ID for tomorrow. */
+function mcr_flash_do(string $do, string $id): string
+{
+    $all = mcr_flash_all();
+    if (!isset($all[$id])) {
+        return '';
+    }
+    $new = '';
+    if ($do === 'stop') {
+        [$s] = mcr_flash_window($all[$id]);
+        $all[$id]['hours'] = max(0.01, (time() - $s) / HOUR_IN_SECONDS);
+    } elseif ($do === 'delete') {
+        unset($all[$id]);
+    } elseif ($do === 'tomorrow') {
+        $d = $all[$id];
+        $start = (new DateTimeImmutable($d['start'], mcr_flash_tz()))->modify('+1 day');
+        while ($start->getTimestamp() < time()) {
+            $start = $start->modify('+1 day');
+        }
+        $new = 'f' . substr(md5(uniqid('', true)), 0, 8);
+        $all[$new] = ['start' => $start->format('Y-m-d H:i'), 'sold' => 0] + $d;
+    }
+    mcr_flash_save($all);
+    return $new;
+}
+
 // ---------------------------------------------------------------- Price
 
 /** Flash price for a product object (simple or variation), or null when no flash sale runs. */

@@ -68,16 +68,16 @@ function mcr_app_manifest(): array
 {
     $icons = MCR_URL . 'assets/app/';
     return [
-        'name' => 'MCR Commandes',
-        'short_name' => 'Commandes',
-        'description' => 'Commandes du Marché Chemin-du-Roy en temps réel',
+        'name' => 'MCR Gestion',
+        'short_name' => 'MCR Gestion',
+        'description' => 'Commandes, produits et promotions du Marché Chemin-du-Roy',
         'id' => MCR_APP_PATH . '/',
         'start_url' => MCR_APP_PATH . '/',
         'scope' => MCR_APP_PATH . '/',
         'display' => 'standalone',
         'orientation' => 'portrait',
-        'background_color' => '#103b2b',
-        'theme_color' => '#174b35',
+        'background_color' => '#f2f2f7',
+        'theme_color' => '#f2f2f7',
         'lang' => 'fr-CA',
         'icons' => [
             ['src' => $icons . 'icon-192.png', 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],
@@ -102,6 +102,9 @@ function mcr_app_render(): void
         'user' => $user->display_name,
         'logout' => wp_logout_url(mcr_app_url('/')),
         'store' => mcr_setting('store', 'name'),
+        'caps' => function_exists('mcr_app_caps') ? mcr_app_caps() : ['orders' => true],
+        'currency' => get_woocommerce_currency_symbol(),
+        'today' => wp_date('Y-m-d'),
     ];
     $v = MCR_VERSION;
     ?><!doctype html>
@@ -109,13 +112,14 @@ function mcr_app_render(): void
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#174b35">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <meta name="robots" content="noindex, nofollow">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Commandes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>MCR Commandes</title>
+<meta name="apple-mobile-web-app-title" content="MCR Gestion">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>MCR Gestion</title>
 <link rel="manifest" href="<?php echo esc_url(MCR_APP_PATH . '/manifest.json'); ?>">
 <link rel="apple-touch-icon" href="<?php echo esc_url(MCR_URL . 'assets/app/icon-180.png'); ?>">
 <link rel="icon" href="<?php echo esc_url(MCR_URL . 'assets/app/icon-192.png'); ?>">

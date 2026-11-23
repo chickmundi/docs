@@ -19,56 +19,12 @@ add_action('admin_post_mcr_flash', function () {
     }
     check_admin_referer('mcr_flash');
     $in = wp_unslash($_POST);
-    $all = mcr_flash_all();
     $do = sanitize_key($in['do'] ?? '');
     $msg = 'ok';
     if ($do === 'save') {
-        $pid = absint($in['product'] ?? 0);
-        $p = $pid ? wc_get_product($pid) : null;
-        $date = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) ($in['date'] ?? '')) ? $in['date'] : '';
-        $time = preg_match('/^\d{2}:\d{2}$/', (string) ($in['time'] ?? '')) ? $in['time'] : '';
-        $value = (float) str_replace(',', '.', (string) ($in['value'] ?? 0));
-        if (!$p || !$date || !$time || $value <= 0 || (int) ($in['qty'] ?? 0) < 1) {
-            $msg = 'missing';
-        } else {
-            $id = sanitize_key($in['id'] ?? '') ?: 'f' . substr(md5(uniqid('', true)), 0, 8);
-            $all[$id] = [
-                'product' => $pid,
-                'mode' => ($in['mode'] ?? '') === 'price' ? 'price' : 'percent',
-                'value' => $value,
-                'start' => $date . ' ' . $time,
-                'hours' => max(0.25, min(72, (float) str_replace(',', '.', (string) ($in['hours'] ?? 3)))),
-                'qty' => max(1, (int) $in['qty']),
-                'per_order' => max(0, (int) ($in['per_order'] ?? 0)),
-                'sold' => (int) ($all[$id]['sold'] ?? 0),
-            ];
-            mcr_flash_save($all);
-            wc_delete_product_transients($pid);
-        }
-    } elseif ($do === 'delete' || $do === 'stop') {
-        $id = sanitize_key($in['id'] ?? '');
-        if (isset($all[$id])) {
-            if ($do === 'stop') {
-                // End it now: keep it in the history with the units sold.
-                [$s] = mcr_flash_window($all[$id]);
-                $all[$id]['hours'] = max(0.01, (time() - $s) / HOUR_IN_SECONDS);
-            } else {
-                unset($all[$id]);
-            }
-            mcr_flash_save($all);
-        }
-    } elseif ($do === 'tomorrow') {
-        $id = sanitize_key($in['id'] ?? '');
-        if (isset($all[$id])) {
-            $d = $all[$id];
-            $start = (new DateTimeImmutable($d['start'], mcr_flash_tz()))->modify('+1 day');
-            while ($start->getTimestamp() < time()) {
-                $start = $start->modify('+1 day');
-            }
-            $new = 'f' . substr(md5(uniqid('', true)), 0, 8);
-            $all[$new] = ['start' => $start->format('Y-m-d H:i'), 'sold' => 0] + $d;
-            mcr_flash_save($all);
-        }
+        $msg = is_wp_error(mcr_flash_upsert($in)) ? 'missing' : 'ok';
+    } elseif (in_array($do, ['delete', 'stop', 'tomorrow'], true)) {
+        mcr_flash_do($do, sanitize_key($in['id'] ?? ''));
     } elseif ($do === 'settings') {
         update_option('mcr_flash_settings', ['low_stock' => max(1, (int) ($in['low_stock'] ?? 5)), 'sold_min' => max(1, (int) ($in['sold_min'] ?? 5)), 'show_sold' => !empty($in['show_sold'])], false);
     }

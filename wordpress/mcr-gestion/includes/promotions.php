@@ -248,6 +248,90 @@ function mcr_promo_schedule_switches(array $c): void
     }
 }
 
+/**
+ * Create or update a campaign from raw input (admin form or the store app).
+ * Returns the campaign ID, or a WP_Error with a message for the user.
+ */
+function mcr_promo_upsert(array $in)
+{
+    $all = mcr_promos();
+    $id = sanitize_key($in['id'] ?? '') ?: 'p' . strtolower(wp_generate_password(6, false, false));
+    $old = $all[$id] ?? null;
+    $type = in_array($in['type'] ?? '', ['percent', 'qty', 'bundle'], true) ? $in['type'] : 'percent';
+    $date = fn($v) => preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $v) ? (string) $v : '';
+    $c = [
+        'type' => $type,
+        'title_fr' => sanitize_text_field($in['title_fr'] ?? ''),
+        'title_en' => sanitize_text_field($in['title_en'] ?? ''),
+        'text_fr' => sanitize_text_field($in['text_fr'] ?? ''),
+        'text_en' => sanitize_text_field($in['text_en'] ?? ''),
+        'percent' => max(1, min(90, (int) ($in['percent'] ?? 10))),
+        'qty' => max(2, min(20, (int) ($in['qty'] ?? 2))),
+        'price' => max(0, (float) str_replace(',', '.', (string) ($in['price'] ?? 0))),
+        'cats' => array_map('absint', (array) ($in['cats'] ?? [])),
+        'products' => array_values(array_filter(array_map('absint', (array) ($in['products'] ?? [])))),
+        'start' => $date($in['start'] ?? ''),
+        'end' => $date($in['end'] ?? ''),
+        'banner' => !empty($in['banner']),
+        'skip_existing' => !empty($in['skip_existing']),
+        'created' => $old['created'] ?? time(),
+    ];
+    if ($type === 'bundle') {
+        $c['cats'] = [];
+    }
+    $error = '';
+    if ($c['title_fr'] === '') {
+        $error = 'Donnez un nom à la promotion.';
+    } elseif (!$c['cats'] && !$c['products']) {
+        $error = 'Choisissez au moins une catégorie ou un produit.';
+    } elseif ($type === 'bundle' && count($c['products']) < 2) {
+        $error = 'Un kit doit contenir au moins deux produits.';
+    } elseif ($type !== 'percent' && $c['price'] <= 0) {
+        $error = 'Indiquez le prix de l’offre.';
+    } elseif ($c['start'] && $c['end'] && $c['end'] < $c['start']) {
+        $error = 'La date de fin est avant la date de début.';
+    } elseif ($type === 'percent' && !$c['end']) {
+        $error = 'Une promotion en % doit avoir une date de fin (les prix reviennent seuls à la fin).';
+    }
+    if ($error) {
+        return new WP_Error('mcr_promo', $error, ['status' => 400, 'id' => $id, 'c' => $c, 'old' => (bool) $old]);
+    }
+    $all[$id] = $c + ['applied' => $old['applied'] ?? 0];
+    mcr_promo_save_all($all);
+    if ($type === 'percent') {
+        // Rewrite the prices: put back what this campaign wrote, then apply again.
+        if ($old && ($old['type'] ?? '') === 'percent') {
+            $all[$id]['reapply'] = true;
+            mcr_promo_save_all($all);
+            mcr_promo_queue($id, 'restore');
+        } else {
+            mcr_promo_queue($id, 'apply');
+        }
+        mcr_promo_schedule_switches($c);
+    } elseif ($old && ($old['type'] ?? '') === 'percent') {
+        mcr_promo_queue($id, 'restore');
+    }
+    return $id;
+}
+
+/** Remove a campaign (percent campaigns first put the original prices back). */
+function mcr_promo_remove(string $id): bool
+{
+    $all = mcr_promos();
+    if (!isset($all[$id])) {
+        return false;
+    }
+    if (($all[$id]['type'] ?? '') === 'percent') {
+        $all[$id]['deleted'] = true;
+        mcr_promo_save_all($all);
+        mcr_promo_queue($id, 'restore');
+    } else {
+        unset($all[$id]);
+        mcr_promo_save_all($all);
+    }
+    return true;
+}
+
 // ---------------------------------------------------------------- Cart deals (qty, bundle)
 
 /**
