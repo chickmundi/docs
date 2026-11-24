@@ -10,7 +10,7 @@ $wpct = mcrt_discount($week);
 $wend = mcrt_sale_end($week);
 $wsave = mcrt_saving($week);
 $wdeals = mcrt_deal_labels($week);
-$simple = $week->is_type('simple') && $week->is_purchasable();
+$simple = $week->is_type('simple') && $week->is_purchasable() && apply_filters('mcr_quick_add', true, $week);
 ?>
 <section class="section section--tight" aria-labelledby="h-week">
   <div class="container">

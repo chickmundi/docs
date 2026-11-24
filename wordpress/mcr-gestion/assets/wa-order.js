@@ -26,6 +26,8 @@
     if (!cart) return req;
     var q = cart.querySelector('input.qty');
     if (q) req.qty = q.value || '1';
+    var w = cart.querySelector('input[name="mcr_weight"]');
+    if (w) req.weight = w.value;
     var v = cart.querySelector('input[name="variation_id"]');
     if (cart.classList.contains('variations_form')) {
       if (!v || !v.value || v.value === '0') return null;
@@ -42,7 +44,7 @@
     if (source === 'cart') return Number(C.cartSubtotal) || 0;
     var r = productRequest();
     var unit = variationPrice != null ? Number(variationPrice) : price;
-    return r ? unit * (parseInt(r.qty, 10) || 1) : 0;
+    return r ? unit * (parseInt(r.qty, 10) || 1) * (r.weight ? (parseFloat(String(r.weight).replace(',', '.')) || 0) : 1) : 0;
   }
 
   // ---------- Opening ----------
@@ -72,7 +74,7 @@
       s.textContent = btn.getAttribute('data-summary') || money(subtotal());
     } else {
       var r = productRequest();
-      s.textContent = (r.qty || 1) + ' × ' + (btn.getAttribute('data-name') || '') + (subtotal() ? ' — ' + money(subtotal()) : '');
+      s.textContent = (r.weight ? String(r.weight).replace('.', C.lang === 'en' ? '.' : ',') + ' ' + (document.querySelector('.mcrw') ? document.querySelector('.mcrw').getAttribute('data-unit') : 'kg') : (r.qty || 1) + ' ×') + ' ' + (btn.getAttribute('data-name') || '') + (subtotal() ? ' — ' + money(subtotal()) : '');
     }
     sheet.showModal();
     document.documentElement.classList.add('wa-open');
@@ -209,6 +211,7 @@
       var r = productRequest();
       if (!r) return error(t.variation);
       body.append('product_id', r.product_id); body.append('qty', r.qty); body.append('variation_id', r.variation_id);
+      if (r.weight) body.append('weight', r.weight);
       Object.keys(r.attributes).forEach(function (k) { body.append('attributes[' + k + ']', r.attributes[k]); });
     }
     send.disabled = true;

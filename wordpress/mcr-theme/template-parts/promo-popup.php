@@ -45,7 +45,7 @@ if ($week) {
 } elseif ($banner) {
     $end = (int) $banner['ends'];
 }
-$simple = $week && $week->is_type('simple') && $week->is_purchasable();
+$simple = $week && $week->is_type('simple') && $week->is_purchasable() && apply_filters('mcr_quick_add', true, $week);
 $name = $week ? ($en ? (mcr_en_meta($week->get_id(), 'title') ?: $week->get_name()) : $week->get_name()) : '';
 ?>
 <dialog class="ppop" id="promo-popup" aria-labelledby="ppop-h" data-promo-popup>

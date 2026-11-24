@@ -37,7 +37,7 @@ $upcoming = $show['active'] ? ($show['next'][0] ?? null) : null;
           $flash = $d['mode'] === 'price' ? min((float) $d['value'], $regular) : $regular * (1 - (float) $d['value'] / 100);
           $off = $regular > 0 ? (int) round((1 - $flash / $regular) * 100) : 0;
           $name = $en && function_exists('mcr_en_meta') ? (mcr_en_meta($p->get_id(), 'title') ?: $p->get_name()) : $p->get_name();
-          $simple = $p->is_type('simple') && $p->is_purchasable() && $p->is_in_stock();
+          $simple = $p->is_type('simple') && $p->is_purchasable() && $p->is_in_stock() && apply_filters('mcr_quick_add', true, $p);
           ?>
         <li class="fcard<?php echo $live ? ' is-live' : ($d['state'] === 'soldout' ? ' is-soldout' : ' is-next'); ?>">
           <a class="fcard__img" href="<?php echo esc_url($p->get_permalink()); ?>" tabindex="-1" aria-hidden="true">

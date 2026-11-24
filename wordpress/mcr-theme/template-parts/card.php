@@ -12,7 +12,8 @@ $en = mcr_is_en();
 $pct = mcrt_discount($product);
 $cat = mcrt_primary_cat($product);
 $in_stock = $product->is_in_stock();
-$simple_buyable = $product->is_type('simple') && $in_stock && $product->is_purchasable();
+$simple_buyable = ($product->is_type('simple') && $in_stock && $product->is_purchasable()) && apply_filters('mcr_quick_add', true, $product);
+$by_weight = function_exists('mcrw_settings') && mcrw_settings($product);
 $hint = mcrt_variation_hint($product);
 $unit = (string) get_post_meta($product->get_id(), '_mcr_unit_label', true);
 $is_new = !empty($args['show_new']) && $product->get_date_created() && $product->get_date_created()->getTimestamp() > time() - 30 * DAY_IN_SECONDS;
@@ -68,7 +69,7 @@ $saving = !empty($args['show_saving']) && $pct ? mcrt_saving($product) : 0;
       <?php if ($simple_buyable) : ?>
         <a href="<?php echo esc_url($product->add_to_cart_url()); ?>" class="pcard__add" data-add-to-cart="<?php echo esc_attr($product->get_id()); ?>" data-name="<?php echo esc_attr($product->get_name()); ?>" rel="nofollow" aria-label="<?php echo esc_attr(($en ? 'Add to cart: ' : 'Ajouter au panier : ') . $product->get_name()); ?>"><?php echo mcr_icon('plus', 18); ?><span><?php mcr_e('Ajouter'); ?></span></a>
       <?php else : ?>
-        <a href="<?php echo esc_url($product->get_permalink()); ?>" class="pcard__add pcard__add--ghost" aria-label="<?php echo esc_attr(($in_stock ? ($en ? 'Choose options: ' : 'Choisir les options : ') : ($en ? 'View: ' : 'Voir : ')) . $product->get_name()); ?>"><span><?php echo esc_html($in_stock ? ($en ? 'Options' : 'Options') : ($en ? 'View' : 'Voir')); ?></span><?php echo mcr_icon('chevron-right', 16); ?></a>
+        <a href="<?php echo esc_url($product->get_permalink()); ?>" class="pcard__add pcard__add--ghost" aria-label="<?php echo esc_attr(($in_stock ? ($by_weight ? ($en ? 'Choose the weight: ' : 'Choisir le poids : ') : ($en ? 'Choose options: ' : 'Choisir les options : ')) : ($en ? 'View: ' : 'Voir : ')) . $product->get_name()); ?>"><span><?php echo esc_html($in_stock ? ($by_weight ? ($en ? 'Weight' : 'Poids') : 'Options') : ($en ? 'View' : 'Voir')); ?></span><?php echo mcr_icon('chevron-right', 16); ?></a>
       <?php endif; ?>
     </div>
   </div>

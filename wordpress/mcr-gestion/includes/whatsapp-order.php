@@ -158,7 +158,8 @@ function mcr_wa_link(WC_Order $o): string
 
 /**
  * Lines to order: the whole cart, or one product from its page.
- * Returns [[product WC_Product, qty int, variation array], …] or a WP_Error.
+ * Returns [[product WC_Product, qty int, variation array, weight float], …] or a WP_Error.
+ * Weight is 0, or the weight chosen for a product sold by weight (MCR Variantes).
  */
 function mcr_wa_requested_lines(array $in)
 {
@@ -170,7 +171,7 @@ function mcr_wa_requested_lines(array $in)
         foreach (WC()->cart->get_cart() as $ci) {
             $fresh = wc_get_product($ci['variation_id'] ?: $ci['product_id']);
             if ($fresh) {
-                $lines[] = [$fresh, (int) $ci['quantity'], (array) ($ci['variation'] ?? [])];
+                $lines[] = [$fresh, (int) $ci['quantity'], (array) ($ci['variation'] ?? []), (float) ($ci['mcr_weight'] ?? 0)];
             }
         }
         return $lines;
@@ -200,7 +201,15 @@ function mcr_wa_requested_lines(array $in)
             }
         }
     }
-    $lines[] = [$product, $qty, $variation];
+    $weight = 0.0;
+    if (function_exists('mcrw_settings') && mcrw_settings($product)) {
+        $w = mcrw_clean($product, wp_unslash((string) ($in['weight'] ?? '')));
+        if (is_wp_error($w)) {
+            return new WP_Error('weight', $w->get_error_message());
+        }
+        $weight = $w;
+    }
+    $lines[] = [$product, $qty, $variation, $weight];
     return $lines;
 }
 
@@ -232,17 +241,20 @@ function mcr_wa_create_order(array $in)
     $lines = mcr_wa_requested_lines($in);
     if (is_wp_error($lines)) {
         $code = $lines->get_error_code();
+        if ($code === 'weight') {
+            return new WP_Error('invalid', $lines->get_error_message());
+        }
         return $code === 'variation' ? $err('Choisissez d’abord une option (couleur, taille…).', 'Please choose an option first (colour, size…).') : $err('Votre panier est vide.', 'Your cart is empty.');
     }
     $subtotal = 0.0;
-    foreach ($lines as [$p, $qty]) {
+    foreach ($lines as [$p, $qty, , $weight]) {
         if (!$p->is_purchasable() || !$p->is_in_stock()) {
             return $err(sprintf('« %s » n’est plus disponible.', $p->get_name()), sprintf('“%s” is no longer available.', $p->get_name()));
         }
         if ($p->managing_stock() && !$p->backorders_allowed() && $p->get_stock_quantity() !== null && $qty > $p->get_stock_quantity()) {
             return $err(sprintf('Il ne reste que %d « %s ».', $p->get_stock_quantity(), $p->get_name()), sprintf('Only %d “%s” left.', $p->get_stock_quantity(), $p->get_name()));
         }
-        $subtotal += (float) wc_get_price_excluding_tax($p, ['qty' => $qty]);
+        $subtotal += $weight > 0 ? (float) wc_get_price_excluding_tax($p, ['qty' => 1, 'price' => mcrw_line_price($p, $weight)]) * $qty : (float) wc_get_price_excluding_tax($p, ['qty' => $qty]);
     }
 
     // Delivery: the real distance and fee. Pickup: a valid time.
@@ -304,8 +316,18 @@ function mcr_wa_create_order(array $in)
     if (is_wp_error($order)) {
         return $order;
     }
-    foreach ($lines as [$p, $qty, $variation]) {
-        $order->add_product($p, $qty, $variation ? ['variation' => $variation] : []);
+    foreach ($lines as [$p, $qty, $variation, $weight]) {
+        $args = $variation ? ['variation' => $variation] : [];
+        if ($weight > 0) {
+            // Sold by weight: the line costs price per kg (or lb) x weight.
+            $line = wc_get_price_excluding_tax($p, ['qty' => 1, 'price' => mcrw_line_price($p, $weight)]) * $qty;
+            $args += ['subtotal' => $line, 'total' => $line];
+        }
+        $item_id = $order->add_product($p, $qty, $args);
+        if ($weight > 0 && $item_id && ($item = $order->get_item($item_id))) {
+            mcrw_add_order_meta($item, $weight, mcrw_settings($p)['unit']);
+            $item->save();
+        }
     }
     if (function_exists('mcr_deals_apply_to_order')) {
         mcr_deals_apply_to_order($order); // "2 pour 5 $", kits
