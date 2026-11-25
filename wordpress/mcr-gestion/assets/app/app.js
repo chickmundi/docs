@@ -85,7 +85,7 @@
   var TABS = [
     { id: 'orders', label: 'Commandes', icon: 'bag', on: CAPS.orders },
     { id: 'products', label: 'Produits', icon: 'box', on: CAPS.products },
-    { id: 'promos', label: 'Promos', icon: 'tag', on: CAPS.shop && (CAPS.promotions || CAPS.flash) },
+    { id: 'promos', label: 'Promos', icon: 'tag', on: CAPS.promos && (CAPS.promotions || CAPS.flash) },
     { id: 'shop', label: 'Boutique', icon: 'store', on: true },
   ].filter(function (t) { return t.on; });
   var S = {
@@ -345,7 +345,7 @@
       body += '<div class="stats">' +
         '<div class="stat stat--hero"><small>À traiter</small><strong>' + d.open + '</strong></div>' +
         '<div class="stat"><small>Aujourd’hui</small><strong>' + d.today.count + '</strong></div>' +
-        '<div class="stat"><small>Ventes du jour</small><strong>' + esc(d.today.total || '–') + '</strong></div></div>';
+        (d.today.total != null ? '<div class="stat"><small>Ventes du jour</small><strong>' + esc(d.today.total || '–') + '</strong></div>' : '') + '</div>';
     }
     body += '<div class="pad">' + seg('otab', v.tab, [['open', 'À traiter'], ['done', 'Terminées'], ['all', 'Toutes']]) + '</div>';
     if (!d) body += v.err ? errBox(v) : skel(4);
@@ -655,7 +655,7 @@
           row({ act: 'stocklow', icon: 'box', tone: 'orange', title: 'Stock bas', sub: d.stock.low_at + ' unités ou moins', value: '<b>' + d.stock.low + '</b>', chev: true }),
         ]);
         if (s.best.length) body += group('Meilleures ventes · 7 jours', s.best.map(function (b, i) { return row({ act: CAPS.products ? 'prod' : '', id: b.id, img: b.image || '', title: '<b class="rank">' + (i + 1) + '</b>' + esc(b.name), value: b.qty + ' vendus', chev: CAPS.products }); }));
-       } else body += upsell('Premium', 'Tableau de bord des ventes', ['Ventes du jour et des 7 derniers jours', 'Panier moyen et graphique', 'Meilleures ventes et alertes de stock']);
+       } else if (C.license) body += upsell('Premium', 'Tableau de bord des ventes', ['Ventes du jour et des 7 derniers jours', 'Panier moyen et graphique', 'Meilleures ventes et alertes de stock']);
        if (d.manage) {
         body += group('Service', [
           toggle('delivery', d.delivery, 'Livraison', d.delivery ? 'Les clients peuvent se faire livrer' : 'Désactivée sur le site', 'truck', 'blue'),
@@ -669,10 +669,10 @@
         ]) + '<div class="pad"><button class="btn btn--gray" data-act="annsave"' + (v.annDirty ? '' : ' disabled') + '>Enregistrer le bandeau</button></div>';
        }
       }
-    } else {
+    } else if (C.license) {
       body += upsell('Croissance', 'Gérez toute la boutique ici', ['Produits : prix, promos, stock et photos', 'Promotions et ventes éclair', 'Livraison, retrait et bandeau d’annonce']);
     }
-    body += group('Notifications', notifRows(), notifFoot());
+    if (CAPS.orders) body += group('Notifications', notifRows(), notifFoot());
     var links = [];
     if (v.data) links.push(row({ icon: 'globe', tone: 'tint', title: 'Voir le site', href: v.data.site, ext: true, chev: true }));
     links.push(row({ icon: 'wp', tone: 'gray', title: 'Ouvrir WordPress', href: C.admin.replace(/post\.php.*$/, ''), ext: true, chev: true }));

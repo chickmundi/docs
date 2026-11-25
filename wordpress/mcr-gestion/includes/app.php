@@ -12,9 +12,16 @@ defined('ABSPATH') || exit;
 
 const MCR_APP_PATH = '/mcr-app';
 
-function mcr_app_can(): bool
+/** Orders and order alerts. */
+function mcr_app_can_orders(): bool
 {
     return current_user_can('edit_shop_orders') || current_user_can('manage_woocommerce');
+}
+
+/** Who can open the app: order staff, shop staff and promotions staff (each sees their own tabs). */
+function mcr_app_can(): bool
+{
+    return mcr_app_can_orders() || current_user_can('mcr_manage_shop') || current_user_can('mcr_manage_promos');
 }
 
 function mcr_app_url(string $path = '/'): string
@@ -228,7 +235,7 @@ function mcr_app_next_steps(WC_Order $o, string $mode): array
 const MCR_APP_OPEN = ['mcr-whatsapp', 'processing', 'on-hold', 'mcr-preparing', 'mcr-ready', 'mcr-out'];
 
 add_action('rest_api_init', function () {
-    $perm = fn() => mcr_app_can();
+    $perm = fn() => mcr_app_can_orders();
     register_rest_route('mcr/v1', '/app/orders', [
         'methods' => 'GET',
         'permission_callback' => $perm,
@@ -257,7 +264,7 @@ add_action('rest_api_init', function () {
             return [
                 'orders' => $orders,
                 'open' => $open,
-                'today' => ['count' => count($today), 'total' => html_entity_decode(wp_strip_all_tags(wc_price($sum)))],
+                'today' => ['count' => count($today), 'total' => current_user_can('mcr_view_sales') ? html_entity_decode(wp_strip_all_tags(wc_price($sum))) : null],
                 'nonce' => wp_create_nonce('wp_rest'),
             ];
         },

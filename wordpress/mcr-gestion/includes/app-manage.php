@@ -10,7 +10,7 @@
  *  - promo        POST create/update · promo/{id}/delete POST
  *  - flash        POST create/update · flash/{id}/{stop|delete|tomorrow} POST
  *  - promo-week   POST
- * Products: edit_products. Promotions and shop settings: manage_woocommerce.
+ * Products: edit_products. Shop settings: mcr_manage_shop. Promotions: mcr_manage_promos. Sales figures: mcr_view_sales (see roles.php).
  * Only real prices: a promo price must be lower than the regular price, which is never raised by the app.
  */
 defined('ABSPATH') || exit;
@@ -18,10 +18,12 @@ defined('ABSPATH') || exit;
 function mcr_app_caps(): array
 {
     return [
-        'orders' => mcr_app_can(),
+        'orders' => mcr_app_can_orders(),
         'products' => current_user_can('edit_products') && mcr_module_on('app_manage'),
-        'shop' => current_user_can('manage_woocommerce') && mcr_module_on('app_manage'),
-        'insights' => current_user_can('manage_woocommerce') && mcr_module_on('app_insights'),
+        'shop' => current_user_can('mcr_manage_shop') && mcr_module_on('app_manage'),
+        'promos' => current_user_can('mcr_manage_promos') && mcr_module_on('app_manage'),
+        'insights' => current_user_can('mcr_view_sales') && mcr_module_on('app_insights'),
+        'sales' => current_user_can('mcr_view_sales'),
         'promotions' => function_exists('mcr_promo_upsert'),
         'flash' => function_exists('mcr_flash_upsert'),
     ];
@@ -250,8 +252,11 @@ function mcr_app_promos_data(): array
 add_action('rest_api_init', function () {
     // Each part of the app is included in a plan (MCR Gestion > Abonnement).
     $products = fn() => current_user_can('edit_products') && mcr_module_on('app_manage');
-    $shop = fn() => current_user_can('manage_woocommerce') && mcr_module_on('app_manage');
-    $insights = fn() => current_user_can('manage_woocommerce') && (mcr_module_on('app_manage') || mcr_module_on('app_insights'));
+    // Promotions staff can look up products (to pick them for a promotion) but not change them.
+    $products_read = fn() => (current_user_can('edit_products') || current_user_can('mcr_manage_promos')) && mcr_module_on('app_manage');
+    $shop = fn() => current_user_can('mcr_manage_shop') && mcr_module_on('app_manage');
+    $promos = fn() => current_user_can('mcr_manage_promos') && mcr_module_on('app_manage');
+    $insights = fn() => (current_user_can('mcr_manage_shop') && mcr_module_on('app_manage')) || (current_user_can('mcr_view_sales') && mcr_module_on('app_insights'));
     $route = fn(string $path, string $method, callable $cb, callable $perm) => register_rest_route('mcr/v1', '/app/' . $path, ['methods' => $method, 'permission_callback' => $perm, 'callback' => $cb]);
 
     // ----- Shop dashboard and quick settings
@@ -263,7 +268,7 @@ add_action('rest_api_init', function () {
             "SELECT COUNT(*) FROM {$wpdb->posts} p JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = '_stock' JOIN {$wpdb->postmeta} s ON s.post_id = p.ID AND s.meta_key = '_manage_stock' AND s.meta_value = 'yes'
              WHERE p.post_type IN ('product','product_variation') AND p.post_status = 'publish' AND CAST(m.meta_value AS SIGNED) BETWEEN 1 AND %d", $low));
         $a = mcr_setting('announcement');
-        $full = mcr_module_on('app_insights');
+        $full = mcr_module_on('app_insights') && current_user_can('mcr_view_sales');
         return [
             'sales' => $full ? mcr_app_sales() : null,
             'stock' => $full ? ['out' => $out, 'low' => $lowc, 'low_at' => $low] : null,
@@ -272,7 +277,7 @@ add_action('rest_api_init', function () {
             'pickup' => !empty(mcr_setting('pickup', 'enabled')),
             'site' => home_url('/'),
             'admin' => admin_url(),
-            'manage' => mcr_module_on('app_manage'),
+            'manage' => mcr_module_on('app_manage') && current_user_can('mcr_manage_shop'),
         ];
     }, $insights);
     $route('shop', 'POST', function (WP_REST_Request $r) {
@@ -328,12 +333,12 @@ add_action('rest_api_init', function () {
         }
         $res = wc_get_products($args);
         return ['items' => array_map('mcr_app_product_row', $res->products), 'total' => (int) $res->total, 'pages' => (int) $res->max_num_pages, 'page' => $page];
-    }, $products);
+    }, $products_read);
 
     $route('product/(?P<id>\d+)', 'GET', function (WP_REST_Request $r) {
         $p = wc_get_product((int) $r['id']);
         return $p ? mcr_app_product_full($p) : mcr_app_err('Produit introuvable', 404);
-    }, $products);
+    }, $products_read);
 
     $save = function (WC_Product $p, array $in) {
         if (isset($in['name'])) {
@@ -447,43 +452,43 @@ add_action('rest_api_init', function () {
             $out[] = ['id' => $t->term_id, 'name' => html_entity_decode($t->name), 'parent' => $t->parent, 'count' => $t->count];
         }
         return $out;
-    }, $products);
+    }, $products_read);
 
     // ----- Promotions and flash sales
-    $route('promos', 'GET', fn() => mcr_app_promos_data(), $shop);
+    $route('promos', 'GET', fn() => mcr_app_promos_data(), $promos);
     $route('promo', 'POST', function (WP_REST_Request $r) {
         if (!function_exists('mcr_promo_upsert')) {
             return mcr_app_err('Module Promotions non inclus dans votre forfait.', 403);
         }
         $res = mcr_promo_upsert((array) $r->get_json_params());
         return is_wp_error($res) ? mcr_app_err($res->get_error_message()) : mcr_app_promos_data();
-    }, $shop);
+    }, $promos);
     $route('promo/(?P<id>[a-z0-9]+)/delete', 'POST', function (WP_REST_Request $r) {
         if (!function_exists('mcr_promo_remove')) {
             return mcr_app_err('Module Promotions non inclus dans votre forfait.', 403);
         }
         mcr_promo_remove((string) $r['id']);
         return mcr_app_promos_data();
-    }, $shop);
+    }, $promos);
     $route('promo-week', 'POST', function (WP_REST_Request $r) {
         update_option('mcr_promo_week', absint($r->get_param('product')));
         update_option('mcrt_cache_ver', (string) time(), true);
         return mcr_app_promos_data();
-    }, $shop);
+    }, $promos);
     $route('flash', 'POST', function (WP_REST_Request $r) {
         if (!function_exists('mcr_flash_upsert')) {
             return mcr_app_err('Module Ventes éclair non inclus dans votre forfait.', 403);
         }
         $res = mcr_flash_upsert((array) $r->get_json_params());
         return is_wp_error($res) ? mcr_app_err($res->get_error_message()) : mcr_app_promos_data();
-    }, $shop);
+    }, $promos);
     $route('flash/(?P<id>[a-z0-9]+)/(?P<do>stop|delete|tomorrow)', 'POST', function (WP_REST_Request $r) {
         if (!function_exists('mcr_flash_do')) {
             return mcr_app_err('Module Ventes éclair non inclus dans votre forfait.', 403);
         }
         mcr_flash_do((string) $r['do'], (string) $r['id']);
         return mcr_app_promos_data();
-    }, $shop);
+    }, $promos);
 });
 
 // New orders change the sales figures.

@@ -7,9 +7,9 @@ defined('ABSPATH') || exit;
 const MCR_DAYS = [1 => 'Lundi', 2 => 'Mardi', 3 => 'Mercredi', 4 => 'Jeudi', 5 => 'Vendredi', 6 => 'Samedi', 7 => 'Dimanche'];
 
 add_action('admin_menu', function () {
-    add_menu_page('MCR Gestion', 'MCR Gestion', 'manage_woocommerce', 'mcr', 'mcr_render_settings_page', 'dashicons-store', 56);
-    add_submenu_page('mcr', 'Paramètres du commerce', 'Paramètres', 'manage_woocommerce', 'mcr', 'mcr_render_settings_page');
-    add_submenu_page('mcr', 'Péremption', 'Péremption', 'manage_woocommerce', 'mcr-expiry', 'mcr_render_expiry_page');
+    add_menu_page('MCR Gestion', 'MCR Gestion', 'mcr_manage_shop', 'mcr', 'mcr_render_settings_page', 'dashicons-store', 56);
+    add_submenu_page('mcr', 'Paramètres du commerce', 'Paramètres', 'mcr_manage_shop', 'mcr', 'mcr_render_settings_page');
+    add_submenu_page('mcr', 'Péremption', 'Péremption', 'mcr_manage_shop', 'mcr-expiry', 'mcr_render_expiry_page');
 });
 
 function mcr_settings_tabs(): array
@@ -19,7 +19,7 @@ function mcr_settings_tabs(): array
 
 add_action('admin_post_mcr_save_settings', function () {
     $group = sanitize_key($_POST['group'] ?? '');
-    if (!current_user_can('manage_woocommerce') || !array_key_exists($group, mcr_settings_tabs())) {
+    if (!current_user_can('mcr_manage_shop') || !array_key_exists($group, mcr_settings_tabs())) {
         wp_die('Accès refusé.');
     }
     check_admin_referer("mcr_settings_{$group}");
@@ -360,7 +360,7 @@ function mcr_render_expiry_page(): void
 
 // Dashboard widget: expiring lots.
 add_action('wp_dashboard_setup', function () {
-    if (!current_user_can('manage_woocommerce')) {
+    if (!current_user_can('mcr_manage_shop')) {
         return;
     }
     wp_add_dashboard_widget('mcr_expiry_widget', 'Péremption proche (14 jours)', function () {

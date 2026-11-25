@@ -3,11 +3,11 @@
 defined('ABSPATH') || exit;
 
 add_action('admin_menu', function () {
-    add_submenu_page('mcr', 'Roue de bienvenue et parrainage', 'Roue et parrainage', 'manage_woocommerce', 'mcr-rewards', 'mcr_render_rewards_page');
+    add_submenu_page('mcr', 'Roue de bienvenue et parrainage', 'Roue et parrainage', 'mcr_manage_promos', 'mcr-rewards', 'mcr_render_rewards_page');
 }, 31);
 
 add_action('admin_post_mcr_rw', function () {
-    if (!current_user_can('manage_woocommerce')) {
+    if (!current_user_can('mcr_manage_promos')) {
         wp_die('', 403);
     }
     check_admin_referer('mcr_rw');

@@ -6,7 +6,7 @@
 defined('ABSPATH') || exit;
 
 add_action('admin_menu', function () {
-    add_submenu_page('mcr', 'Promotions', 'Promotions', 'manage_woocommerce', 'mcr-promos', 'mcr_render_promos_page');
+    add_submenu_page('mcr', 'Promotions', 'Promotions', 'mcr_manage_promos', 'mcr-promos', 'mcr_render_promos_page');
 }, 22);
 
 add_action('admin_enqueue_scripts', function ($hook) {
@@ -24,7 +24,7 @@ function mcr_promos_admin_url(array $args = []): string
 }
 
 add_action('admin_post_mcr_promo_save', function () {
-    if (!current_user_can('manage_woocommerce')) {
+    if (!current_user_can('mcr_manage_promos')) {
         wp_die('Accès refusé');
     }
     check_admin_referer('mcr_promo_save');
@@ -43,7 +43,7 @@ add_action('admin_post_mcr_promo_save', function () {
 });
 
 add_action('admin_post_mcr_promo_delete', function () {
-    if (!current_user_can('manage_woocommerce')) {
+    if (!current_user_can('mcr_manage_promos')) {
         wp_die('Accès refusé');
     }
     $id = sanitize_key(wp_unslash($_GET['id'] ?? ''));
@@ -56,7 +56,7 @@ add_action('admin_post_mcr_promo_delete', function () {
 });
 
 add_action('admin_post_mcr_promo_week', function () {
-    if (!current_user_can('manage_woocommerce')) {
+    if (!current_user_can('mcr_manage_promos')) {
         wp_die('Accès refusé');
     }
     check_admin_referer('mcr_promo_week');

@@ -296,3 +296,5 @@ button.row:active, a.row:active { background: var(--fill2); transition: none; }
   .stats { grid-template-columns: repeat(3, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+.stats:has(.stat:nth-child(2):last-child) { grid-template-columns: 1fr 1fr; }

@@ -3,7 +3,7 @@
 defined('ABSPATH') || exit;
 
 add_action('admin_menu', function () {
-    add_submenu_page('mcr', 'Ventes éclair', 'Ventes éclair', 'manage_woocommerce', 'mcr-flash', 'mcr_render_flash_page');
+    add_submenu_page('mcr', 'Ventes éclair', 'Ventes éclair', 'mcr_manage_promos', 'mcr-flash', 'mcr_render_flash_page');
 }, 23);
 
 add_action('admin_enqueue_scripts', function ($hook) {
@@ -14,7 +14,7 @@ add_action('admin_enqueue_scripts', function ($hook) {
 });
 
 add_action('admin_post_mcr_flash', function () {
-    if (!current_user_can('manage_woocommerce')) {
+    if (!current_user_can('mcr_manage_promos')) {
         wp_die('', 403);
     }
     check_admin_referer('mcr_flash');
