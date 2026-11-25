@@ -4,7 +4,7 @@
  */
 defined('ABSPATH') || exit;
 
-define('MCRT_VERSION', '1.5.6');
+define('MCRT_VERSION', '1.5.7');
 define('MCRT_DIR', get_template_directory());
 define('MCRT_URL', get_template_directory_uri());
 
@@ -492,7 +492,7 @@ add_action('woocommerce_single_product_summary', function () {
     if ($end > time()) {
         echo '<p class="pp-promo__ends">' . mcr_icon('clock', 16) . ' ' . esc_html($en ? 'Sale ends in' : 'Fin de la promo dans') . ' <strong data-countdown="' . (int) $end . '">' . esc_html(mcrt_end_label($end)) . '</strong> <small>(' . esc_html(wp_date($en ? 'F j' : 'j F', $end, mcrt_tz())) . ')</small></p>';
     }
-    $where = function_exists('mcr_product_sale_where') ? (mcr_product_sale_where($product) ?: ($deals ? 'online' : '')) : '';
+    $where = $save > 0 && function_exists('mcr_product_sale_where') ? mcr_product_sale_where($product) : '';
     if ($where === 'online') {
         echo '<p class="pp-promo__where">' . mcr_icon('shopping-cart', 16) . ' ' . esc_html($en ? 'Sale price for online orders only, not in store.' : 'Prix promo valable pour les commandes en ligne seulement, pas en magasin.') . '</p>';
     } elseif ($where === 'both') {
@@ -500,7 +500,7 @@ add_action('woocommerce_single_product_summary', function () {
     }
     foreach ($deals as $d) {
         $kit = $d['type'] === 'bundle';
-        echo '<p class="pp-promo__deal"><span class="badge badge--deal">' . esc_html(mcr_promo_label($d)) . '</span> ' . esc_html($kit ? (mcr_promo_title($d) . ($en ? ': this product is part of a kit.' : ' : ce produit fait partie d’un kit.')) : ($en ? 'Price applied automatically in the cart.' : 'Prix appliqué automatiquement au panier.'));
+        echo '<p class="pp-promo__deal"><span class="badge badge--deal">' . esc_html(mcr_promo_label($d)) . '</span> ' . esc_html($kit ? (mcr_promo_title($d) . ($en ? ': this product is part of a kit.' : ' : ce produit fait partie d’un kit.')) : ($en ? 'Price applied automatically in the cart.' : 'Prix appliqué automatiquement au panier.')) . ' <small class="pp-promo__dwhere">' . esc_html(mcr_promo_where($d) === 'both' ? ($en ? 'Online and in store.' : 'En ligne et en magasin.') : ($en ? 'Online orders only.' : 'Commandes en ligne seulement.')) . '</small>';
         if ($kit) {
             echo ' <a href="' . esc_url(mcrt_promos_url()) . '#h-bundles">' . esc_html($en ? 'See the kit' : 'Voir le kit') . '</a>';
         }

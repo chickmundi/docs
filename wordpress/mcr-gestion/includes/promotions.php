@@ -120,6 +120,17 @@ function mcr_product_sale_where(WC_Product $p): string
     return 'online';
 }
 
+/** The product's current offer (sale price, or else its cart deals) is for online orders only. */
+function mcr_product_promo_online_only(WC_Product $p): bool
+{
+    $w = mcr_product_sale_where($p);
+    if ($w !== '') {
+        return $w === 'online';
+    }
+    $deals = mcr_product_deals($p);
+    return $deals && !array_filter($deals, fn($d) => mcr_promo_where($d) === 'both');
+}
+
 /** Product IDs targeted by a campaign (explicit products + every product of the chosen categories). */
 function mcr_promo_target_ids(array $c): array
 {
