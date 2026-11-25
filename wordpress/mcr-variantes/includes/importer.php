@@ -142,6 +142,49 @@ function mcrv_set_variants(array $rows, bool $apply): array
     return $out;
 }
 
+/**
+ * Product names exactly as on the old site: French name (the product title) and English name
+ * (MCR Gestion's English title, _mcr_title_en). Descriptions, web addresses, prices and stock are not touched.
+ * $rows = [{id, fr, en}]. An English name equal to the French one is removed, so English shows the French name.
+ */
+function mcrv_set_names(array $rows, bool $apply): array
+{
+    $out = ['fr' => 0, 'en' => 0, 'unchanged' => 0, 'missing' => [], 'samples' => []];
+    foreach ($rows as $row) {
+        $p = wc_get_product(absint($row['id'] ?? 0));
+        if (!$p || $p->is_type('variation')) {
+            $out['missing'][] = (string) ($row['id'] ?? '?');
+            continue;
+        }
+        $fr = trim((string) ($row['fr'] ?? ''));
+        $en = trim((string) ($row['en'] ?? ''));
+        $cur_fr = $p->get_name('edit');
+        $cur_en = (string) get_post_meta($p->get_id(), '_mcr_title_en', true);
+        $want_en = $en !== '' && $en !== $fr ? $en : '';
+        $chg_fr = $fr !== '' && $fr !== $cur_fr;
+        $chg_en = $want_en !== $cur_en;
+        if (!$chg_fr && !$chg_en) {
+            $out['unchanged']++;
+            continue;
+        }
+        $out['fr'] += $chg_fr ? 1 : 0;
+        $out['en'] += $chg_en ? 1 : 0;
+        if (count($out['samples']) < 30) {
+            $out['samples'][] = '#' . $p->get_id() . ($chg_fr ? ' FR « ' . $cur_fr . ' » → « ' . $fr . ' »' : '') . ($chg_en ? ' EN « ' . $cur_en . ' » → « ' . $want_en . ' »' : '');
+        }
+        if ($apply) {
+            if ($chg_fr) {
+                $p->set_name($fr); // variation names follow
+                $p->save();
+            }
+            if ($chg_en) {
+                $want_en === '' ? delete_post_meta($p->get_id(), '_mcr_title_en') : update_post_meta($p->get_id(), '_mcr_title_en', $want_en);
+            }
+        }
+    }
+    return $out;
+}
+
 add_action('rest_api_init', function () {
     register_rest_route('mcr-variantes/v1', '/import', [
         'methods' => 'POST',
@@ -199,6 +242,17 @@ add_action('rest_api_init', function () {
                 mcrt_cache_flush();
             }
             return $out;
+        },
+    ]);
+    register_rest_route('mcr-variantes/v1', '/set-names', [
+        'methods' => 'POST',
+        'permission_callback' => fn() => current_user_can('manage_woocommerce'),
+        'callback' => function (WP_REST_Request $r) {
+            $res = mcrv_set_names((array) $r->get_param('rows'), (bool) $r->get_param('apply'));
+            if ($r->get_param('apply') && function_exists('mcrt_cache_flush')) {
+                mcrt_cache_flush();
+            }
+            return $res;
         },
     ]);
     register_rest_route('mcr-variantes/v1', '/set-variants', [
