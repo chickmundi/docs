@@ -1,0 +1,63 @@
+<title>Montreal African Grocers</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: a single call-sheet column, ranked leads as numbered rows (rank is the work order) */
+:root{--bg:#f6f7f2;--card:#ffffff;--fg:#1b241d;--mut:#5d6a60;--line:#dde3d8;--acc:#1f6b3c;--hot:#b4541a;--hotbg:#fbe9dc;--unk:#7a5a00;--unkbg:#fbf1d3;
+--disp:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;--txt:Inter,ui-sans-serif,system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121813;--card:#1a221c;--fg:#e6ebe4;--mut:#9aa79c;--line:#2b362e;--acc:#6fcf93;--hot:#f0a06c;--hotbg:#3a2517;--unk:#e8c860;--unkbg:#332a10;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121813;--card:#1a221c;--fg:#e6ebe4;--mut:#9aa79c;--line:#2b362e;--acc:#6fcf93;--hot:#f0a06c;--hotbg:#3a2517;--unk:#e8c860;--unkbg:#332a10;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:15px/1.55 var(--txt)}
+.wrap{max-width:820px;margin:0 auto;padding-block:40px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--acc);font-weight:600}
+h1{font:700 clamp(28px,5vw,40px)/1.1 var(--disp);margin:6px 0 10px;text-wrap:balance}
+h2{font:700 20px/1.2 var(--disp);margin:40px 0 12px}
+.lede{color:var(--mut);max-width:65ch;margin:0}
+ol{list-style:none;padding:0;margin:0;display:grid;gap:12px}
+.lead{display:grid;grid-template-columns:40px 1fr;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}
+.rk{font:700 22px/1 var(--disp);color:var(--acc);font-variant-numeric:tabular-nums}
+.body{min-width:0}
+.hd{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+h3{font:600 17px/1.3 var(--disp);margin:0}
+.sc{font-variant-numeric:tabular-nums;color:var(--mut);font-size:13px}
+.meta{color:var(--mut);font-size:13px}
+.body p{margin:8px 0}
+.tags,.ct{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px}
+.ct{margin-top:6px}
+.pill{font-size:11.5px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--mut)}
+.pill.hot{background:var(--hotbg);color:var(--hot);border-color:transparent}
+.pill.unk{background:var(--unkbg);color:var(--unk);border-color:transparent}
+.ph{font-variant-numeric:tabular-nums;font-weight:600;user-select:all}
+.src{font-size:12px;color:var(--mut);margin-top:6px}
+.note{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;font-size:14px}
+.note ul,.cut{margin:6px 0 0;padding-left:18px}
+.cut li{margin:3px 0;font-size:14px}
+</style>
+<div class="wrap">
+<div class="eyebrow">Prospect list · online-store proposal</div>
+<h1>African grocers in Greater Montreal: {{N}} to call</h1>
+<p class="lede">These are independent African and Afro-Caribbean grocery stores in Montréal, Laval and Longueuil that have a physical shop and no real online store yet. That's the same kind of business as Marché Chemin du Roy. Stores that already sell online were cut. Rank is the order to work the list in.</p>
+
+<h2>Start with these</h2>
+<ol>
+{{LEADS}}
+</ol>
+
+<h2>Check before pitching</h2>
+<p class="lede">These stores have a website, but I couldn't confirm whether it takes orders. If it's only an information site, move them up the list.</p>
+<ol style="margin-top:12px">
+{{CHECK}}
+</ol>
+
+<h2>Cut: already online</h2>
+<ul class="cut">{{CUT}}</ul>
+
+<h2>How this was built</h2>
+<div class="note">
+<ul>
+<li>The profile is based on one past client, Marché Chemin du Roy. I couldn't find its details online or in a connected CRM, so fit is judged on store type and on whether the store already sells online.</li>
+<li>Found by web search through directories, store sites, Facebook, TikTok and Tripadvisor. No lead-data connector was used. Pages could not be opened directly, so every detail comes from search-result summaries. Check each one by calling.</li>
+<li>No owner names were found. Every contact is the store's public phone number or page. No email addresses were guessed.</li>
+<li>Score = fit ×0.4 + signal ×0.4 + reachability ×0.2. Reachability is low for every store because no decision-maker has been named yet.</li>
+</ul></div>
+</div>
