@@ -6,12 +6,22 @@ $en = mcr_is_en();
 $l = $en ? 'en' : 'fr';
 $count = (int) wp_count_posts('product')->publish;
 $free = function_exists('mcr_setting') ? (float) mcr_setting('delivery', 'free_min_subtotal') : 99;
-$lead = trim((string) ($home['hero_lead_' . $l] ?? ''));
-if ($lead === '') {
-    $lead = $en
-        ? sprintf('African and local groceries, frozen meat and fish, wigs and hair care: over %d products, delivered in Trois-Rivières or ready for pickup.', floor($count / 100) * 100)
-        : sprintf('Épicerie africaine et d’ici, viandes et poissons surgelés, perruques et soins capillaires : plus de %d produits, livrés à Trois-Rivières ou prêts pour la cueillette.', floor($count / 100) * 100);
-}
+$lead = trim((string) ($home['hero_lead_' . $l] ?? '')); // custom text from MCR Gestion, used as is
+$rounded = (int) (floor($count / 100) * 100);
+$rotate = array_values(array_filter(array_map('trim', preg_split('/\R/', (string) ($home['hero_rotate_' . $l] ?? '')))));
+$slogan = preg_replace('/ +([!?:;»])/u', "\u{00A0}$1", trim((string) ($home['hero_slogan_' . $l] ?? '')));
+// Title words appear one after the other.
+$wi = 0;
+$words = function (string $text) use (&$wi): string {
+    $out = [];
+    $text = preg_replace('/ +([!?:;»])/u', "\u{00A0}$1", trim($text)); // French spacing: "vous !" stays together
+    foreach (preg_split('/[ \t\r\n]+/', $text) as $w) {
+        if ($w !== '') {
+            $out[] = '<span class="hw"><span style="--i:' . $wi++ . '">' . esc_html($w) . '</span></span>';
+        }
+    }
+    return implode(' ', $out);
+};
 // Largest real discount right now, for the side banner.
 $sale_ids = array_values(array_filter(wc_get_product_ids_on_sale(), fn($id) => get_post_type($id) === 'product' && get_post_status($id) === 'publish'));
 $best = 0;
@@ -27,8 +37,20 @@ $shop = mcr_shop_url();
     <div class="hero__main">
       <div class="hero__copy">
         <p class="eyebrow eyebrow--light"><?php echo mcr_icon('map-pin', 15); ?> <?php echo esc_html($home['hero_eyebrow_' . $l] ?? ''); ?></p>
-        <h1 class="hero__title"><?php echo esc_html($home['hero_title_' . $l] ?? ''); ?> <em><?php echo esc_html($home['hero_highlight_' . $l] ?? ''); ?></em></h1>
-        <p class="hero__lead"><?php echo esc_html($lead); ?></p>
+        <h1 class="hero__title"><?php echo $words((string) ($home['hero_title_' . $l] ?? '')); // phpcs:ignore ?> <em><?php echo $words((string) ($home['hero_highlight_' . $l] ?? '')); // phpcs:ignore ?></em></h1>
+        <?php if ($lead !== '') : ?>
+          <p class="hero__lead"><?php echo esc_html($lead); ?></p>
+        <?php else : ?>
+          <?php if ($rotate) : ?>
+            <p class="hero__rot">
+              <span class="hero__rot-intro"><?php echo esc_html($en ? 'Your everyday essentials,' : 'Vos essentiels du quotidien,'); ?></span>
+              <span class="rot" data-rotate aria-hidden="true"><?php foreach ($rotate as $i => $w) : ?><span class="rot__w<?php echo $i ? '' : ' is-on'; ?>"><?php echo esc_html($w); ?></span><?php endforeach; ?></span>
+              <span class="rot__all"><?php echo esc_html(implode(', ', $rotate)); ?></span>
+            </p>
+          <?php endif; ?>
+          <p class="hero__lead"><?php echo wp_kses_post(sprintf($en ? 'Over %s products to discover, for the needs of the whole community.' : 'Plus de %s produits à découvrir pour répondre aux besoins de toute la communauté.', '<b class="hero__num" data-countup="' . $rounded . '">' . esc_html(number_format_i18n($rounded)) . '</b>')); ?></p>
+        <?php endif; ?>
+        <?php if ($slogan !== '') : ?><p class="hero__slogan"><span><?php echo esc_html($slogan); ?></span></p><?php endif; ?>
         <div class="hero__cta">
           <a class="btn btn--gold btn--lg" href="<?php echo esc_url($shop); ?>"><?php echo mcr_icon('shopping-basket', 19); ?> <?php echo esc_html($en ? 'Start shopping' : 'Faire mes achats'); ?></a>
           <a class="btn btn--line btn--lg" href="<?php echo esc_url(add_query_arg('orderby', 'date', $shop)); ?>"><?php echo esc_html($en ? 'New arrivals' : 'Explorer les nouveautés'); ?></a>

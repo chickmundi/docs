@@ -115,8 +115,11 @@ add_action('admin_post_mcr_save_settings', function () {
                 $banners[] = $row;
             }
             $current['banners'] = $banners;
-            foreach (['hero_lead_fr', 'hero_lead_en'] as $k) {
+            foreach (['hero_lead_fr', 'hero_lead_en', 'hero_rotate_fr', 'hero_rotate_en'] as $k) {
                 $current[$k] = sanitize_textarea_field($in[$k] ?? '');
+            }
+            foreach (['hero_slogan_fr', 'hero_slogan_en'] as $k) {
+                $current[$k] = sanitize_text_field($in[$k] ?? '');
             }
             $rows = [];
             foreach ((array) ($in['sections'] ?? []) as $r) {
@@ -263,6 +266,8 @@ function mcr_render_settings_page(): void
             $row('Titre (anglais)', mcr_input('hero_title_en', $s['hero_title_en'], 'text', ['class' => 'large-text']) . '<br>' . mcr_input('hero_highlight_en', $s['hero_highlight_en'], 'text', ['class' => 'large-text']));
             $row('Texte d’accueil (français)', '<textarea name="mcr[hero_lead_fr]" rows="3" class="large-text">' . esc_textarea($s['hero_lead_fr']) . '</textarea>', 'Laisser vide pour le texte automatique (avec le nombre de produits).');
             $row('Texte d’accueil (anglais)', '<textarea name="mcr[hero_lead_en]" rows="3" class="large-text">' . esc_textarea($s['hero_lead_en']) . '</textarea>');
+            $row('Mots qui défilent (FR / EN)', '<textarea name="mcr[hero_rotate_fr]" rows="6" class="large-text">' . esc_textarea($s['hero_rotate_fr'] ?? '') . '</textarea><textarea name="mcr[hero_rotate_en]" rows="6" class="large-text">' . esc_textarea($s['hero_rotate_en'] ?? '') . '</textarea>', 'Un par ligne. Ils s’affichent à tour de rôle après « Vos essentiels du quotidien, ».');
+            $row('Phrase signature (FR / EN)', mcr_input('hero_slogan_fr', $s['hero_slogan_fr'] ?? '', 'text', ['class' => 'large-text']) . '<br>' . mcr_input('hero_slogan_en', $s['hero_slogan_en'] ?? '', 'text', ['class' => 'large-text']), 'ex. « Un seul endroit, une multitude de choix ! »');
             $row('Infolettre', mcr_input('newsletter_shortcode', $s['newsletter_shortcode'] ?? '', 'text', ['class' => 'large-text', 'placeholder' => '[formulaire-infolettre id="…"]']), 'Code court du formulaire d’inscription (Hostinger Reach, Contact Form 7…). Vide : la section invite à recevoir les promotions sur WhatsApp.');
             echo '</table><h2>Bannières promotionnelles</h2><p>Trois bannières sous les catégories. Le lien et l’image viennent de la catégorie choisie, sauf si vous indiquez une adresse ou une image (copiez l’adresse d’une image de la Médiathèque).</p>';
             $cats = get_terms(['taxonomy' => 'product_cat', 'hide_empty' => false, 'orderby' => 'name']);

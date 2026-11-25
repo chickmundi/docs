@@ -370,6 +370,33 @@ body.no-scroll { overflow: hidden; }
 .hero__copy { position: relative; z-index: 2; max-width: 600px; }
 .hero__title { font-family: var(--font-display); font-weight: 600; font-size: clamp(2.1rem, 1.3rem + 2.6vw, 3.5rem); line-height: 1.02; letter-spacing: -.025em; color: #fff; margin: 4px 0 16px; }
 .hero__title em { display: block; font-style: italic; color: var(--gold-500); }
+/* Hero text animations: title words rise in, words take turns, number counts up, slogan underline draws */
+.hw { display: inline-block; overflow: hidden; vertical-align: bottom; padding-bottom: .1em; margin-bottom: -.1em; }
+.hw > span { display: inline-block; transform: translateY(110%); animation: hw-in .9s cubic-bezier(.2, .8, .2, 1) forwards; animation-delay: calc(var(--i) * 75ms + 120ms); }
+@keyframes hw-in { to { transform: none; } }
+.hero__title em .hw > span { background: linear-gradient(100deg, var(--gold-500) 0 40%, #fff3c9 50%, var(--gold-500) 60% 100%); background-size: 250% 100%; background-position: 100% 0; -webkit-background-clip: text; background-clip: text; color: transparent; animation: hw-in .9s cubic-bezier(.2, .8, .2, 1) calc(var(--i) * 75ms + 120ms) forwards, hero-shine 2.4s ease 1.6s 1 forwards; }
+@keyframes hero-shine { to { background-position: 0 0; } }
+.hero__rot { margin: 0 0 6px; color: #d6e3da; font-size: clamp(1.02rem, .95rem + .35vw, 1.2rem); animation: hero-fade .8s ease .7s both; }
+.hero__rot-intro { display: block; }
+.rot { display: grid; overflow: hidden; height: 1.45em; margin-top: 2px; color: var(--gold-300, #f2d48b); font-weight: 800; font-size: 1.18em; letter-spacing: -.01em; }
+.rot__w { grid-area: 1 / 1; white-space: nowrap; transform: translateY(105%); opacity: 0; transition: transform .55s cubic-bezier(.2, .8, .2, 1), opacity .4s ease; }
+.rot__w.is-on { transform: none; opacity: 1; }
+.rot__w.is-out { transform: translateY(-105%); opacity: 0; }
+.rot__w::after { content: ""; display: inline-block; width: 2px; height: .95em; margin-left: 4px; vertical-align: -.1em; background: currentColor; opacity: .7; animation: rot-caret 1s steps(1) infinite; }
+@keyframes rot-caret { 50% { opacity: 0; } }
+.rot__all { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.hero__num { color: #fff; font-variant-numeric: tabular-nums; }
+.hero__slogan { margin: -8px 0 22px; animation: hero-fade .8s ease 1.1s both; }
+.hero__slogan span { font: italic 600 clamp(1.1rem, 1rem + .5vw, 1.35rem)/1.3 var(--font-display); color: #fff; background: linear-gradient(var(--gold-500), var(--gold-500)) 0 100% / 0 3px no-repeat; padding-bottom: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; animation: hero-underline 1s cubic-bezier(.2, .8, .2, 1) 1.6s forwards; }
+@keyframes hero-underline { to { background-size: 100% 3px; } }
+@keyframes hero-fade { from { opacity: 0; transform: translateY(10px); } }
+@media (prefers-reduced-motion: reduce) {
+  .hw > span, .hero__title em .hw > span, .hero__rot, .hero__slogan { animation: none; transform: none; }
+  .hero__title em .hw > span { background: none; color: var(--gold-500); }
+  .hero__slogan span { animation: none; background-size: 100% 3px; }
+  .rot { display: none; }
+  .rot__all { position: static; width: auto; height: auto; clip: auto; white-space: normal; display: block; color: var(--gold-300, #f2d48b); font-weight: 700; }
+}
 .hero__lead { font-size: clamp(1rem, .95rem + .3vw, 1.15rem); color: #d6e3da; max-width: 52ch; margin-bottom: 24px; }
 .hero__cta { display: flex; flex-wrap: wrap; gap: 10px; }
 .hero__facts { display: flex; flex-wrap: wrap; gap: 8px 22px; list-style: none; margin: 26px 0 0; padding: 0; font-size: var(--fs-sm); color: #d6e3da; }

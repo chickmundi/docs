@@ -71,14 +71,19 @@ function mcr_default_settings(): array
         ],
         // Homepage: hero text, banners and the order of the sections (MCR Gestion > Paramètres > Page d'accueil).
         'home' => [
-            'hero_eyebrow_fr' => 'Épicerie africaine et beauté à Trois-Rivières',
-            'hero_eyebrow_en' => 'African grocery and beauty in Trois-Rivières',
-            'hero_title_fr' => 'Les saveurs d’Afrique,',
-            'hero_highlight_fr' => 'près de chez vous.',
-            'hero_title_en' => 'The flavours of Africa,',
-            'hero_highlight_en' => 'close to home.',
+            'hero_eyebrow_fr' => 'Marché de proximité, saveurs du monde et beauté',
+            'hero_eyebrow_en' => 'Neighbourhood market, flavours of the world and beauty',
+            'hero_title_fr' => 'La diversité à portée de main,',
+            'hero_highlight_fr' => 'près de chez vous !',
+            'hero_title_en' => 'Diversity within reach,',
+            'hero_highlight_en' => 'close to home!',
             'hero_lead_fr' => '', // empty: automatic text with the number of products
             'hero_lead_en' => '',
+            // Words that take turns after "Vos essentiels du quotidien," (one per line).
+            'hero_rotate_fr' => "épicerie d’ici et d’ailleurs\nviandes et poissons surgelés\nspécialités africaines\nperruques\nproduits de beauté\nsoins capillaires",
+            'hero_rotate_en' => "local and international groceries\nfrozen meat and fish\nAfrican specialities\nwigs\nbeauty products\nhair care",
+            'hero_slogan_fr' => 'Un seul endroit, une multitude de choix !',
+            'hero_slogan_en' => 'One place, a world of choice!',
             'newsletter_shortcode' => '', // e.g. the shortcode of a Hostinger Reach or Contact Form 7 form
             'banners' => [
                 ['on' => true, 'tone' => 'green', 'cat' => 'epices-et-condiments', 'url' => '', 'image' => '',
@@ -198,6 +203,30 @@ function mcr_settings_install_defaults(): void
         }
     }
 }
+
+/** One time: the hero text from the client (November 2026) replaces the previous default text, if it was not changed. */
+add_action('init', function () {
+    if (get_option('mcr_home_v3')) {
+        return;
+    }
+    $saved = get_option('mcr_home', null);
+    if (is_array($saved)) {
+        $new = mcr_default_settings()['home'];
+        $old = ['hero_eyebrow_fr' => 'Épicerie africaine et beauté à Trois-Rivières', 'hero_eyebrow_en' => 'African grocery and beauty in Trois-Rivières', 'hero_title_fr' => 'Les saveurs d’Afrique,', 'hero_highlight_fr' => 'près de chez vous.', 'hero_title_en' => 'The flavours of Africa,', 'hero_highlight_en' => 'close to home.'];
+        foreach ($old as $k => $v) {
+            if (($saved[$k] ?? $v) === $v) {
+                $saved[$k] = $new[$k];
+            }
+        }
+        foreach (['hero_rotate_fr', 'hero_rotate_en', 'hero_slogan_fr', 'hero_slogan_en'] as $k) {
+            if (!isset($saved[$k])) {
+                $saved[$k] = $new[$k];
+            }
+        }
+        update_option('mcr_home', $saved);
+    }
+    update_option('mcr_home_v3', 1, false);
+});
 
 /** One time: homepage settings saved with the previous layout get the new hero text and section order. */
 add_action('init', function () {

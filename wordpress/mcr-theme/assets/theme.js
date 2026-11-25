@@ -390,6 +390,41 @@
     wrap.classList.add('is-auto');
   });
 
+  // ---------- Hero: words taking turns, product count counting up ----------
+  var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  $$('[data-rotate]').forEach(function (box) {
+    var w = $$('.rot__w', box);
+    if (still || w.length < 2) return;
+    var i = 0;
+    setInterval(function () {
+      if (document.hidden) return;
+      var cur = w[i], next = w[(i + 1) % w.length];
+      cur.className = 'rot__w is-out';
+      next.className = 'rot__w is-on';
+      setTimeout(function () { if (!cur.classList.contains('is-on')) cur.className = 'rot__w'; }, 600);
+      i = (i + 1) % w.length;
+    }, 2300);
+  });
+  $$('[data-countup]').forEach(function (el) {
+    var end = +el.getAttribute('data-countup');
+    if (still || !end || !('IntersectionObserver' in window)) return;
+    var fmt = function (n) { return n.toLocaleString(C.lang === 'en' ? 'en-CA' : 'fr-CA'); };
+    var io = new IntersectionObserver(function (ents) {
+      if (!ents[0].isIntersecting) return;
+      io.disconnect();
+      var t0 = null;
+      var step = function (t) {
+        t0 = t0 || t;
+        var k = Math.min(1, (t - t0) / 1400);
+        el.textContent = fmt(Math.round(end * (1 - Math.pow(1 - k, 3))));
+        if (k < 1) requestAnimationFrame(step);
+      };
+      el.textContent = fmt(0);
+      requestAnimationFrame(step);
+    });
+    io.observe(el);
+  });
+
   // ---------- Live countdowns (only for real sale end dates) ----------
   var counters = $$('[data-countdown]');
   if (counters.length) {
