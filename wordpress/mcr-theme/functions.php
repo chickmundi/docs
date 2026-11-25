@@ -4,7 +4,7 @@
  */
 defined('ABSPATH') || exit;
 
-define('MCRT_VERSION', '1.5.5');
+define('MCRT_VERSION', '1.5.6');
 define('MCRT_DIR', get_template_directory());
 define('MCRT_URL', get_template_directory_uri());
 
@@ -491,6 +491,12 @@ add_action('woocommerce_single_product_summary', function () {
     }
     if ($end > time()) {
         echo '<p class="pp-promo__ends">' . mcr_icon('clock', 16) . ' ' . esc_html($en ? 'Sale ends in' : 'Fin de la promo dans') . ' <strong data-countdown="' . (int) $end . '">' . esc_html(mcrt_end_label($end)) . '</strong> <small>(' . esc_html(wp_date($en ? 'F j' : 'j F', $end, mcrt_tz())) . ')</small></p>';
+    }
+    $where = function_exists('mcr_product_sale_where') ? (mcr_product_sale_where($product) ?: ($deals ? 'online' : '')) : '';
+    if ($where === 'online') {
+        echo '<p class="pp-promo__where">' . mcr_icon('shopping-cart', 16) . ' ' . esc_html($en ? 'Sale price for online orders only, not in store.' : 'Prix promo valable pour les commandes en ligne seulement, pas en magasin.') . '</p>';
+    } elseif ($where === 'both') {
+        echo '<p class="pp-promo__where">' . mcr_icon('store', 16) . ' ' . esc_html($en ? 'Same sale price online and in store.' : 'Même prix promo en ligne et en magasin.') . '</p>';
     }
     foreach ($deals as $d) {
         $kit = $d['type'] === 'bundle';

@@ -47,6 +47,7 @@ $saving = !empty($args['show_saving']) && $pct ? mcrt_saving($product) : 0;
       <?php if ($is_new && !$pct) : ?><span class="badge badge--new"><?php echo esc_html($en ? 'New' : 'Nouveau'); ?></span><?php endif; ?>
       <?php if (!$in_stock) : ?><span class="badge badge--muted"><?php mcr_e('Épuisé'); ?></span><?php endif; ?>
     </span>
+    <?php if (($pct > 0 || $deal_labels) && function_exists('mcr_product_sale_where') && in_array(mcr_product_sale_where($product) ?: 'online', ['online'], true)) : ?><span class="badge badge--online pcard__where" title="<?php echo esc_attr($en ? 'Sale price for online orders only' : 'Prix promo pour les commandes en ligne seulement'); ?>"><?php echo esc_html($en ? 'Online' : 'En ligne'); ?></span><?php endif; ?>
     <button class="pcard__wish" type="button" data-wish="<?php echo esc_attr(mcrt_wish_data($product)); ?>" aria-pressed="false" aria-label="<?php echo esc_attr(mcr_t('Ajouter à ma liste') . ' : ' . $product->get_name()); ?>"><?php echo mcr_icon('heart', 18); ?></button>
   </div>
   <div class="pcard__body">

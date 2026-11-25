@@ -101,6 +101,25 @@ function mcr_promo_where_label(array $c, ?bool $en = null): string
     };
 }
 
+/**
+ * Where a product's current sale price applies: '' (not on sale), 'online', 'store' or 'both'.
+ * Prices written by a campaign follow the campaign; prices set by hand on the product are online only.
+ */
+function mcr_product_sale_where(WC_Product $p): string
+{
+    if (!$p->is_on_sale()) {
+        return '';
+    }
+    $ids = $p->is_type('variable') ? array_merge([$p->get_id()], $p->get_children()) : [$p->get_id()];
+    foreach ($ids as $id) {
+        $promo = (string) get_post_meta($id, '_mcr_promo', true);
+        if ($promo !== '' && ($c = mcr_promos()[$promo] ?? null)) {
+            return mcr_promo_where($c);
+        }
+    }
+    return 'online';
+}
+
 /** Product IDs targeted by a campaign (explicit products + every product of the chosen categories). */
 function mcr_promo_target_ids(array $c): array
 {

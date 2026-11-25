@@ -79,7 +79,7 @@ $street = function_exists('mcr_setting') ? (string) mcr_setting('store', 'street
       <article class="promo-banner" data-reveal>
         <span class="promo-banner__label"><?php echo esc_html($b['label']); ?></span>
         <div class="promo-banner__body">
-          <?php if (($b['where'] ?? 'online') !== 'online') : ?><span class="where-pill<?php echo $b['where'] === 'store' ? ' where-pill--store' : ''; ?>"><?php echo mcr_icon('store', 14); ?> <?php echo esc_html($b['where_label']); ?></span><?php endif; ?>
+          <?php if (!empty($b['where_label'])) : ?><span class="where-pill<?php echo $b['where'] === 'store' ? ' where-pill--store' : ''; ?>"><?php echo mcr_icon($b['where'] === 'online' ? 'shopping-cart' : 'store', 14); ?> <?php echo esc_html($b['where_label']); ?></span><?php endif; ?>
           <h2><?php echo esc_html($b['title']); ?></h2>
           <?php if ($b['text']) : ?><p><?php echo esc_html($b['text']); ?></p><?php endif; ?>
           <?php if ($b['ends']) : ?><p class="promo-banner__ends"><?php echo mcr_icon('clock', 16); ?> <?php echo esc_html($en ? 'Ends in' : 'Se termine dans'); ?> <strong data-countdown="<?php echo (int) $b['ends']; ?>"><?php echo esc_html(mcrt_end_label($b['ends'])); ?></strong></p><?php endif; ?>
@@ -173,6 +173,7 @@ $street = function_exists('mcr_setting') ? (string) mcr_setting('store', 'street
 <section class="section" aria-labelledby="h-onsale" id="produits">
   <div class="container">
     <?php mcrt_section_head($en ? 'Real prices, real savings' : 'Vrais prix, vraies économies', $en ? 'All products on sale' : 'Tous les produits en promotion', '', '', 'h-onsale'); ?>
+    <p class="instore__note"><?php echo mcr_icon('shopping-cart', 16); ?> <?php echo esc_html($en ? 'These sale prices are for online orders only, unless marked “Online and in store”.' : 'Ces prix promo sont valables pour les commandes en ligne seulement, sauf mention « En ligne et en magasin ».'); ?></p>
     <div class="promo-tools">
       <ul class="chips">
         <li><a href="<?php echo esc_url(remove_query_arg(['rayon', 'pg'], add_query_arg('tri', $sort, $base)) . '#produits'); ?>"<?php echo $dept ? '' : ' aria-current="true"'; ?>><?php echo esc_html($en ? 'All' : 'Tout'); ?> <small><?php echo count($ids); ?></small></a></li>

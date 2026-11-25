@@ -82,7 +82,7 @@ $name = $week ? ($en ? (mcr_en_meta($week->get_id(), 'title') ?: $week->get_name
       <div class="ppop__deal">
         <span class="ppop__labelwrap"><svg class="ppop__burst" viewBox="0 0 100 100" aria-hidden="true"><path fill="currentColor" d="M50 0l7 16 15-9-1 17 17-2-8 15 16 7-15 8 9 15-17-1 2 17-15-8-7 16-7-16-15 8 2-17-17 1 9-15-15-8 16-7-8-15 17 2-1-17 15 9z"/></svg><span class="ppop__label"><?php echo esc_html($banner['label']); ?></span></span>
         <?php if ($banner['text'] !== '') : ?><p><?php echo esc_html($banner['text']); ?></p><?php endif; ?>
-        <?php if (($banner['where'] ?? 'online') !== 'online') : ?><p class="ppop__where"><?php echo mcr_icon('store', 16); ?> <?php echo esc_html($banner['where_label']); ?></p><?php endif; ?>
+        <?php if (!empty($banner['where_label'])) : ?><p class="ppop__where"><?php echo mcr_icon(($banner['where'] ?? '') === 'online' ? 'shopping-cart' : 'store', 16); ?> <?php echo esc_html($banner['where_label']); ?></p><?php endif; ?>
       </div>
     <?php endif; ?>
 
