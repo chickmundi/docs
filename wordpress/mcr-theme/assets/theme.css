@@ -180,6 +180,21 @@ a:hover .link-arrow .icon, .link-arrow:hover .icon { transform: translateX(3px);
 .js [data-reveal].is-in { opacity: 1; transform: none; }
 
 /* ======================= 4. Header ======================= */
+.evbar { background: var(--terra-600, #b55a35); color: #fff; font-size: var(--fs-sm); }
+.evbar.is-soon { background: var(--ink, #18231d); }
+.evbar__inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 14px; min-height: 40px; padding-top: 6px; padding-bottom: 6px; color: inherit; text-decoration: none; text-align: center; }
+.evbar__name { display: inline-flex; align-items: center; gap: 6px; font-weight: 800; color: var(--gold-300, #f2d48b); letter-spacing: .02em; }
+.evbar__deals { font-weight: 600; }
+.evbar__deals small { font-weight: 500; opacity: .85; font-size: .82rem; }
+.evbar__time { display: inline-flex; align-items: center; gap: 6px; }
+.evbar__time b { font-variant-numeric: tabular-nums; color: var(--gold-300, #f2d48b); }
+.evbar__inner:hover .evbar__deals { text-decoration: underline; }
+.promo-banner.promo-banner--soon { background: var(--ink, #18231d); }
+.soon__deals { margin: 6px 0 10px; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 1.05rem; font-weight: 700; }
+.soon__count { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0; color: var(--gold-300, #f2d48b); font-weight: 600; }
+.soon__count strong { font: 700 clamp(1.35rem, 1.1rem + 1vw, 1.8rem)/1.1 var(--font-head); font-variant-numeric: tabular-nums; color: #fff; }
+.soon__when { margin: 6px 0 0; opacity: .85; font-size: .92rem; }
+.soon__when::first-letter { text-transform: uppercase; }
 .announce { background: var(--green-950); color: #f3efe2; font-size: var(--fs-sm); }
 .announce__inner { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 38px; text-align: center; }
 .announce__inner p { margin: 0; }

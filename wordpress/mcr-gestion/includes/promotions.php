@@ -335,6 +335,9 @@ add_action('mcr_promo_switch', function () {
     }
     delete_transient('wc_products_onsale');
     delete_transient('mcr_promo_active');
+    if (function_exists('mcrt_cache_flush')) {
+        mcrt_cache_flush(); // home page sections show the new prices right away
+    }
 });
 function mcr_promo_schedule_switches(array $c): void
 {
@@ -637,6 +640,54 @@ function mcr_promo_banners(): array
         }
     }
     return $out;
+}
+
+/**
+ * Promotions to announce with a countdown (bar on every page, Promotions page): campaigns with a banner
+ * that start within the next 7 days ("Commence dans") or are running with a real end date ("Se termine dans").
+ * Campaigns with the same name are shown together, e.g. "Black Friday Promo: -10 % Épicerie · -30 % Perruques".
+ */
+function mcr_promo_events(): array
+{
+    $now = time();
+    $groups = [];
+    foreach (mcr_promos() as $id => $c) {
+        if (empty($c['banner']) || !empty($c['deleted'])) {
+            continue;
+        }
+        [$from, $to] = mcr_promo_range($c);
+        $state = mcr_promo_state($c, $now);
+        if (!($state === 'scheduled' && $from - $now <= 7 * DAY_IN_SECONDS) && !($state === 'active' && $to)) {
+            continue;
+        }
+        $title = mcr_promo_title($c);
+        $key = strtolower(remove_accents($title)) . '|' . $state;
+        $names = [];
+        foreach ((array) ($c['cats'] ?? []) as $cid) {
+            $t = get_term((int) $cid, 'product_cat');
+            if ($t && !is_wp_error($t)) {
+                $names[] = $t->name;
+            }
+        }
+        if (!$names && !empty($c['products'])) {
+            $p = wc_get_product((int) $c['products'][0]);
+            $names[] = $p ? $p->get_name() . (count($c['products']) > 1 ? ' +' . (count($c['products']) - 1) : '') : '';
+        }
+        $g = $groups[$key] ?? ['title' => $title, 'state' => $state, 'starts' => $from, 'ends' => $to, 'parts' => [], 'where' => [], 'cats' => []];
+        $g['parts'][] = trim(mcr_promo_label($c) . ' ' . implode(', ', array_filter($names)));
+        $g['where'][mcr_promo_where($c)] = mcr_promo_where_label($c);
+        $g['cats'] = array_merge($g['cats'], (array) ($c['cats'] ?? []));
+        $g['starts'] = $g['starts'] ? min($g['starts'], $from) : $from;
+        $g['ends'] = max($g['ends'], $to);
+        $groups[$key] = $g;
+    }
+    foreach ($groups as &$g) {
+        $g['where_label'] = count($g['where']) === 1 ? reset($g['where']) : '';
+    }
+    unset($g);
+    // The next thing to happen comes first: a promo about to start, or one about to end.
+    usort($groups, fn($a, $b) => ($a['state'] === 'scheduled' ? $a['starts'] : $a['ends']) <=> ($b['state'] === 'scheduled' ? $b['starts'] : $b['ends']));
+    return $groups;
 }
 
 /** Address of the Promotions page. */

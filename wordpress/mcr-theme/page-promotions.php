@@ -72,6 +72,31 @@ $street = function_exists('mcr_setting') ? (string) mcr_setting('store', 'street
   </div>
 </section>
 
+<?php $events = function_exists('mcr_promo_events') ? array_values(array_filter(mcr_promo_events(), fn($e) => $e['state'] === 'scheduled')) : []; ?>
+<?php if ($events) : ?>
+<section class="section section--tight">
+  <div class="container promo-banners">
+    <?php foreach ($events as $e) : ?>
+      <article class="promo-banner promo-banner--soon" data-reveal>
+        <span class="promo-banner__label"><?php echo esc_html($en ? 'Coming soon' : 'Bientôt'); ?></span>
+        <div class="promo-banner__body">
+          <?php if ($e['where_label']) : ?><span class="where-pill"><?php echo mcr_icon('shopping-cart', 14); ?> <?php echo esc_html($e['where_label']); ?></span><?php endif; ?>
+          <h2><?php echo esc_html($e['title']); ?></h2>
+          <ul class="soon__deals"><?php foreach ($e['parts'] as $pt) : ?><li><?php echo esc_html($pt); ?></li><?php endforeach; ?></ul>
+          <p class="soon__count"><?php echo mcr_icon('clock', 18); ?> <span><?php echo esc_html($en ? 'Starts in' : 'Commence dans'); ?></span> <strong data-countdown="<?php echo (int) $e['starts']; ?>" data-countdown-reload><?php echo esc_html(mcrt_end_label($e['starts'])); ?></strong></p>
+          <p class="soon__when"><?php
+            $same = $e['ends'] && wp_date('Ymd', $e['starts'], mcrt_tz()) === wp_date('Ymd', $e['ends'], mcrt_tz());
+            echo esc_html($same
+                ? ($en ? 'Only on ' . wp_date('l, F j', $e['starts'], mcrt_tz()) . ', all day' : 'Seulement le ' . mb_strtolower(wp_date('l j F', $e['starts'], mcrt_tz())) . ', toute la journée')
+                : ($en ? 'From ' . wp_date('F j', $e['starts'], mcrt_tz()) . ($e['ends'] ? ' to ' . wp_date('F j', $e['ends'], mcrt_tz()) : '') : 'Du ' . wp_date('j F', $e['starts'], mcrt_tz()) . ($e['ends'] ? ' au ' . wp_date('j F', $e['ends'], mcrt_tz()) : '')));
+          ?></p>
+        </div>
+      </article>
+    <?php endforeach; ?>
+  </div>
+</section>
+<?php endif; ?>
+
 <?php if ($banners) : ?>
 <section class="section section--tight">
   <div class="container promo-banners">
