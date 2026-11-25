@@ -67,28 +67,6 @@
     $$('[data-reveal]').forEach(function (el) { el.classList.add('is-in'); });
   }
 
-  // ---------- Product cards appear one after another when they come on screen ----------
-  var calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (!calm && 'IntersectionObserver' in window) {
-    var cardIo = new IntersectionObserver(function (entries) {
-      var n = 0;
-      entries.forEach(function (en) {
-        if (!en.isIntersecting) return;
-        var el = en.target;
-        el.style.transitionDelay = Math.min(n++, 5) * 90 + 'ms';
-        el.classList.add('is-in');
-        cardIo.unobserve(el);
-        setTimeout(function () { el.classList.remove('card-in'); el.classList.remove('is-in'); el.style.transitionDelay = ''; }, 1400);
-      });
-    }, { rootMargin: '0px 0px -6% 0px', threshold: 0.12 });
-    $$('.pcard').forEach(function (c) {
-      var r = c.getBoundingClientRect();
-      if (r.top < window.innerHeight * 0.9 && r.bottom > 0 && r.left < window.innerWidth) return; // already visible at load: no delay
-      c.classList.add('card-in');
-      cardIo.observe(c);
-    });
-  }
-
   // ---------- Shop sidebar ----------
   var side = $('[data-side]');
   if (side) {
@@ -220,7 +198,29 @@
     setTimeout(function () {
       if (f.parentNode) f.parentNode.removeChild(f);
       target.classList.remove('cart-hit'); void target.offsetWidth; target.classList.add('cart-hit');
+      confetti(target);
     }, 760);
+  }
+
+  // A small burst of coloured confetti around the cart icon (about 1 second, then gone).
+  function confetti(el) {
+    var r = el.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+    var colours = ['#e6b74f', '#c96b43', '#2d7a57', '#f2d48b', '#e2574c', '#4aa3df', '#9b5de5'];
+    var box = document.createElement('div');
+    box.className = 'confetti';
+    box.style.left = x + 'px'; box.style.top = y + 'px';
+    for (var i = 0; i < 18; i++) {
+      var p = document.createElement('i');
+      var ang = (i / 18) * Math.PI * 2 + Math.random() * 0.4, dist = 38 + Math.random() * 34;
+      p.style.setProperty('--x', Math.cos(ang) * dist + 'px');
+      p.style.setProperty('--y', Math.sin(ang) * dist + 'px');
+      p.style.setProperty('--r', Math.round(Math.random() * 540 - 270) + 'deg');
+      p.style.background = colours[i % colours.length];
+      if (i % 3 === 0) p.style.borderRadius = '50%';
+      box.appendChild(p);
+    }
+    document.body.appendChild(box);
+    setTimeout(function () { if (box.parentNode) box.parentNode.removeChild(box); }, 1100);
   }
 
   // ---------- Cart: quantity steppers, automatic update ----------
