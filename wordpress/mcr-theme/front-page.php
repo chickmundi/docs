@@ -9,6 +9,7 @@ get_header();
 $home = function_exists('mcr_setting') ? mcr_setting('home') : [];
 get_template_part('template-parts/home/hero', null, ['home' => $home]);
 get_template_part('template-parts/home/flash'); // live: not cached
+get_template_part('template-parts/home/promo-event'); // upcoming or running promotion, live countdown: not cached
 
 mcrt_cached('home-sections-' . mcrt_home_variant(), function () use ($home) { // 8 shuffled versions
     foreach (mcrt_home_sections() as $i => $sec) {

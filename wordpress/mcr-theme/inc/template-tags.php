@@ -307,6 +307,18 @@ function mcrt_end_label(int $end, bool $short = true): string
     return ($en ? 'Until ' : 'Jusqu’au ') . wp_date($en ? 'M j' : 'j M', $end, mcrt_tz());
 }
 
+/** "Seulement le jeudi 26 novembre", "Du 26 au 28 novembre", for a promotion event. */
+function mcrt_event_when(array $e): string
+{
+    $en = mcr_is_en();
+    $tz = mcrt_tz();
+    if ($e['ends'] && wp_date('Ymd', $e['starts'], $tz) === wp_date('Ymd', $e['ends'], $tz)) {
+        return $en ? 'Only on ' . wp_date('l, F j', $e['starts'], $tz) : 'Seulement le ' . mb_strtolower(wp_date('l j F', $e['starts'], $tz));
+    }
+    $from = wp_date($en ? 'F j' : 'j F', $e['starts'], $tz);
+    return $e['ends'] ? ($en ? 'From ' . $from . ' to ' . wp_date('F j', $e['ends'], $tz) : 'Du ' . $from . ' au ' . wp_date('j F', $e['ends'], $tz)) : ($en ? 'From ' . $from : 'Dès le ' . $from);
+}
+
 /** Deal labels for a product ("2 pour 5,00 $", "Kit 24,99 $"). */
 function mcrt_deal_labels(WC_Product $p): array
 {

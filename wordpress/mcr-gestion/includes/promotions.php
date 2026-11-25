@@ -30,6 +30,7 @@ function mcr_promos(): array
 function mcr_promo_save_all(array $all): void
 {
     update_option('mcr_promos', $all, false);
+    update_option('mcr_promos_rev', time(), false);
     delete_transient('mcr_promo_active');
 }
 
@@ -673,7 +674,8 @@ function mcr_promo_events(): array
             $p = wc_get_product((int) $c['products'][0]);
             $names[] = $p ? $p->get_name() . (count($c['products']) > 1 ? ' +' . (count($c['products']) - 1) : '') : '';
         }
-        $g = $groups[$key] ?? ['title' => $title, 'state' => $state, 'starts' => $from, 'ends' => $to, 'parts' => [], 'where' => [], 'cats' => []];
+        $g = $groups[$key] ?? ['title' => $title, 'state' => $state, 'starts' => $from, 'ends' => $to, 'parts' => [], 'where' => [], 'cats' => [], 'ids' => []];
+        $g['ids'][] = $id;
         $g['parts'][] = trim(mcr_promo_label($c) . ' ' . implode(', ', array_filter($names)));
         $g['where'][mcr_promo_where($c)] = mcr_promo_where_label($c);
         $g['cats'] = array_merge($g['cats'], (array) ($c['cats'] ?? []));
@@ -688,6 +690,62 @@ function mcr_promo_events(): array
     // The next thing to happen comes first: a promo about to start, or one about to end.
     usort($groups, fn($a, $b) => ($a['state'] === 'scheduled' ? $a['starts'] : $a['ends']) <=> ($b['state'] === 'scheduled' ? $b['starts'] : $b['ends']));
     return $groups;
+}
+
+/**
+ * Products of an event with their promo price, biggest saving first (cached 10 minutes).
+ * Returns [['id' => product ID, 'price' => promo price, 'regular' => regular price, 'pct' => %, 'part' => index]].
+ * $part limits to one of the event's offers (index in $event['ids']).
+ */
+function mcr_promo_event_items(array $event, int $part = -1): array
+{
+    $key = 'mcr_evitems_' . md5(implode(',', $event['ids']) . '|' . $event['state'] . '|' . get_option('mcr_promos_rev', 0));
+    $items = get_transient($key);
+    if (!is_array($items)) {
+        $items = [];
+        $seen = [];
+        $all = mcr_promos();
+        foreach ($event['ids'] as $i => $cid) {
+            $c = $all[$cid] ?? null;
+            if (!$c || ($c['type'] ?? '') !== 'percent') {
+                continue;
+            }
+            foreach (mcr_promo_target_ids($c) as $pid) {
+                if (isset($seen[$pid])) {
+                    continue;
+                }
+                $p = wc_get_product($pid);
+                if (!$p || !$p->is_visible()) {
+                    continue;
+                }
+                $reg = (float) ($p->is_type('variable') ? $p->get_variation_regular_price('min') : $p->get_regular_price('edit'));
+                if ($reg <= 0) {
+                    continue;
+                }
+                $seen[$pid] = true;
+                $items[] = ['id' => $pid, 'price' => mcr_promo_percent_price($p, $c), 'regular' => $reg, 'pct' => (int) $c['percent'], 'part' => $i, 'stock' => $p->is_in_stock()];
+            }
+        }
+        usort($items, fn($a, $b) => ($b['stock'] <=> $a['stock']) ?: (($b['regular'] - $b['price']) <=> ($a['regular'] - $a['price'])));
+        set_transient($key, $items, 10 * MINUTE_IN_SECONDS);
+    }
+    return $part < 0 ? $items : array_values(array_filter($items, fn($x) => $x['part'] === $part));
+}
+
+/** A scheduled campaign (starting within 7 days, with a banner) that includes this product, with its future price. */
+function mcr_product_upcoming(WC_Product $p): ?array
+{
+    foreach (mcr_promo_events() as $e) {
+        if ($e['state'] !== 'scheduled') {
+            continue;
+        }
+        foreach (mcr_promo_event_items($e) as $it) {
+            if ($it['id'] === $p->get_id()) {
+                return $it + ['event' => $e];
+            }
+        }
+    }
+    return null;
 }
 
 /** Address of the Promotions page. */

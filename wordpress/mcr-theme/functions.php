@@ -4,7 +4,7 @@
  */
 defined('ABSPATH') || exit;
 
-define('MCRT_VERSION', '1.5.8');
+define('MCRT_VERSION', '1.5.9');
 define('MCRT_DIR', get_template_directory());
 define('MCRT_URL', get_template_directory_uri());
 
@@ -507,6 +507,23 @@ add_action('woocommerce_single_product_summary', function () {
         echo '</p>';
     }
     echo '</div>';
+}, 11);
+
+// ---------- Product page: upcoming promotion (preview of the future price, with countdown) ----------
+add_action('woocommerce_single_product_summary', function () {
+    global $product;
+    if (!$product instanceof WC_Product || !function_exists('mcr_product_upcoming') || $product->is_on_sale()) {
+        return;
+    }
+    $u = mcr_product_upcoming($product);
+    if (!$u) {
+        return;
+    }
+    $en = mcr_is_en();
+    $e = $u['event'];
+    echo '<div class="pp-soon"><p class="pp-soon__head">' . mcr_icon('clock', 18) . ' <strong>' . esc_html($e['title']) . '</strong> · -' . (int) $u['pct'] . ' %</p>'
+        . '<p class="pp-soon__price">' . esc_html($en ? 'Promo price: ' : 'Prix promo : ') . '<b>' . wp_kses_post(($product->is_type('variable') ? ($en ? 'from ' : 'dès ') : '') . wc_price($u['price'])) . '</b> · ' . esc_html(mcrt_event_when($e)) . ($e['where_label'] ? ' (' . esc_html(mb_strtolower($e['where_label'])) . ')' : '') . '</p>'
+        . '<p class="pp-soon__count">' . esc_html($en ? 'Starts in' : 'Commence dans') . ' <b data-countdown="' . (int) $e['starts'] . '" data-countdown-reload>' . esc_html(mcrt_end_label($e['starts'])) . '</b>. ' . esc_html($en ? 'Until then, the regular price applies.' : 'D’ici là, le prix régulier s’applique.') . '</p></div>';
 }, 11);
 
 // ---------- Product page: promotions valid in the physical store only ----------

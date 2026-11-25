@@ -97,6 +97,42 @@ $street = function_exists('mcr_setting') ? (string) mcr_setting('store', 'street
 </section>
 <?php endif; ?>
 
+<?php foreach ($events as $ei => $e) :
+    $soonItems = mcr_promo_event_items($e);
+    if (!$soonItems) { continue; }
+    $part = isset($_GET['offre']) ? (int) $_GET['offre'] : -1; // phpcs:ignore WordPress.Security.NonceVerification
+    $part = isset($e['ids'][$part]) ? $part : -1;
+    $list = $part < 0 ? $soonItems : array_values(array_filter($soonItems, fn($x) => $x['part'] === $part));
+    $spg = max(1, (int) ($_GET['bpg'] ?? 1)); // phpcs:ignore WordPress.Security.NonceVerification
+    $spages = max(1, (int) ceil(count($list) / 24));
+    $when = mcrt_event_when($e);
+    ?>
+<section class="section section--tight" id="bientot" aria-labelledby="h-bientot-<?php echo (int) $ei; ?>">
+  <div class="container">
+    <?php mcrt_section_head($e['title'] . ' · ' . $when, sprintf($en ? '%d products coming on sale' : '%d produits bientôt en promo', count($soonItems)), '', '', 'h-bientot-' . $ei); ?>
+    <p class="instore__note"><?php echo mcr_icon('clock', 16); ?> <?php echo esc_html($en ? 'Preview: the promo prices apply when the promotion starts. Until then, these products are sold at their regular price.' : 'Aperçu : les prix promo s’appliquent quand la promotion commence. D’ici là, ces produits sont vendus au prix régulier.'); ?></p>
+    <ul class="chips">
+      <li><a href="<?php echo esc_url(remove_query_arg(['offre', 'bpg']) . '#bientot'); ?>"<?php echo $part < 0 ? ' aria-current="true"' : ''; ?>><?php echo esc_html($en ? 'All' : 'Tout'); ?> <small><?php echo count($soonItems); ?></small></a></li>
+      <?php foreach ($e['parts'] as $pi => $pt) : $n = count(array_filter($soonItems, fn($x) => $x['part'] === $pi)); if (!$n) { continue; } ?>
+        <li><a href="<?php echo esc_url(add_query_arg('offre', $pi, remove_query_arg('bpg')) . '#bientot'); ?>"<?php echo $part === $pi ? ' aria-current="true"' : ''; ?>><?php echo esc_html($pt); ?> <small><?php echo (int) $n; ?></small></a></li>
+      <?php endforeach; ?>
+    </ul>
+    <ul class="prow prow--grid promo-grid">
+      <?php foreach (array_slice($list, ($spg - 1) * 24, 24) as $it) : $p = wc_get_product($it['id']); if (!$p) { continue; } ?>
+        <li><?php get_template_part('template-parts/card', null, ['product' => $p, 'soon' => $it + ['when' => $when]]); ?></li>
+      <?php endforeach; ?>
+    </ul>
+    <?php if ($spages > 1) : ?>
+      <nav class="pager" aria-label="Pages">
+        <?php for ($i = 1; $i <= $spages; $i++) : ?>
+          <a href="<?php echo esc_url(add_query_arg('bpg', $i > 1 ? $i : false) . '#bientot'); ?>"<?php echo $i === $spg ? ' aria-current="page"' : ''; ?>><?php echo (int) $i; ?></a>
+        <?php endfor; ?>
+      </nav>
+    <?php endif; ?>
+  </div>
+</section>
+<?php endforeach; ?>
+
 <?php if ($banners) : ?>
 <section class="section section--tight">
   <div class="container promo-banners">

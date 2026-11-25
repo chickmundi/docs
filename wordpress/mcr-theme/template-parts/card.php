@@ -33,6 +33,15 @@ $eager = !empty($args['eager']);
 $deal_labels = mcrt_deal_labels($product);
 $end_label = $pct ? mcrt_end_label(mcrt_sale_end($product)) : '';
 $saving = !empty($args['show_saving']) && $pct ? mcrt_saving($product) : 0;
+// Upcoming promotion preview: future price shown, not for sale at that price yet.
+$soon = $args['soon'] ?? null;
+if ($soon) {
+    $pct = (int) $soon['pct'];
+    $deal_labels = [];
+    $end_label = '';
+    $flash = null;
+    $sold30 = '';
+}
 ?>
 <article class="pcard<?php echo $in_stock ? '' : ' is-out'; ?>" data-reveal>
   <div class="pcard__media">
@@ -58,6 +67,7 @@ $saving = !empty($args['show_saving']) && $pct ? mcrt_saving($product) : 0;
         <span class="stars" style="--r:<?php echo esc_attr($avg / 5 * 100); ?>%"></span><small>(<?php echo (int) $reviews; ?>)</small>
       </p>
     <?php endif; ?>
+    <?php if ($soon) : ?><p class="pcard__soonnote"><?php echo esc_html($soon['when']); ?></p><?php endif; ?>
     <?php if ($saving > 0) : ?><p class="pcard__save"><?php echo wp_kses_post(sprintf($en ? 'You save %s' : 'Économisez %s', wc_price($saving))); ?></p><?php endif; ?>
     <?php if ($sold30) : ?><p class="pcard__hot"><?php echo mcr_icon('flame', 13); ?> <?php echo esc_html($sold30); ?></p><?php endif; ?>
     <p class="pcard__meta">
@@ -66,8 +76,14 @@ $saving = !empty($args['show_saving']) && $pct ? mcrt_saving($product) : 0;
       <?php elseif ($in_stock) : ?><span class="pcard__stock"><?php echo esc_html($en ? 'In stock' : 'En stock'); ?></span><?php endif; ?>
     </p>
     <div class="pcard__foot">
+      <?php if ($soon) : ?>
+        <span class="pcard__price is-sale"><del><?php echo wc_price($soon['regular']); // phpcs:ignore ?></del> <ins><?php echo ($product->is_type('variable') ? '<small class="pcard__from">' . esc_html($en ? 'From' : 'Dès') . '</small> ' : '') . wc_price($soon['price']); // phpcs:ignore ?></ins></span>
+        <span class="pcard__soon" title="<?php echo esc_attr($soon['when']); ?>"><?php echo mcr_icon('clock', 15); ?><span><?php echo esc_html($en ? 'Soon' : 'Bientôt'); ?></span></span>
+      <?php else : ?>
       <span class="pcard__price<?php echo $pct ? ' is-sale' : ''; ?>"><?php echo $price_html; // phpcs:ignore ?></span>
-      <?php if ($simple_buyable) : ?>
+      <?php endif; ?>
+      <?php if ($soon) : ?>
+      <?php elseif ($simple_buyable) : ?>
         <a href="<?php echo esc_url($product->add_to_cart_url()); ?>" class="pcard__add" data-add-to-cart="<?php echo esc_attr($product->get_id()); ?>" data-name="<?php echo esc_attr($product->get_name()); ?>" rel="nofollow" aria-label="<?php echo esc_attr(($en ? 'Add to cart: ' : 'Ajouter au panier : ') . $product->get_name()); ?>"><?php echo mcr_icon('plus', 18); ?><span><?php mcr_e('Ajouter'); ?></span></a>
       <?php else : ?>
         <a href="<?php echo esc_url($product->get_permalink()); ?>" class="pcard__add pcard__add--ghost" aria-label="<?php echo esc_attr(($in_stock ? ($by_weight ? ($en ? 'Choose the weight: ' : 'Choisir le poids : ') : ($en ? 'Choose options: ' : 'Choisir les options : ')) : ($en ? 'View: ' : 'Voir : ')) . $product->get_name()); ?>"><span><?php echo esc_html($in_stock ? ($by_weight ? ($en ? 'Weight' : 'Poids') : 'Options') : ($en ? 'View' : 'Voir')); ?></span><?php echo mcr_icon('chevron-right', 16); ?></a>

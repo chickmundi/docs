@@ -55,16 +55,6 @@ $logged = is_user_logged_in();
 </div>
 <?php endif; ?>
 
-<?php $mcr_events = function_exists('mcr_promo_events') ? mcr_promo_events() : []; if ($mcr_events) : $ev = $mcr_events[0]; $soon = $ev['state'] === 'scheduled'; $at = $soon ? $ev['starts'] : $ev['ends']; ?>
-<div class="evbar<?php echo $soon ? ' is-soon' : ''; ?>">
-  <a class="container evbar__inner" href="<?php echo esc_url(function_exists('mcr_promotions_url') ? mcr_promotions_url() : home_url('/')); ?>">
-    <span class="evbar__name"><?php echo mcr_icon('badge-percent', 16); ?> <?php echo esc_html($ev['title']); ?></span>
-    <span class="evbar__deals"><?php echo esc_html(implode(' · ', $ev['parts'])); ?><?php if ($ev['where_label']) : ?> <small>(<?php echo esc_html(mb_strtolower($ev['where_label'])); ?>)</small><?php endif; ?></span>
-    <span class="evbar__time"><?php echo mcr_icon('clock', 15); ?> <?php echo esc_html($soon ? ($en ? 'Starts in' : 'Commence dans') : ($en ? 'Ends in' : 'Se termine dans')); ?> <b data-countdown="<?php echo (int) $at; ?>" data-countdown-reload><?php echo esc_html(function_exists('mcrt_end_label') ? mcrt_end_label($at) : ''); ?></b></span>
-  </a>
-</div>
-<?php endif; ?>
-
 <div class="topbar">
   <div class="container topbar__inner">
     <ul class="topbar__info">
