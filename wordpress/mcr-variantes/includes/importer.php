@@ -244,6 +244,40 @@ add_action('rest_api_init', function () {
             return $out;
         },
     ]);
+    // Hidden search words: added to the product's tags (existing tags are kept).
+    register_rest_route('mcr-variantes/v1', '/set-tags', [
+        'methods' => 'POST',
+        'permission_callback' => fn() => current_user_can('manage_woocommerce'),
+        'callback' => function (WP_REST_Request $r) {
+            $apply = (bool) $r->get_param('apply');
+            $out = ['products' => 0, 'tags_added' => 0, 'missing' => []];
+            foreach ((array) $r->get_param('rows') as $row) {
+                $id = absint($row['id'] ?? 0);
+                if (get_post_type($id) !== 'product') {
+                    $out['missing'][] = $id;
+                    continue;
+                }
+                $have = array_map(fn($n) => remove_accents(mb_strtolower($n)), wp_get_object_terms($id, 'product_tag', ['fields' => 'names']));
+                $new = [];
+                foreach ((array) ($row['tags'] ?? []) as $t) {
+                    $t = sanitize_text_field((string) $t);
+                    $k = remove_accents(mb_strtolower($t));
+                    if ($t !== '' && !in_array($k, $have, true)) {
+                        $new[] = $t;
+                        $have[] = $k;
+                    }
+                }
+                if ($new) {
+                    $out['products']++;
+                    $out['tags_added'] += count($new);
+                    if ($apply) {
+                        wp_set_object_terms($id, $new, 'product_tag', true);
+                    }
+                }
+            }
+            return $out;
+        },
+    ]);
     register_rest_route('mcr-variantes/v1', '/set-names', [
         'methods' => 'POST',
         'permission_callback' => fn() => current_user_can('manage_woocommerce'),
