@@ -4,7 +4,7 @@
  */
 defined('ABSPATH') || exit;
 
-define('MCRT_VERSION', '1.5.2');
+define('MCRT_VERSION', '1.5.4');
 define('MCRT_DIR', get_template_directory());
 define('MCRT_URL', get_template_directory_uri());
 
@@ -541,3 +541,48 @@ add_action('woocommerce_single_product_summary', function () {
         echo '</p>';
     }
 }, 10);
+
+// ---------------------------------------------------------------- Customer sign-in / account creation page
+add_action('wp_enqueue_scripts', function () {
+    if (!function_exists('is_account_page') || !is_account_page() || is_user_logged_in()) {
+        return;
+    }
+    wp_enqueue_style('mcr-auth', MCRT_URL . '/assets/auth.css', ['mcr'], MCRT_VERSION);
+    wp_enqueue_script('mcr-auth', MCRT_URL . '/assets/auth.js', [], MCRT_VERSION, ['strategy' => 'defer', 'in_footer' => true]);
+    wp_localize_script('mcr-auth', 'MCR_AUTH', [
+        'en' => mcr_is_en(),
+        'words' => mcr_is_en() ? ['Too short', 'Weak', 'Fair', 'Good', 'Strong'] : ['Trop court', 'Faible', 'Moyen', 'Bon', 'Excellent'],
+        'required' => mcr_is_en() ? 'Fill in this field.' : 'Remplissez ce champ.',
+        'email' => mcr_is_en() ? 'Enter a valid email address.' : 'Entrez un courriel valide.',
+        'short' => mcr_is_en() ? 'At least 8 characters.' : 'Au moins 8 caractères.',
+    ]);
+    // Our own gentle strength indicator replaces WooCommerce's, which blocks the button until "strong".
+    wp_dequeue_script('wc-password-strength-meter');
+}, 30);
+
+// Account creation: first name kept on the account and for the next checkout; passwords of 8+ characters.
+add_filter('woocommerce_registration_errors', function ($errors, $username, $email) {
+    $pw = isset($_POST['password']) ? (string) wp_unslash($_POST['password']) : ''; // phpcs:ignore WordPress.Security.NonceVerification
+    if ('no' === get_option('woocommerce_registration_generate_password') && $pw !== '' && strlen($pw) < 8) {
+        $errors->add('mcr_short_password', mcr_is_en() ? 'Choose a password of at least 8 characters.' : 'Choisissez un mot de passe d’au moins 8 caractères.');
+    }
+    return $errors;
+}, 10, 3);
+add_action('woocommerce_created_customer', function ($customer_id) {
+    $first = isset($_POST['mcr_first_name']) ? sanitize_text_field(wp_unslash($_POST['mcr_first_name'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification
+    if ($first !== '') {
+        update_user_meta($customer_id, 'first_name', $first);
+        update_user_meta($customer_id, 'billing_first_name', $first);
+        wp_update_user(['ID' => $customer_id, 'display_name' => $first]);
+    }
+});
+
+// Privacy notice under account creation, in the visitor's language.
+add_filter('woocommerce_get_privacy_policy_text', function ($text, $type) {
+    if ($type !== 'registration') {
+        return $text;
+    }
+    return mcr_is_en()
+        ? 'Your details are used to manage your account and your orders, as described in our [privacy_policy].'
+        : 'Vos renseignements servent à gérer votre compte et vos commandes, comme décrit dans notre [privacy_policy].';
+}, 10, 2);
