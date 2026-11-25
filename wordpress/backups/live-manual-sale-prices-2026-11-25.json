@@ -1,0 +1,291 @@
+[
+ {
+  "id": 4764,
+  "name": "Super X braid X-pression",
+  "type": "variable",
+  "variations": [
+   {
+    "id": 9691,
+    "sale_price": "6.99",
+    "regular_price": "7.50",
+    "from": null,
+    "to": null
+   },
+   {
+    "id": 9690,
+    "sale_price": "6.99",
+    "regular_price": "7.50",
+    "from": null,
+    "to": null
+   },
+   {
+    "id": 9701,
+    "sale_price": "6.99",
+    "regular_price": "7.50",
+    "from": null,
+    "to": null
+   },
+   {
+    "id": 9700,
+    "sale_price": "6.99",
+    "regular_price": "7.50",
+    "from": null,
+    "to": null
+   },
+   {
+    "id": 9699,
+    "sale_price": "6.99",
+    "regular_price": "7.50",
+    "from": null,
+    "to": null
+   },
+   {
+    "id": 9698,
+    "sale_price": "6.99",
+    "regular_price": "7.50",
+    "from": null,
+    "to": null
+   },
+   {
+    "id": 9697,
+    "sale_price": "6.99",
+    "regular_price": "7.50",
+    "from": null,
+    "to": null
+   },
+   {
+    "id": 9696,
+    "sale_price": "6.99",
+    "regular_price": "7.50",
+    "from": null,
+    "to": null
+   },
+   {
+    "id": 9695,
+    "sale_price": "6.99",
+    "regular_price": "7.50",
+    "from": null,
+    "to": null
+   },
+   {
+    "id": 9694,
+    "sale_price": "6.99",
+    "regular_price": "7.50",
+    "from": null,
+    "to": null
+   },
+   {
+    "id": 9693,
+    "sale_price": "6.99",
+    "regular_price": "7.50",
+    "from": null,
+    "to": null
+   },
+   {
+    "id": 9692,
+    "sale_price": "6.99",
+    "regular_price": "7.50",
+    "from": null,
+    "to": null
+   },
+   {
+    "id": 9689,
+    "sale_price": "6.99",
+    "regular_price": "7.50",
+    "from": null,
+    "to": null
+   }
+  ]
+ },
+ {
+  "id": 4786,
+  "name": "Crème de champignons Campbell’s 284 ml",
+  "type": "simple",
+  "sale_price": "2.69",
+  "regular_price": "3.69",
+  "from": null,
+  "to": null
+ },
+ {
+  "id": 4965,
+  "name": "Janet afro coily string chignon",
+  "type": "simple",
+  "sale_price": "19.99",
+  "regular_price": "24.99",
+  "from": null,
+  "to": null
+ },
+ {
+  "id": 4967,
+  "name": "Janet afro perm l string chignon",
+  "type": "simple",
+  "sale_price": "19.99",
+  "regular_price": "22.99",
+  "from": null,
+  "to": null
+ },
+ {
+  "id": 4969,
+  "name": "Janet afro lady (D/S) chignon",
+  "type": "simple",
+  "sale_price": "19.99",
+  "regular_price": "22.99",
+  "from": null,
+  "to": null
+ },
+ {
+  "id": 6817,
+  "name": "Défrisant crème ORS Olive Oil Professional 1,8 kg",
+  "type": "simple",
+  "sale_price": "37.10",
+  "regular_price": "44.45",
+  "from": null,
+  "to": null
+ },
+ {
+  "id": 7621,
+  "name": "Janet afro puff string chignon",
+  "type": "simple",
+  "sale_price": "19.99",
+  "regular_price": "22.50",
+  "from": null,
+  "to": null
+ },
+ {
+  "id": 8400,
+  "name": "Gari (farine de manioc 100 %) 5 kg",
+  "type": "simple",
+  "sale_price": "28.99",
+  "regular_price": "31.99",
+  "from": null,
+  "to": null
+ },
+ {
+  "id": 8642,
+  "name": "Tissage naturel finger roll 10s 3pcs Empire",
+  "type": "variable",
+  "variations": [
+   {
+    "id": 8648,
+    "sale_price": "29.99",
+    "regular_price": "33.90",
+    "from": null,
+    "to": null
+   },
+   {
+    "id": 8647,
+    "sale_price": "29.99",
+    "regular_price": "33.90",
+    "from": null,
+    "to": null
+   },
+   {
+    "id": 8646,
+    "sale_price": "29.99",
+    "regular_price": "33.90",
+    "from": null,
+    "to": null
+   }
+  ]
+ },
+ {
+  "id": 8643,
+  "name": "Tissage naturel Empire kinky curly 10s 3 pcs",
+  "type": "variable",
+  "variations": [
+   {
+    "id": 8655,
+    "sale_price": "29.99",
+    "regular_price": "32.63",
+    "from": null,
+    "to": null
+   }
+  ]
+ },
+ {
+  "id": 8684,
+  "name": "6x Supreme passion twist 22″ Crochet braids",
+  "type": "variable",
+  "variations": [
+   {
+    "id": 8713,
+    "sale_price": "27.99",
+    "regular_price": "35.99",
+    "from": null,
+    "to": null
+   },
+   {
+    "id": 8712,
+    "sale_price": "27.99",
+    "regular_price": "35.99",
+    "from": null,
+    "to": null
+   },
+   {
+    "id": 8711,
+    "sale_price": "27.99",
+    "regular_price": "35.99",
+    "from": null,
+    "to": null
+   },
+   {
+    "id": 8710,
+    "sale_price": "27.99",
+    "regular_price": "35.99",
+    "from": null,
+    "to": null
+   }
+  ]
+ },
+ {
+  "id": 8687,
+  "name": "6x spring twist Crochet braid",
+  "type": "simple",
+  "sale_price": "27.99",
+  "regular_price": "35.99",
+  "from": null,
+  "to": null
+ },
+ {
+  "id": 8875,
+  "name": "LULUTRESS CROCHET BRAID 18″ – WATER WAVE",
+  "type": "variable",
+  "variations": [
+   {
+    "id": 8916,
+    "sale_price": "7.99",
+    "regular_price": "10.99",
+    "from": null,
+    "to": null
+   },
+   {
+    "id": 8915,
+    "sale_price": "7.99",
+    "regular_price": "10.99",
+    "from": null,
+    "to": null
+   }
+  ]
+ },
+ {
+  "id": 9766,
+  "name": "Mèche 2 X  afro kinky bulk 48 »",
+  "type": "variable",
+  "variations": [
+   {
+    "id": 9773,
+    "sale_price": "9.99",
+    "regular_price": "19.99",
+    "from": null,
+    "to": null
+   },
+   {
+    "id": 9772,
+    "sale_price": "9.99",
+    "regular_price": "19.99",
+    "from": null,
+    "to": null
+   }
+  ]
+ }
+]
