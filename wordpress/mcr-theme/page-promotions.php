@@ -56,6 +56,8 @@ $base = get_permalink();
 $banners = function_exists('mcr_promo_banners') ? mcr_promo_banners() : [];
 $deals = function_exists('mcr_promo_active_deals') ? mcr_promo_active_deals() : [];
 $week = function_exists('mcr_promo_of_week') ? mcr_promo_of_week() : null;
+$instore = function_exists('mcr_promo_store_campaigns') ? mcr_promo_store_campaigns() : [];
+$street = function_exists('mcr_setting') ? (string) mcr_setting('store', 'street') : '';
 ?>
 <section class="promo-hero">
   <div class="container promo-hero__in">
@@ -77,11 +79,14 @@ $week = function_exists('mcr_promo_of_week') ? mcr_promo_of_week() : null;
       <article class="promo-banner" data-reveal>
         <span class="promo-banner__label"><?php echo esc_html($b['label']); ?></span>
         <div class="promo-banner__body">
+          <?php if (($b['where'] ?? 'online') !== 'online') : ?><span class="where-pill<?php echo $b['where'] === 'store' ? ' where-pill--store' : ''; ?>"><?php echo mcr_icon('store', 14); ?> <?php echo esc_html($b['where_label']); ?></span><?php endif; ?>
           <h2><?php echo esc_html($b['title']); ?></h2>
           <?php if ($b['text']) : ?><p><?php echo esc_html($b['text']); ?></p><?php endif; ?>
           <?php if ($b['ends']) : ?><p class="promo-banner__ends"><?php echo mcr_icon('clock', 16); ?> <?php echo esc_html($en ? 'Ends in' : 'Se termine dans'); ?> <strong data-countdown="<?php echo (int) $b['ends']; ?>"><?php echo esc_html(mcrt_end_label($b['ends'])); ?></strong></p><?php endif; ?>
         </div>
-        <?php if ($b['type'] === 'bundle') : ?>
+        <?php if (($b['where'] ?? 'online') === 'store') : ?>
+          <?php if ($street) : ?><span class="promo-banner__store"><?php echo mcr_icon('map-pin', 16); ?> <?php echo esc_html($street); ?></span><?php endif; ?>
+        <?php elseif ($b['type'] === 'bundle') : ?>
           <a class="btn btn--gold" href="<?php echo esc_url(add_query_arg('mcr_kit', $b['id'], home_url('/'))); ?>"><?php echo mcr_icon('shopping-basket', 18); ?> <?php echo esc_html($en ? 'Add the kit' : 'Ajouter le kit'); ?></a>
         <?php elseif ($b['cats']) : $t = get_term((int) $b['cats'][0], 'product_cat'); ?>
           <?php if ($t && !is_wp_error($t)) : ?><a class="btn btn--gold" href="<?php echo esc_url(get_term_link($t)); ?>"><?php echo esc_html($en ? 'See products' : 'Voir les produits'); ?> <?php echo mcr_icon('arrow-right', 16); ?></a><?php endif; ?>
@@ -124,6 +129,39 @@ $week = function_exists('mcr_promo_of_week') ? mcr_promo_of_week() : null;
             <?php else : $first = reset($prods); ?>
               <a class="btn btn--sm btn--ghost" href="<?php echo esc_url($first->get_permalink()); ?>"><?php echo esc_html($en ? 'See the product' : 'Voir le produit'); ?></a>
             <?php endif; ?>
+          </div>
+        </article>
+      <?php endforeach; ?>
+    </div>
+  </div>
+</section>
+<?php endif; ?>
+
+<?php if ($instore) : ?>
+<section class="section section--tight" aria-labelledby="h-instore" id="en-magasin">
+  <div class="container">
+    <?php mcrt_section_head($street ? ($en ? 'At ' : 'Au ') . $street : ($en ? 'At the store' : 'Au magasin'), $en ? 'In-store only deals' : 'Promotions en magasin seulement', '', '', 'h-instore'); ?>
+    <p class="instore__note"><?php echo mcr_icon('store', 16); ?> <?php echo esc_html($en ? 'These deals apply at the counter in our store. They are not applied to online orders.' : 'Ces promotions s’appliquent à la caisse, en magasin. Elles ne s’appliquent pas aux commandes en ligne.'); ?></p>
+    <div class="bundles">
+      <?php foreach ($instore as $d) :
+          $prods = array_values(array_filter(array_map('wc_get_product', array_slice($d['type'] === 'bundle' ? $d['products'] : $d['targets'], 0, 6)), fn($p) => $p && $p->is_visible()));
+          if (!$prods) {
+              continue;
+          }
+          [, $to] = mcr_promo_range($d);
+          $more = count($d['type'] === 'bundle' ? $d['products'] : $d['targets']) - count($prods);
+          $cat = $d['type'] !== 'bundle' && !empty($d['cats']) ? get_term((int) $d['cats'][0], 'product_cat') : null;
+          $text = trim((string) ($en && !empty($d['text_en']) ? $d['text_en'] : ($d['text_fr'] ?? '')));
+          ?>
+        <article class="bundle bundle--store" data-reveal>
+          <div class="bundle__thumbs"><?php foreach ($prods as $p) : ?><a href="<?php echo esc_url($p->get_permalink()); ?>" title="<?php echo esc_attr($p->get_name()); ?>"><?php echo $p->get_image('thumbnail', ['alt' => esc_attr($p->get_name()), 'loading' => 'lazy']); ?></a><?php endforeach; ?></div>
+          <div class="bundle__body">
+            <span class="bundle__label"><?php echo esc_html(mcr_promo_label($d)); ?></span> <span class="where-pill where-pill--store"><?php echo mcr_icon('store', 14); ?> <?php echo esc_html($en ? 'In store only' : 'En magasin seulement'); ?></span>
+            <h3><?php echo esc_html(mcr_promo_title($d)); ?></h3>
+            <?php if ($text) : ?><p class="bundle__list"><?php echo esc_html($text); ?></p><?php endif; ?>
+            <p class="bundle__list"><?php echo esc_html(implode($d['type'] === 'bundle' ? ' + ' : ', ', array_map(fn($p) => $p->get_name(), $prods)) . ($more > 0 ? sprintf($en ? ' and %d more' : ' et %d autres', $more) : '')); ?></p>
+            <?php if ($to) : ?><p class="bundle__ends"><?php echo mcr_icon('clock', 14); ?> <?php echo esc_html(mcrt_end_label($to)); ?></p><?php endif; ?>
+            <?php if ($cat && !is_wp_error($cat)) : ?><a class="btn btn--sm btn--ghost" href="<?php echo esc_url(get_term_link($cat)); ?>"><?php echo esc_html($en ? 'See the products' : 'Voir les produits'); ?></a><?php endif; ?>
           </div>
         </article>
       <?php endforeach; ?>

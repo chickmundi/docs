@@ -1578,6 +1578,20 @@ html.wa-open { overflow: hidden; }
 .pp-promo__ends strong { font-variant-numeric: tabular-nums; }
 .pp-promo__ends small { color: var(--muted); font-weight: 500; }
 .pp-promo__deal { font-size: .92rem; }
+/* In-store-only promotions */
+.pp-store { margin: 0 0 16px; padding: 12px 14px; border-radius: var(--radius); background: var(--sage); border: 1px solid var(--green-300, #9fc2ab); }
+.pp-store__deal { margin: 0; display: flex; gap: 10px; align-items: flex-start; color: var(--green-800); font-weight: 600; line-height: 1.45; }
+.pp-store__deal + .pp-store__deal { margin-top: 10px; }
+.pp-store__deal > svg { flex: none; margin-top: 2px; }
+.pp-store__deal small { color: var(--muted); font-weight: 500; }
+.pp-store__tag { display: inline-block; margin-right: 4px; padding: 1px 9px; border-radius: 99px; background: var(--green-700); color: #fff; font-size: .78rem; font-weight: 800; letter-spacing: .02em; }
+.pp-store__where { display: block; margin-top: 2px; }
+.where-pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 99px; background: var(--gold-100); color: var(--green-900); font-size: .8rem; font-weight: 700; margin-bottom: 6px; }
+.where-pill--store { background: var(--sage); color: var(--green-800); }
+.promo-banner__store { display: inline-flex; align-items: center; gap: 6px; color: var(--gold-300, #f2d48b); font-weight: 600; }
+.instore__note { display: flex; align-items: flex-start; gap: 8px; margin: -6px 0 18px; color: var(--muted); }
+.bundle--store .bundle__label { background: var(--green-800); }
+.ppop__where { display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; color: var(--green-700); }
 .mcr-freebar { margin: 0 0 14px; padding: 12px 14px; border-radius: var(--radius); background: var(--gold-100, #faf0d4); border: 1px solid var(--gold-300, #f3d48a); }
 .mcr-freebar p { margin: 0 0 8px; font-size: .9rem; }
 .mcr-freebar__track { display: block; height: 8px; border-radius: 99px; background: rgba(23, 75, 53, .12); overflow: hidden; }

@@ -9,6 +9,12 @@
  *              The prices a product had before are kept and put back when the campaign is removed.
  *  - qty     : "2 pour 5 $" on chosen products, applied in the cart (and WhatsApp orders).
  *  - bundle  : "Kit fufu" = several products together for one price, applied in the cart.
+ * Where a campaign applies ("where"): online, in store, or both.
+ *  - online / both : as above (sale prices and cart deals on the website).
+ *  - store         : nothing changes on the website's prices or cart; the campaign is shown as
+ *                    "En magasin seulement" (Promotions page, product pages, banner), and the team
+ *                    prints the price sheet for the cash register (MCR Gestion > Promotions).
+ * Campaigns saved before this option existed were online, and stay online.
  * Only real prices are shown; a countdown appears only when a real end date exists.
  */
 defined('ABSPATH') || exit;
@@ -65,6 +71,36 @@ function mcr_promo_label(array $c, ?bool $en = null): string
     };
 }
 
+/** 'online', 'store' or 'both'. */
+function mcr_promo_where(array $c): string
+{
+    $w = $c['where'] ?? 'online';
+    return in_array($w, ['online', 'store', 'both'], true) ? $w : 'online';
+}
+
+/** The campaign changes prices or the cart on the website. */
+function mcr_promo_online(array $c): bool
+{
+    return mcr_promo_where($c) !== 'store';
+}
+
+/** Percent campaigns that write sale prices on the website. */
+function mcr_promo_writes_prices(array $c): bool
+{
+    return ($c['type'] ?? '') === 'percent' && mcr_promo_online($c);
+}
+
+/** "En magasin seulement", "En ligne seulement", "En ligne et en magasin". */
+function mcr_promo_where_label(array $c, ?bool $en = null): string
+{
+    $en = $en ?? mcr_is_en();
+    return match (mcr_promo_where($c)) {
+        'store' => $en ? 'In store only' : 'En magasin seulement',
+        'both' => $en ? 'Online and in store' : 'En ligne et en magasin',
+        default => $en ? 'Online only' : 'En ligne seulement',
+    };
+}
+
 /** Product IDs targeted by a campaign (explicit products + every product of the chosen categories). */
 function mcr_promo_target_ids(array $c): array
 {
@@ -88,7 +124,7 @@ function mcr_promo_active_deals(): array
     }
     $deals = [];
     foreach (mcr_promos() as $id => $c) {
-        if (in_array($c['type'] ?? '', ['qty', 'bundle'], true) && mcr_promo_state($c) === 'active') {
+        if (in_array($c['type'] ?? '', ['qty', 'bundle'], true) && mcr_promo_online($c) && mcr_promo_state($c) === 'active' && empty($c['deleted'])) {
             $c['id'] = $id;
             $c['targets'] = mcr_promo_target_ids($c);
             $deals[] = $c;
@@ -102,6 +138,38 @@ function mcr_product_deals(WC_Product $p): array
 {
     $ids = [$p->get_id(), $p->get_parent_id()];
     return array_values(array_filter(mcr_promo_active_deals(), fn($d) => (bool) array_intersect($ids, $d['targets'])));
+}
+
+/** Active in-store-only campaigns, with their products (cached for the request). */
+function mcr_promo_store_campaigns(): array
+{
+    static $list = null;
+    if ($list !== null) {
+        return $list;
+    }
+    $list = [];
+    foreach (mcr_promos() as $id => $c) {
+        if (mcr_promo_where($c) === 'store' && empty($c['deleted']) && mcr_promo_state($c) === 'active') {
+            $c['id'] = $id;
+            $c['targets'] = mcr_promo_target_ids($c);
+            $list[] = $c;
+        }
+    }
+    return $list;
+}
+
+/** In-store-only campaigns for one product. */
+function mcr_product_store_deals(WC_Product $p): array
+{
+    $ids = [$p->get_id(), $p->get_parent_id()];
+    return array_values(array_filter(mcr_promo_store_campaigns(), fn($d) => (bool) array_intersect($ids, $d['targets'])));
+}
+
+/** Price of a product with a percent campaign, from its regular price (0 when unknown). */
+function mcr_promo_percent_price(WC_Product $p, array $c): float
+{
+    $reg = (float) ($p->is_type('variable') ? $p->get_variation_regular_price('min') : $p->get_regular_price('edit'));
+    return $reg > 0 ? round($reg * (1 - (float) ($c['percent'] ?? 0) / 100), wc_get_price_decimals()) : 0.0;
 }
 
 // ---------------------------------------------------------------- Percent campaigns: real sale prices
@@ -274,6 +342,7 @@ function mcr_promo_upsert(array $in)
         'end' => $date($in['end'] ?? ''),
         'banner' => !empty($in['banner']),
         'skip_existing' => !empty($in['skip_existing']),
+        'where' => in_array($in['where'] ?? '', ['online', 'store', 'both'], true) ? $in['where'] : ($old ? mcr_promo_where($old) : 'both'),
         'created' => $old['created'] ?? time(),
     ];
     if ($type === 'bundle') {
@@ -290,7 +359,7 @@ function mcr_promo_upsert(array $in)
         $error = 'Indiquez le prix de l’offre.';
     } elseif ($c['start'] && $c['end'] && $c['end'] < $c['start']) {
         $error = 'La date de fin est avant la date de début.';
-    } elseif ($type === 'percent' && !$c['end']) {
+    } elseif (mcr_promo_writes_prices($c) && !$c['end']) {
         $error = 'Une promotion en % doit avoir une date de fin (les prix reviennent seuls à la fin).';
     }
     if ($error) {
@@ -298,9 +367,9 @@ function mcr_promo_upsert(array $in)
     }
     $all[$id] = $c + ['applied' => $old['applied'] ?? 0];
     mcr_promo_save_all($all);
-    if ($type === 'percent') {
+    if (mcr_promo_writes_prices($c)) {
         // Rewrite the prices: put back what this campaign wrote, then apply again.
-        if ($old && ($old['type'] ?? '') === 'percent') {
+        if ($old && mcr_promo_writes_prices($old)) {
             $all[$id]['reapply'] = true;
             mcr_promo_save_all($all);
             mcr_promo_queue($id, 'restore');
@@ -308,8 +377,8 @@ function mcr_promo_upsert(array $in)
             mcr_promo_queue($id, 'apply');
         }
         mcr_promo_schedule_switches($c);
-    } elseif ($old && ($old['type'] ?? '') === 'percent') {
-        mcr_promo_queue($id, 'restore');
+    } elseif ($old && mcr_promo_writes_prices($old)) {
+        mcr_promo_queue($id, 'restore'); // now in store only, or no longer a % campaign: website prices go back
     }
     return $id;
 }
@@ -321,7 +390,7 @@ function mcr_promo_remove(string $id): bool
     if (!isset($all[$id])) {
         return false;
     }
-    if (($all[$id]['type'] ?? '') === 'percent') {
+    if (mcr_promo_writes_prices($all[$id])) {
         $all[$id]['deleted'] = true;
         mcr_promo_save_all($all);
         mcr_promo_queue($id, 'restore');
@@ -534,7 +603,7 @@ function mcr_promo_banners(): array
     foreach (mcr_promos() as $id => $c) {
         if (!empty($c['banner']) && mcr_promo_state($c) === 'active' && empty($c['deleted'])) {
             [, $to] = mcr_promo_range($c);
-            $out[] = ['id' => $id, 'title' => mcr_promo_title($c), 'text' => trim((string) (mcr_is_en() && !empty($c['text_en']) ? $c['text_en'] : ($c['text_fr'] ?? ''))), 'label' => mcr_promo_label($c), 'ends' => $to, 'type' => $c['type'], 'cats' => (array) ($c['cats'] ?? []), 'products' => (array) ($c['products'] ?? []), 'price' => (float) ($c['price'] ?? 0)];
+            $out[] = ['id' => $id, 'title' => mcr_promo_title($c), 'text' => trim((string) (mcr_is_en() && !empty($c['text_en']) ? $c['text_en'] : ($c['text_fr'] ?? ''))), 'label' => mcr_promo_label($c), 'ends' => $to, 'type' => $c['type'], 'cats' => (array) ($c['cats'] ?? []), 'products' => (array) ($c['products'] ?? []), 'price' => (float) ($c['price'] ?? 0), 'where' => mcr_promo_where($c), 'where_label' => mcr_promo_where_label($c)];
         }
     }
     return $out;

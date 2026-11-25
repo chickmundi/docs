@@ -551,7 +551,7 @@
         if (!groups[g[0]].length) return;
         body += group(g[1], groups[g[0]].slice(0, g[0] === 'ended' ? 10 : 50).map(function (c) {
           var when = c.start && c.end ? fmtDate(c.start) + ' – ' + fmtDate(c.end) : c.end ? 'Jusqu’au ' + fmtDate(c.end) : c.start ? 'Dès le ' + fmtDate(c.start) : 'Sans date de fin';
-          return row({ act: 'promo', id: c.id, icon: c.type === 'percent' ? 'tag' : c.type === 'qty' ? 'bag' : 'box', tone: c.state === 'active' ? 'green' : c.state === 'scheduled' ? 'blue' : 'gray', title: esc(c.title_fr), sub: esc(c.label) + ' · ' + esc(when) + (c.working ? ' · mise à jour des prix…' : ''), chev: true });
+          return row({ act: 'promo', id: c.id, icon: c.type === 'percent' ? 'tag' : c.type === 'qty' ? 'bag' : 'box', tone: c.state === 'active' ? 'green' : c.state === 'scheduled' ? 'blue' : 'gray', title: esc(c.title_fr), sub: esc(c.label) + ' · ' + esc(c.where === 'store' ? 'En magasin' : c.where === 'both' ? 'En ligne + magasin' : 'En ligne') + ' · ' + esc(when) + (c.working ? ' · mise à jour des prix…' : ''), chev: true });
         }));
       });
     }
@@ -611,10 +611,12 @@
     var f = v.f = v.f || {
       id: c.id || '', type: c.type || 'percent', title_fr: c.title_fr || '', title_en: c.title_en || '', text_fr: c.text_fr || '', text_en: c.text_en || '',
       percent: c.percent || 15, qty: c.qty || 2, price: c.price || '', products: c.products || [], cats: c.cats || [],
-      start: c.start || C.today, end: c.end || addDays(7), banner: c.id ? !!c.banner : true, skip_existing: c.id ? !!c.skip_existing : true,
+      where: c.where || 'both', start: c.start || C.today, end: c.end || addDays(7), banner: c.id ? !!c.banner : true, skip_existing: c.id ? !!c.skip_existing : true,
     };
     var body = '<div class="pad">' + seg('ptype', f.type, [['percent', 'Rabais %'], ['qty', 'Lot'], ['bundle', 'Kit']]) + '</div>' +
       '<p class="gfoot gfoot--top">' + (f.type === 'percent' ? 'Un vrai rabais sur le prix régulier, du début à la fin. Les prix reviennent seuls.' : f.type === 'qty' ? 'Ex. « 2 pour 5 $ » : appliqué dans le panier quand le client prend la quantité.' : 'Plusieurs produits ensemble pour un prix spécial, appliqué dans le panier.') + '</p>';
+    body += '<h2 class="ghead">Où</h2><div class="pad">' + seg('pwhere', f.where, [['both', 'Les deux'], ['online', 'En ligne'], ['store', 'En magasin']]) + '</div>' +
+      '<p class="gfoot gfoot--top">' + (f.where === 'store' ? 'Les prix du site ne changent pas. La promo est affichée « En magasin seulement » sur le site.' : f.where === 'online' ? 'Seulement pour les commandes sur le site.' : 'Le même rabais sur le site et à la caisse.') + '</p>';
     body += group('Nom', [field('title_fr', 'Français', f.title_fr, { ph: f.type === 'percent' ? 'Ex. Semaine des épices' : f.type === 'qty' ? 'Ex. Plantain 2 pour 5 $' : 'Ex. Kit fufu' }), field('title_en', 'Anglais', f.title_en, { ph: 'Facultatif' })]);
     if (f.type === 'percent') body += group('Rabais', [stepper('percent', f.percent, 1, 90, 5, ['Pourcentage', f.percent + ' % de moins sur le prix régulier'])]);
     if (f.type === 'qty') body += group('Offre', [stepper('qty', f.qty, 2, 20, 1, ['Quantité', '']), field('price', 'Prix du lot', f.price, { mode: 'decimal', unit: '$', ph: '0,00' })], hintFor(v), 'price');
@@ -625,14 +627,14 @@
     if (f.type !== 'bundle') body += group('', [row({ act: 'pcats', icon: 'tag', tone: 'orange', title: 'Catégories entières', value: esc(catNames(f.cats)), chev: true })], 'Tous les produits des catégories choisies sont inclus.');
     body += group('Dates', [field('start', 'Début', f.start, { type: 'date' }), field('end', 'Fin', f.end, { type: 'date', min: f.start })]);
     body += group('Options', [toggle('banner', f.banner, 'Afficher dans la fenêtre promo', 'Sur l’accueil et la page Promotions', 'megaphone', 'red')].concat(f.type === 'percent' ? [toggle('skip_existing', f.skip_existing, 'Garder les promos déjà en place', 'Ne touche pas aux produits qui ont déjà un prix promo', 'tag', 'gray')] : []));
-    if (c.id) body += group('', [row({ act: 'pdelete', icon: 'trash', tone: 'red', title: 'Supprimer la promotion', cls: 'is-danger' })], c.type === 'percent' ? 'Les prix d’origine sont remis automatiquement.' : '');
+    if (c.id) body += group('', [row({ act: 'pdelete', icon: 'trash', tone: 'red', title: 'Supprimer la promotion', cls: 'is-danger' })], c.type === 'percent' && c.where !== 'store' ? 'Les prix d’origine sont remis automatiquement.' : '');
     return { title: c.id ? 'Promotion' : 'Nouvelle promotion', large: false, backLabel: 'Promos', right: saveBtn(v, c.id ? 'Enregistrer' : 'Créer'), body: body };
   };
   function savePromoForm(v) {
     var f = v.f;
     var body = { id: f.id, type: f.type, title_fr: f.title_fr, title_en: f.title_en, text_fr: f.text_fr, text_en: f.text_en, percent: f.percent, qty: f.qty, price: f.price,
-      products: f.products.map(function (p) { return p.id; }), cats: f.type === 'bundle' ? [] : f.cats, start: f.start, end: f.end, banner: f.banner ? 1 : '', skip_existing: f.skip_existing ? 1 : '' };
-    sendPromo(v, 'promo', body, f.type === 'percent' ? 'Promotion enregistrée. Les prix se mettent à jour.' : 'Offre enregistrée');
+      products: f.products.map(function (p) { return p.id; }), cats: f.type === 'bundle' ? [] : f.cats, where: f.where, start: f.start, end: f.end, banner: f.banner ? 1 : '', skip_existing: f.skip_existing ? 1 : '' };
+    sendPromo(v, 'promo', body, f.where === 'store' ? 'Promotion en magasin enregistrée' : f.type === 'percent' ? 'Promotion enregistrée. Les prix se mettent à jour.' : 'Offre enregistrée');
   }
 
   // ============================================================ SHOP
@@ -827,7 +829,8 @@
     if (name === 'pseg') { v.seg = val; refreshView(); return; }
     if (name === 'fmode') { v.f.mode = val; v.f.value = val === 'percent' ? 20 : (v.f.product && num(v.f.product.regular) ? Math.floor(num(v.f.product.regular) * 0.7 * 100) / 100 : ''); markDirty(v); refreshView(); return; }
     if (name === 'fhours') { v.f.hours = +val; markDirty(v); refreshView(); return; }
-    if (name === 'ptype') { v.f.type = val; markDirty(v); refreshView(); }
+    if (name === 'ptype') { v.f.type = val; markDirty(v); refreshView(); return; }
+    if (name === 'pwhere') { v.f.where = val; markDirty(v); refreshView(); }
   }
   function stepField(v, b) {
     var k = b.dataset.step, f = sheet ? null : v.f;

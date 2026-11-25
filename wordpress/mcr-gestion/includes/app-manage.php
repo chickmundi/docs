@@ -219,9 +219,9 @@ function mcr_app_promos_data(): array
                 'text_fr' => $c['text_fr'] ?? '', 'text_en' => $c['text_en'] ?? '',
                 'percent' => (int) ($c['percent'] ?? 10), 'qty' => (int) ($c['qty'] ?? 2), 'price' => (float) ($c['price'] ?? 0),
                 'cats' => array_map('intval', (array) ($c['cats'] ?? [])), 'products' => $names,
-                'start' => $c['start'] ?? '', 'end' => $c['end'] ?? '', 'banner' => !empty($c['banner']), 'skip_existing' => !empty($c['skip_existing']),
+                'where' => mcr_promo_where($c), 'where_label' => mcr_promo_where_label($c, false), 'start' => $c['start'] ?? '', 'end' => $c['end'] ?? '', 'banner' => !empty($c['banner']), 'skip_existing' => !empty($c['skip_existing']),
                 'state' => mcr_promo_state($c), 'label' => mcr_promo_label($c, false), 'applied' => (int) ($c['applied'] ?? 0),
-                'working' => $job && empty($job['finished']) ? ['done' => (int) $job['done'], 'total' => (int) $job['total']] : null,
+                'working' => mcr_promo_writes_prices($c) && $job && empty($job['finished']) ? ['done' => (int) $job['done'], 'total' => (int) $job['total']] : null,
             ];
         }
         usort($out['promos'], fn($a, $b) => (['active' => 0, 'scheduled' => 1, 'ended' => 2][$a['state']] <=> ['active' => 0, 'scheduled' => 1, 'ended' => 2][$b['state']]) ?: strcmp($b['start'], $a['start']));

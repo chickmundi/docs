@@ -36,8 +36,9 @@ add_action('admin_post_mcr_promo_save', function () {
         wp_safe_redirect(mcr_promos_admin_url(['edit' => $e['old'] ? $e['id'] : 'new']));
         exit;
     }
-    $type = mcr_promos()[$res]['type'] ?? 'percent';
-    set_transient('mcr_promo_notice', ['success', $type === 'percent' ? 'Promotion enregistrée. Les prix sont mis à jour en arrière-plan (quelques secondes à quelques minutes).' : 'Offre enregistrée. Elle s’applique dans le panier pendant ses dates.'], 120);
+    $saved = mcr_promos()[$res] ?? [];
+    $type = $saved['type'] ?? 'percent';
+    set_transient('mcr_promo_notice', ['success', mcr_promo_where($saved) === 'store' ? 'Promotion en magasin enregistrée. Les prix du site ne changent pas ; imprimez la feuille de prix pour la caisse.' : ($type === 'percent' ? 'Promotion enregistrée. Les prix sont mis à jour en arrière-plan (quelques secondes à quelques minutes).' : 'Offre enregistrée. Elle s’applique dans le panier pendant ses dates.')], 120);
     wp_safe_redirect(mcr_promos_admin_url());
     exit;
 });
@@ -52,6 +53,49 @@ add_action('admin_post_mcr_promo_delete', function () {
         set_transient('mcr_promo_notice', ['success', 'Promotion supprimée. Les prix d’origine sont remis.'], 120);
     }
     wp_safe_redirect(mcr_promos_admin_url());
+    exit;
+});
+
+// Price sheet for the cash register: products, regular price and promo price (in-store campaigns).
+add_action('admin_post_mcr_promo_print', function () {
+    if (!current_user_can('mcr_manage_promos')) {
+        wp_die('Accès refusé');
+    }
+    $id = sanitize_key(wp_unslash($_GET['id'] ?? ''));
+    check_admin_referer('mcr_promo_print_' . $id);
+    $c = mcr_promos()[$id] ?? null;
+    if (!$c) {
+        wp_die('Promotion introuvable.');
+    }
+    $money = fn($v) => html_entity_decode(wp_strip_all_tags(wc_price((float) $v)));
+    $ids = ($c['type'] ?? '') === 'bundle' ? array_map('absint', (array) $c['products']) : mcr_promo_target_ids($c);
+    $rows = [];
+    foreach ($ids as $pid) {
+        $p = wc_get_product($pid);
+        if (!$p) {
+            continue;
+        }
+        $reg = (float) ($p->is_type('variable') ? $p->get_variation_regular_price('min') : $p->get_regular_price('edit'));
+        $promo = match ($c['type'] ?? '') {
+            'percent' => $reg > 0 ? ($p->is_type('variable') ? 'dès ' : '') . $money(mcr_promo_percent_price($p, $c)) : '—',
+            'qty' => mcr_promo_label($c, false),
+            default => '',
+        };
+        $rows[] = [$p->get_name(), $p->get_sku(), $reg > 0 ? ($p->is_type('variable') ? 'dès ' : '') . $money($reg) : '—', $promo];
+    }
+    usort($rows, fn($a, $b) => strcoll($a[0], $b[0]));
+    [$from, $to] = mcr_promo_range($c);
+    $tz = mcr_store_tz();
+    $dates = ($from ? 'Du ' . wp_date('j F Y', $from, $tz) : 'Dès maintenant') . ($to ? ' au ' . wp_date('j F Y', $to, $tz) : ', sans date de fin');
+    header('Content-Type: text/html; charset=utf-8');
+    echo '<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>' . esc_html(mcr_promo_title($c, false)) . ' — feuille de prix</title><style>body{font:14px/1.4 system-ui,sans-serif;margin:24px;color:#1d1d1b}h1{margin:0 0 4px;font-size:22px}p{margin:0 0 4px;color:#555}.deal{display:inline-block;margin:8px 0 16px;padding:4px 12px;border:2px solid #174b35;border-radius:99px;font-weight:700;color:#174b35}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:7px 8px;border-bottom:1px solid #ddd}th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#666;border-bottom:2px solid #174b35}td.n{text-align:right;white-space:nowrap}td.p{font-weight:700;color:#174b35}.no{margin-top:16px}@media print{.no{display:none}body{margin:10mm}}</style></head><body>';
+    echo '<h1>' . esc_html(mcr_promo_title($c, false)) . '</h1><p>' . esc_html($dates) . ' · ' . esc_html(mcr_promo_where_label($c, false)) . '</p>';
+    echo '<span class="deal">' . esc_html(mcr_promo_label($c, false)) . (($c['type'] ?? '') === 'bundle' ? ' pour les ' . count($rows) . ' produits ensemble' : '') . '</span>';
+    echo '<table><thead><tr><th>Produit</th><th>Code</th><th class="n">Prix régulier</th>' . (($c['type'] ?? '') === 'bundle' ? '' : '<th class="n">Prix promo</th>') . '</tr></thead><tbody>';
+    foreach ($rows as [$n, $sku, $reg, $promo]) {
+        echo '<tr><td>' . esc_html($n) . '</td><td>' . esc_html($sku) . '</td><td class="n">' . esc_html($reg) . '</td>' . (($c['type'] ?? '') === 'bundle' ? '' : '<td class="n p">' . esc_html($promo) . '</td>') . '</tr>';
+    }
+    echo '</tbody></table><p>' . count($rows) . ' produit' . (count($rows) > 1 ? 's' : '') . '</p><p class="no"><button onclick="print()">Imprimer</button></p></body></html>';
     exit;
 });
 
@@ -105,17 +149,17 @@ function mcr_render_promos_page(): void
         return;
     }
     if ($edit) {
-        $c = ($notice[0] ?? '') === 'error' && !empty($notice[2]) ? $notice[2] : ($all[$edit] ?? ['type' => 'percent', 'percent' => 15, 'qty' => 2, 'banner' => true, 'skip_existing' => true, 'start' => wp_date('Y-m-d', null, mcr_store_tz()), 'end' => wp_date('Y-m-d', strtotime('+14 days'), mcr_store_tz())]);
+        $c = ($notice[0] ?? '') === 'error' && !empty($notice[2]) ? $notice[2] : ($all[$edit] ?? ['type' => 'percent', 'percent' => 15, 'qty' => 2, 'banner' => true, 'skip_existing' => true, 'where' => 'both', 'start' => wp_date('Y-m-d', null, mcr_store_tz()), 'end' => wp_date('Y-m-d', strtotime('+14 days'), mcr_store_tz())]);
         mcr_render_promo_form($edit === 'new' ? '' : $edit, $c);
         echo '</div>';
         return;
     }
     $states = ['active' => ['En cours', '#13693a', '#d9f7e3'], 'scheduled' => ['Programmée', '#8a5a00', '#fdf0c8'], 'ended' => ['Terminée', '#555', '#eee']];
     $types = ['percent' => 'Rabais en %', 'qty' => 'Prix par quantité', 'bundle' => 'Kit'];
-    echo '<p style="max-width:780px">Créez une promotion en quelques secondes : un rabais en % sur une catégorie ou des produits (les prix changent seuls au début et reviennent seuls à la fin), une offre « 2 pour 5 $ », ou un kit de produits à prix fixe. Les promotions apparaissent sur la page <a href="' . esc_url(mcr_promotions_url()) . '" target="_blank">Promotions</a>, sur l’accueil et sur les fiches produits.</p>';
-    echo '<table class="widefat striped" style="max-width:1100px"><thead><tr><th>Promotion</th><th>Type</th><th>Offre</th><th>Ciblage</th><th>Dates</th><th>État</th><th></th></tr></thead><tbody>';
+    echo '<p style="max-width:780px">Créez une promotion en quelques secondes : un rabais en % sur une catégorie ou des produits (les prix changent seuls au début et reviennent seuls à la fin), une offre « 2 pour 5 $ », ou un kit de produits à prix fixe. Choisissez où elle s’applique : en ligne, en magasin ou les deux. Les promotions apparaissent sur la page <a href="' . esc_url(mcr_promotions_url()) . '" target="_blank">Promotions</a>, sur l’accueil et sur les fiches produits.</p>';
+    echo '<table class="widefat striped" style="max-width:1100px"><thead><tr><th>Promotion</th><th>Type</th><th>Offre</th><th>Ciblage</th><th>Où</th><th>Dates</th><th>État</th><th></th></tr></thead><tbody>';
     if (!$all) {
-        echo '<tr><td colspan="7">Aucune promotion pour le moment. <a href="' . esc_url(mcr_promos_admin_url(['edit' => 'new'])) . '">Créer la première</a>.</td></tr>';
+        echo '<tr><td colspan="8">Aucune promotion pour le moment. <a href="' . esc_url(mcr_promos_admin_url(['edit' => 'new'])) . '">Créer la première</a>.</td></tr>';
     }
     uasort($all, fn($a, $b) => ($b['created'] ?? 0) <=> ($a['created'] ?? 0));
     foreach ($all as $id => $c) {
@@ -134,15 +178,16 @@ function mcr_render_promos_page(): void
             $target[] = count($c['products']) . ' produit' . (count($c['products']) > 1 ? 's' : '');
         }
         $job = $c['job'] ?? null;
-        $progress = $job && empty($job['finished']) ? sprintf(' · mise à jour %d/%d', $job['done'], $job['total']) : (($c['type'] === 'percent' && isset($c['applied'])) ? sprintf(' · %d produit%s en promo', $c['applied'], $c['applied'] > 1 ? 's' : '') : '');
+        $progress = mcr_promo_where($c) === 'store' ? '' : ($job && empty($job['finished']) ? sprintf(' · mise à jour %d/%d', $job['done'], $job['total']) : (($c['type'] === 'percent' && isset($c['applied'])) ? sprintf(' · %d produit%s en promo', $c['applied'], $c['applied'] > 1 ? 's' : '') : ''));
         printf(
-            '<tr><td><strong><a href="%s">%s</a></strong>%s</td><td>%s</td><td><strong>%s</strong></td><td>%s</td><td>%s</td><td><span style="padding:2px 8px;border-radius:99px;background:%s;color:%s;font-weight:600">%s</span><br><small>%s</small></td><td><a href="%s">Modifier</a> · <a href="%s" onclick="return confirm(\'Supprimer cette promotion ? Les prix d’origine seront remis.\')" style="color:#b32d2e">Supprimer</a></td></tr>',
+            '<tr><td><strong><a href="%s">%s</a></strong>%s</td><td>%s</td><td><strong>%s</strong></td><td>%s</td><td>%s</td><td>%s</td><td><span style="padding:2px 8px;border-radius:99px;background:%s;color:%s;font-weight:600">%s</span><br><small>%s</small></td><td><a href="%s">Modifier</a> · <a href="%s" onclick="return confirm(\'Supprimer cette promotion ?\')" style="color:#b32d2e">Supprimer</a></td></tr>',
             esc_url(mcr_promos_admin_url(['edit' => $id])),
             esc_html(mcr_promo_title($c, false)),
             !empty($c['banner']) ? '<br><small>Bannière affichée</small>' : '',
             esc_html($types[$c['type']] ?? ''),
             esc_html(mcr_promo_label($c, false)),
             esc_html(implode(', ', $target)),
+            esc_html(mcr_promo_where_label($c, false)) . (mcr_promo_where($c) !== 'online' ? '<br><a href="' . esc_url(wp_nonce_url(admin_url('admin-post.php?action=mcr_promo_print&id=' . $id), 'mcr_promo_print_' . $id)) . '" target="_blank">Feuille de prix</a>' : ''),
             esc_html(($c['start'] ? wp_date('j M Y', mcr_promo_range($c)[0], mcr_store_tz()) : 'Dès maintenant') . ' → ' . ($c['end'] ? wp_date('j M Y', mcr_promo_range($c)[1], mcr_store_tz()) : 'sans fin')),
             esc_attr($st[2]),
             esc_attr($st[1]),
@@ -198,6 +243,11 @@ function mcr_render_promo_form(string $id, array $c): void
         <tr><th>Type d’offre</th><td>
           <?php foreach (['percent' => ['Rabais en %', 'ex. -15 % sur les crochets. Les prix changent sur tout le site.'], 'qty' => ['Prix par quantité', 'ex. 2 pour 5 $. Appliqué au panier.'], 'bundle' => ['Kit', 'ex. Kit fufu à 24,99 $ (plusieurs produits ensemble). Appliqué au panier.']] as $k => [$l, $h]) : ?>
             <label style="display:block;margin-bottom:6px"><input type="radio" name="type" value="<?php echo esc_attr($k); ?>" <?php checked($type, $k); ?>> <strong><?php echo esc_html($l); ?></strong> <span class="description"><?php echo esc_html($h); ?></span></label>
+          <?php endforeach; ?>
+        </td></tr>
+        <tr><th>Où</th><td>
+          <?php $where = mcr_promo_where($c); foreach (['both' => ['En ligne et en magasin', 'Le même rabais sur le site et à la caisse.'], 'online' => ['En ligne seulement', 'Seulement pour les commandes sur le site.'], 'store' => ['En magasin seulement', 'Les prix du site ne changent pas. La promo est affichée « En magasin seulement » et une feuille de prix est prête pour la caisse.']] as $k => [$l, $h]) : ?>
+            <label style="display:block;margin-bottom:6px"><input type="radio" name="where" value="<?php echo esc_attr($k); ?>" <?php checked($where, $k); ?>> <strong><?php echo esc_html($l); ?></strong> <span class="description"><?php echo esc_html($h); ?></span></label>
           <?php endforeach; ?>
         </td></tr>
         <tr><th><label for="t_fr">Nom</label></th><td><input id="t_fr" class="regular-text" name="title_fr" value="<?php echo esc_attr($c['title_fr'] ?? ''); ?>" placeholder="ex. Semaine des crochets" required> <input class="regular-text" name="title_en" value="<?php echo esc_attr($c['title_en'] ?? ''); ?>" placeholder="English (optional)"></td></tr>

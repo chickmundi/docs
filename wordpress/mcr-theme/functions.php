@@ -4,7 +4,7 @@
  */
 defined('ABSPATH') || exit;
 
-define('MCRT_VERSION', '1.5.4');
+define('MCRT_VERSION', '1.5.5');
 define('MCRT_DIR', get_template_directory());
 define('MCRT_URL', get_template_directory_uri());
 
@@ -502,6 +502,36 @@ add_action('woocommerce_single_product_summary', function () {
     }
     echo '</div>';
 }, 11);
+
+// ---------- Product page: promotions valid in the physical store only ----------
+add_action('woocommerce_single_product_summary', function () {
+    global $product;
+    if (!$product instanceof WC_Product || !function_exists('mcr_product_store_deals')) {
+        return;
+    }
+    $deals = mcr_product_store_deals($product);
+    if (!$deals) {
+        return;
+    }
+    $en = mcr_is_en();
+    $street = function_exists('mcr_setting') ? (string) mcr_setting('store', 'street') : '';
+    echo '<div class="pp-store">';
+    foreach ($deals as $d) {
+        [, $to] = mcr_promo_range($d);
+        $what = mcr_promo_label($d);
+        if ($d['type'] === 'percent' && ($price = mcr_promo_percent_price($product, $d)) > 0) {
+            $what .= ' · ' . html_entity_decode(wp_strip_all_tags(wc_price($price))) . ($product->is_type('variable') ? ($en ? ' and up' : ' et plus') : '');
+        } elseif ($d['type'] === 'bundle') {
+            $what = mcr_promo_title($d) . ' · ' . $what;
+        }
+        echo '<p class="pp-store__deal">' . mcr_icon('store', 18) . ' <span><strong class="pp-store__tag">' . esc_html($en ? 'In store only' : 'En magasin seulement') . '</strong> ' . esc_html($what);
+        if ($to) {
+            echo ' <small>' . esc_html(($en ? 'until ' : 'jusqu’au ') . wp_date($en ? 'F j' : 'j F', $to, mcrt_tz())) . '</small>';
+        }
+        echo '<small class="pp-store__where">' . esc_html(($en ? 'At the counter' : 'À la caisse') . ($street ? ', ' . $street : '') . ($en ? '. Not applied to online orders.' : '. Ne s’applique pas aux commandes en ligne.')) . '</small></span></p>';
+    }
+    echo '</div>';
+}, 12);
 
 // ---------- Homepage promotions pop-up (before the icon sprite, which prints at wp_footer priority 1) ----------
 add_action('wp_footer', function () {
