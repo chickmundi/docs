@@ -67,6 +67,28 @@
     $$('[data-reveal]').forEach(function (el) { el.classList.add('is-in'); });
   }
 
+  // ---------- Product cards appear one after another when they come on screen ----------
+  var calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!calm && 'IntersectionObserver' in window) {
+    var cardIo = new IntersectionObserver(function (entries) {
+      var n = 0;
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        var el = en.target;
+        el.style.transitionDelay = Math.min(n++, 5) * 90 + 'ms';
+        el.classList.add('is-in');
+        cardIo.unobserve(el);
+        setTimeout(function () { el.classList.remove('card-in'); el.classList.remove('is-in'); el.style.transitionDelay = ''; }, 1400);
+      });
+    }, { rootMargin: '0px 0px -6% 0px', threshold: 0.12 });
+    $$('.pcard').forEach(function (c) {
+      var r = c.getBoundingClientRect();
+      if (r.top < window.innerHeight * 0.9 && r.bottom > 0 && r.left < window.innerWidth) return; // already visible at load: no delay
+      c.classList.add('card-in');
+      cardIo.observe(c);
+    });
+  }
+
   // ---------- Shop sidebar ----------
   var side = $('[data-side]');
   if (side) {
@@ -164,11 +186,42 @@
         }
         a.classList.add('added');
         setTimeout(function () { a.classList.remove('added'); }, 1600);
+        flyToCart(a);
         toast('« ' + a.getAttribute('data-name') + ' » ' + (C.i18n.added || 'ajouté au panier'));
       })
       .catch(function () { window.location.href = a.href; });
   });
 
+
+  // The product photo flies into the visible cart icon, then the icon bounces.
+  function flyToCart(btn) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var card = btn.closest('.pcard, .ppop__hero, li');
+    var img = card && card.querySelector('img');
+    var target = $$('.tabbar a[href*="' + location.host + '"] .tabbar__icon, .act--cart .act__ic').filter(function (el) {
+      var r = el.getBoundingClientRect();
+      return r.width > 0 && r.bottom > 0 && r.top < window.innerHeight;
+    }).filter(function (el) { return el.querySelector('[data-cart-count]'); })[0];
+    if (!img || !target) return;
+    var r = img.getBoundingClientRect(), t = target.getBoundingClientRect();
+    if (r.width === 0 || r.bottom < 0 || r.top > window.innerHeight) return;
+    var f = img.cloneNode(false);
+    f.removeAttribute('srcset'); f.removeAttribute('loading'); f.alt = '';
+    f.className = 'fly2cart';
+    f.style.left = r.left + 'px'; f.style.top = r.top + 'px'; f.style.width = r.width + 'px'; f.style.height = r.height + 'px';
+    document.body.appendChild(f);
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        var dx = t.left + t.width / 2 - (r.left + r.width / 2), dy = t.top + t.height / 2 - (r.top + r.height / 2);
+        f.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(.1) rotate(18deg)';
+        f.style.opacity = '.35';
+      });
+    });
+    setTimeout(function () {
+      if (f.parentNode) f.parentNode.removeChild(f);
+      target.classList.remove('cart-hit'); void target.offsetWidth; target.classList.add('cart-hit');
+    }, 760);
+  }
 
   // ---------- Cart: quantity steppers, automatic update ----------
   var cartTimer = null;
