@@ -31,7 +31,7 @@ $when = mcrt_event_when($e);
         <div class="prow-wrap evt__row" data-carousel>
           <ul class="prow prow--scroll">
             <?php foreach ($items as $it) : $p = wc_get_product($it['id']); if (!$p) { continue; } ?>
-              <li><?php get_template_part('template-parts/card', null, $soon ? ['product' => $p, 'soon' => $it + ['when' => $when]] : ['product' => $p]); ?></li>
+              <li><?php get_template_part('template-parts/card', null, $soon ? ['product' => $p, 'soon' => $it + ['when' => $when, 'starts' => $e['starts']]] : ['product' => $p]); ?></li>
             <?php endforeach; ?>
           </ul>
         </div>

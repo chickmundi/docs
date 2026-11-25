@@ -119,7 +119,7 @@ $street = function_exists('mcr_setting') ? (string) mcr_setting('store', 'street
     </ul>
     <ul class="prow prow--grid promo-grid">
       <?php foreach (array_slice($list, ($spg - 1) * 24, 24) as $it) : $p = wc_get_product($it['id']); if (!$p) { continue; } ?>
-        <li><?php get_template_part('template-parts/card', null, ['product' => $p, 'soon' => $it + ['when' => $when]]); ?></li>
+        <li><?php get_template_part('template-parts/card', null, ['product' => $p, 'soon' => $it + ['when' => $when, 'starts' => $e['starts']]]); ?></li>
       <?php endforeach; ?>
     </ul>
     <?php if ($spages > 1) : ?>

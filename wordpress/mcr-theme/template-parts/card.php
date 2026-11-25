@@ -67,7 +67,6 @@ if ($soon) {
         <span class="stars" style="--r:<?php echo esc_attr($avg / 5 * 100); ?>%"></span><small>(<?php echo (int) $reviews; ?>)</small>
       </p>
     <?php endif; ?>
-    <?php if ($soon) : ?><p class="pcard__soonnote"><?php echo esc_html($soon['when']); ?></p><?php endif; ?>
     <?php if ($saving > 0) : ?><p class="pcard__save"><?php echo wp_kses_post(sprintf($en ? 'You save %s' : 'Économisez %s', wc_price($saving))); ?></p><?php endif; ?>
     <?php if ($sold30) : ?><p class="pcard__hot"><?php echo mcr_icon('flame', 13); ?> <?php echo esc_html($sold30); ?></p><?php endif; ?>
     <p class="pcard__meta">
@@ -78,11 +77,11 @@ if ($soon) {
     <div class="pcard__foot">
       <?php if ($soon) : ?>
         <span class="pcard__price is-sale"><del><?php echo wc_price($soon['regular']); // phpcs:ignore ?></del> <ins><?php echo ($product->is_type('variable') ? '<small class="pcard__from">' . esc_html($en ? 'From' : 'Dès') . '</small> ' : '') . wc_price($soon['price']); // phpcs:ignore ?></ins></span>
-        <span class="pcard__soon" title="<?php echo esc_attr($soon['when']); ?>"><?php echo mcr_icon('clock', 15); ?><span><?php echo esc_html($en ? 'Soon' : 'Bientôt'); ?></span></span>
       <?php else : ?>
       <span class="pcard__price<?php echo $pct ? ' is-sale' : ''; ?>"><?php echo $price_html; // phpcs:ignore ?></span>
       <?php endif; ?>
       <?php if ($soon) : ?>
+        <span class="pcard__soonbar" title="<?php echo esc_attr($soon['when']); ?>"><?php echo mcr_icon('clock', 16); ?> <?php echo esc_html($en ? 'In' : 'Dans'); ?> <b data-countdown="<?php echo (int) ($soon['starts'] ?? 0); ?>" data-countdown-short data-countdown-reload><?php echo esc_html(mcrt_end_label((int) ($soon['starts'] ?? 0))); ?></b></span>
       <?php elseif ($simple_buyable) : ?>
         <a href="<?php echo esc_url($product->add_to_cart_url()); ?>" class="pcard__add" data-add-to-cart="<?php echo esc_attr($product->get_id()); ?>" data-name="<?php echo esc_attr($product->get_name()); ?>" rel="nofollow" aria-label="<?php echo esc_attr(($en ? 'Add to cart: ' : 'Ajouter au panier : ') . $product->get_name()); ?>"><?php echo mcr_icon('plus', 18); ?><span><?php mcr_e('Ajouter'); ?></span></a>
       <?php else : ?>

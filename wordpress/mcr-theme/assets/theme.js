@@ -440,7 +440,9 @@
       var now = Date.now() / 1000;
       counters.forEach(function (el) {
         var left = Math.round(+el.getAttribute('data-countdown') - now);
-        el.textContent = cdFmt(left);
+        var txt = cdFmt(left);
+        if (el.hasAttribute('data-countdown-short') && left >= 3600) txt = txt.replace(/ \d+ s$/, '');
+        el.textContent = txt;
         // Flash sales: when one starts or ends, reload once so prices and buttons are up to date.
         if (left <= 0 && left > -5 && el.hasAttribute('data-countdown-reload') && !window.__mcrReloaded) { window.__mcrReloaded = true; setTimeout(function () { location.reload(); }, 1500); }
       });
