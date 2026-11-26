@@ -42,6 +42,10 @@ add_action('admin_post_mcr_social', function () {
             $res = mcr_social_make($date);
             $msg = ['success', 'Publication préparée.'];
             break;
+        case 'type':
+            $res = mcr_social_make($date, ['type' => sanitize_key($in['type'] ?? 'theme'), 'cat' => sanitize_title($in['cat'] ?? ''), 'hero' => absint($in['hero'] ?? 0)]);
+            $msg = ['success', 'Publication préparée.'];
+            break;
         case 'other':
             $res = mcr_social_make($date, ['other' => true]);
             $msg = ['success', 'Nouvelle sélection de produits.'];
@@ -202,6 +206,18 @@ function mcr_render_social_page(): void
       </div>
     </div>
   <?php endif; ?>
+
+  <?php $cats = get_terms(['taxonomy' => 'product_cat', 'hide_empty' => true, 'parent' => 0]); ?>
+  <h2 style="margin-top:34px">Créer une autre sorte de publication</h2>
+  <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" class="mcr-social__type" style="max-width:820px">
+    <?php wp_nonce_field('mcr_social'); ?><input type="hidden" name="action" value="mcr_social"><input type="hidden" name="do" value="type"><input type="hidden" name="date" value="<?php echo esc_attr($date); ?>">
+    <p><label><input type="radio" name="type" value="related" checked> <strong>Souvent achetés ensemble</strong> : un produit et ceux que les clients achètent avec lui (vraies commandes)</label></p>
+    <p style="margin-left:24px"><select class="wc-product-search" name="hero" style="width:420px" data-placeholder="Produit vedette (vide : choisi automatiquement)" data-action="woocommerce_json_search_products" data-allow_clear="true"></select></p>
+    <p><label><input type="radio" name="type" value="category"> <strong>Un rayon</strong> : 4 produits d’une même catégorie</label>
+      <select name="cat" style="margin-left:8px"><?php foreach ((array) $cats as $t) : if (in_array($t->slug, ['tout', 'uncategorized', 'non-classe'], true)) { continue; } ?><option value="<?php echo esc_attr($t->slug); ?>"><?php echo esc_html($t->name); ?></option><?php endforeach; ?></select></p>
+    <p><label><input type="radio" name="type" value="theme"> <strong>Thème du jour</strong> (selon le jour de la semaine)</label></p>
+    <p><button class="button button-primary"><?php echo $post ? 'Remplacer la publication de ce jour' : 'Créer la publication'; ?></button></p>
+  </form>
 
   <h2 style="margin-top:34px">Thèmes de la semaine</h2>
   <p class="description">Si une promotion avec bannière commence dans les 3 jours (ou se termine dans les 2 jours), elle remplace le thème du jour.</p>

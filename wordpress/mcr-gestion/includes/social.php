@@ -74,8 +74,19 @@ function mcr_social_themes(): array
         4 => ['meat', 'Viandes et poissons', 'Meat and fish', 'grid', ['cat', ['viandes', 'poissons-et-fruits-de-mer', 'surgeles']]],
         5 => ['deals', 'Promos du week-end', 'Weekend deals', 'grid', ['sale']],
         6 => ['favs', 'Les favoris de nos clients', 'Our customers’ favourites', 'grid', ['popular']],
-        7 => ['breakfast', 'Dimanche gourmand', 'Sunday treats', 'single', ['cat', ['petit-dejeuner', 'epices-et-condiments']]],
+        7 => ['related', 'Souvent achetés ensemble', 'Often bought together', 'grid', ['related']],
     ];
+}
+
+/**
+ * Name used in posts: the French name kept for posts (meta _mcr_social_name, e.g. for wigs whose shop name
+ * stays the brand's English name), else the product name.
+ */
+function mcr_social_name(WC_Product $p): string
+{
+    $id = $p->get_parent_id() ?: $p->get_id();
+    $n = trim((string) get_post_meta($id, '_mcr_social_name', true));
+    return $n !== '' ? $n : $p->get_name();
 }
 
 /** A product that can be shown: published, visible, in stock, with a photo and a price. */
@@ -206,6 +217,13 @@ function mcr_social_plan(string $date, array $avoid = []): array
         }
     }
     [$key, $title, , $format, $source] = mcr_social_themes()[$dow];
+    if ($source[0] === 'related') {
+        $r = mcr_social_plan_related($date, 0, $avoid);
+        if ($r) {
+            return $r;
+        }
+        [$key, $title, $format, $source] = ['breakfast', 'Dimanche gourmand', 'single', ['cat', ['petit-dejeuner', 'epices-et-condiments']]];
+    }
     $ids = mcr_social_pick($source, $format === 'single' ? 1 : 4, $avoid);
     if (!$ids && $source[0] !== 'popular') { // nothing new / on sale: fall back on popular products
         $ids = mcr_social_pick(['popular'], $format === 'single' ? 1 : 4, $avoid);
@@ -219,6 +237,114 @@ function mcr_social_plan(string $date, array $avoid = []): array
     }
     $url = $format === 'single' && $ids ? get_permalink($ids[0]) : ($key === 'deals' ? mcr_promotions_url() : (($source[0] === 'cat' && ($t = get_term_by('slug', $source[1][0], 'product_cat'))) ? get_term_link($t) : (function_exists('mcr_shop_url') ? mcr_shop_url() : home_url('/'))));
     return ['date' => $date, 'theme' => $key, 'title' => $title, 'format' => $format, 'products' => $ids, 'link' => mcr_social_link((string) $url, $date)];
+}
+
+/**
+ * "Souvent achetés ensemble": a product and up to 3 products bought with it in real orders
+ * (MCR Gestion's "Souvent achetés ensemble" data), else its cross-sells, else popular products of its aisle.
+ * $hero = 0: a popular product that has partners, chosen for the day.
+ */
+function mcr_social_plan_related(string $date, int $hero = 0, array $avoid = []): ?array
+{
+    $pairs = function_exists('mcr_fbt_pairs') ? mcr_fbt_pairs() : [];
+    // Same department only (groceries with groceries, beauty with beauty), so the group makes sense.
+    $dept = function (int $id): array {
+        $beauty = ['perruques', 'extensions-capillaires', 'soins-capillaires', 'soins-corporels'];
+        $fam = [];
+        foreach ((array) wp_get_post_terms($id, 'product_cat', ['fields' => 'all']) as $t) {
+            if (!$t instanceof WP_Term) {
+                continue;
+            }
+            $top = $t;
+            while ($top->parent && ($up = get_term($top->parent, 'product_cat')) && !is_wp_error($up)) {
+                $top = $up;
+            }
+            if ($top->slug !== 'tout') {
+                $fam[in_array($top->slug, $beauty, true) ? 'beauty' : 'food'] = true;
+            }
+        }
+        return $fam ? array_keys($fam) : ['food']; // only in « Tout »: counted as groceries
+    };
+    $partners = function (int $id) use ($pairs, $avoid, $dept): array {
+        $out = [];
+        $base = wc_get_product($id);
+        $mine = $dept($id);
+        $cands = array_merge(array_keys($pairs[$id] ?? []), $base ? $base->get_cross_sell_ids() : [], $base ? $base->get_upsell_ids() : []);
+        foreach (array_unique($cands) as $pid) {
+            $p = wc_get_product($pid);
+            if ($mine && !array_intersect($mine, $dept((int) $pid))) {
+                continue;
+            }
+            if ($pid !== $id && $p && mcr_social_ok($p) && !in_array($pid, $avoid, true)) {
+                $out[] = $pid;
+            }
+            if (count($out) >= 3) {
+                break;
+            }
+        }
+        return $out;
+    };
+    if (!$hero) {
+        $cands = array_keys(array_filter($pairs, fn($m) => count($m) >= 2));
+        if (!$cands) {
+            $cands = wc_get_products(['status' => 'publish', 'limit' => 60, 'return' => 'ids', 'stock_status' => 'instock', 'orderby' => 'popularity']);
+        }
+        mt_srand(crc32($date . 'related'));
+        shuffle($cands);
+        mt_srand();
+        $fallback = 0;
+        foreach ($cands as $id) {
+            $p = wc_get_product($id);
+            if (!$p || !mcr_social_ok($p) || in_array($id, $avoid, true)) {
+                continue;
+            }
+            $n = count($partners((int) $id));
+            if ($n >= 2) {
+                $hero = (int) $id;
+                break;
+            }
+            if ($n >= 1 && !$fallback) {
+                $fallback = (int) $id;
+            }
+        }
+        if (!$hero) { // few real pairs: a popular product, completed with its aisle below
+            $hero = $fallback ?: (int) (mcr_social_pick(['popular'], 1, $avoid)[0] ?? 0);
+        }
+    }
+    $hp = $hero ? wc_get_product($hero) : null;
+    if (!$hp) {
+        return null;
+    }
+    $ids = array_merge([$hero], $partners($hero));
+    if (count($ids) < 3) { // not enough real partners: popular products of the same aisle
+        // Most specific real aisle of the product (a sub-category first, never « Tout »).
+        $terms = array_filter((array) wp_get_post_terms($hero, 'product_cat'), fn($t) => $t instanceof WP_Term && !in_array($t->slug, ['tout', 'uncategorized', 'non-classe'], true));
+        usort($terms, fn($a, $b) => ($b->parent ? 1 : 0) <=> ($a->parent ? 1 : 0));
+        $more = $terms ? mcr_social_pick(['cat', [$terms[0]->slug]], 4 - count($ids), array_merge($avoid, $ids)) : [];
+        $ids = array_merge($ids, $more);
+    }
+    if (count($ids) < 2) {
+        return null;
+    }
+    return ['date' => $date, 'theme' => 'related', 'title' => 'Souvent achetés ensemble', 'format' => count($ids) >= 3 ? 'grid' : 'single', 'products' => array_slice($ids, 0, 4), 'hero' => $hero, 'link' => mcr_social_link(get_permalink($hero), $date)];
+}
+
+/** A group of products from one aisle (category), for the "Un rayon" posts. */
+function mcr_social_plan_category(string $date, string $slug, array $avoid = []): ?array
+{
+    $t = get_term_by('slug', $slug, 'product_cat');
+    if (!$t) {
+        return null;
+    }
+    $ids = mcr_social_pick(['cat', [$slug]], 4, $avoid);
+    if (!$ids) {
+        $ids = mcr_social_pick(['cat', [$slug]], 4);
+    }
+    if (!$ids) {
+        return null;
+    }
+    $name = function_exists('mcr_is_en') ? $t->name : $t->name;
+    return ['date' => $date, 'theme' => 'category', 'title' => 'Le rayon ' . $name, 'format' => count($ids) >= 3 ? 'grid' : 'single', 'products' => $ids, 'cat' => $slug, 'link' => mcr_social_link((string) get_term_link($t), $date)];
 }
 
 // ---------------------------------------------------------------- Caption
@@ -239,7 +365,7 @@ function mcr_social_facts(array $plan): array
         }
         $cat = wp_get_post_terms($id, 'product_cat', ['fields' => 'names']);
         $items[] = array_filter([
-            'name' => $p->get_name(),
+            'name' => mcr_social_name($p),
             'price' => mcr_social_money($price, $from, mcr_social_unit($p)),
             'regular_price' => $pct ? mcr_social_money($reg, false, mcr_social_unit($p)) : null,
             'discount' => $pct ? '-' . $pct . ' %' : null,
@@ -277,6 +403,8 @@ function mcr_social_caption_ai(array $plan)
         . 'Write in French as spoken in Québec: warm, lively, proud of the community, never pushy. '
         . 'Structure: a catchy first line (a question, a craving or a little scene), 2 to 4 short lines about the products with their exact prices as given, '
         . 'then one call to action with the link exactly as given on its own line, then the hashtags given. Use 2 to 4 emojis at most. '
+        . 'The whole post must be in French: if a product name contains English words (brand or model names of wigs, for example), keep the brand and model but describe the product in French (e.g. "la perruque Butta Lace Bohemian"). '
+        . 'For a "Souvent achetés ensemble" post, present the products as things that go well together (a meal, a routine, a kit), based only on their names and descriptions. '
         . 'Rules: use only the facts given. Never invent prices, discounts, quantities, stock levels, dates, health claims or awards. '
         . 'If a promotion has not started yet, say when it starts and do not say the prices are on now. Keep it under 700 characters.';
     $body = [
@@ -328,6 +456,8 @@ function mcr_social_caption_template(array $plan): string
         'deals' => 'Les promos du week-end sont arrivées ! 🛒',
         'favs' => 'Les produits que nos clients adorent ❤️',
         'breakfast' => 'Un dimanche tout en saveurs ☕',
+        'related' => 'Nos clients les prennent souvent ensemble 🛒',
+        'category' => $plan['title'] . ' : nos incontournables 🧺',
     ];
     if (($plan['format'] ?? '') === 'event') {
         $p = $f['promotion'];
@@ -336,6 +466,9 @@ function mcr_social_caption_template(array $plan): string
     } else {
         $head = $hooks[$plan['theme']] ?? $plan['title'];
         $body = "\n" . implode("\n", array_map($line, $f['products']));
+        if ($plan['theme'] === 'related' && count($f['products']) > 1) {
+            $body = "\nVous prenez " . $f['products'][0]['name'] . ' (' . $f['products'][0]['price'] . ") ? Pensez aussi à :\n" . implode("\n", array_map($line, array_slice($f['products'], 1)));
+        }
         if (count($f['products']) === 1 && !empty($f['products'][0]['about'])) {
             $body .= "\n" . $f['products'][0]['about'];
         }
@@ -515,7 +648,7 @@ function mcr_social_render(array $plan)
             imagettftext($im, 40, 0, $W - 150 - (int) (mcr_social_tw($fB, 40, $t) / 2), 280, $white, $fB, $t);
         }
         $y = mcr_social_text($im, $fI, 40, $gold3, 60, 832, $plan['title'], $W - 120, 1);
-        $y = mcr_social_text($im, $fB, 46, $white, 60, $y + 4, $p->get_name(), $W - 120, 2, 1.12);
+        $y = mcr_social_text($im, $fB, 46, $white, 60, $y + 4, mcr_social_name($p), $W - 120, 2, 1.12);
         $px = 60;
         $py = $y + 30;
         $pw = mcr_social_pill($im, $fB, 40, $gold, $deep, $px, $py, mcr_social_money($price, $from, mcr_social_unit($p)), 34, 92);
@@ -553,7 +686,7 @@ function mcr_social_render(array $plan)
                 mcr_social_fit($im, $src, $x, $y0, $cw, $imgH, 22);
                 imagedestroy($src);
             }
-            mcr_social_text($im, $fB, 20, $ink, $x + 22, $y0 + $imgH - 14, $p->get_name(), $cw - 44, 1, 1.1);
+            mcr_social_text($im, $fB, 20, $ink, $x + 22, $y0 + $imgH - 14, mcr_social_name($p), $cw - 44, 1, 1.1);
             [$price, $reg, $pct, $from] = $priceOf($p);
             mcr_social_pill($im, $fB, 22, $gold, $deep, $x + 18, $y0 + $ch - 62, mcr_social_money($price, $from, mcr_social_unit($p)), 18, 48);
             if ($pct) {
@@ -590,7 +723,15 @@ function mcr_social_render(array $plan)
 function mcr_social_make(string $date, array $opts = [])
 {
     $old = mcr_social_posts()[$date] ?? null;
-    if (!empty($opts['products'])) {
+    if (!empty($opts['type']) && $opts['type'] !== 'theme') {
+        $avoid = mcr_social_recent_ids();
+        $plan = $opts['type'] === 'related'
+            ? mcr_social_plan_related($date, absint($opts['hero'] ?? 0), $avoid)
+            : mcr_social_plan_category($date, sanitize_title($opts['cat'] ?? ''), $avoid);
+        if (!$plan) {
+            return new WP_Error('mcr_social_empty', $opts['type'] === 'related' ? 'Pas assez de produits liés pour ce produit : choisissez-en un autre.' : 'Aucun produit en stock avec photo dans ce rayon.');
+        }
+    } elseif (!empty($opts['products'])) {
         $plan = mcr_social_plan($date);
         $plan['products'] = array_values(array_filter(array_map('absint', $opts['products'])));
         if ($plan['format'] === 'grid' && count($plan['products']) === 1) {
@@ -729,4 +870,26 @@ add_action('init', function () {
     }
     $next = (new DateTimeImmutable('tomorrow 06:00', mcr_store_tz()))->getTimestamp();
     as_schedule_recurring_action($next, DAY_IN_SECONDS, 'mcr_social_daily', [], 'mcr');
+});
+
+// Store the French names used in posts: POST /wp-json/mcr/v1/social/names {rows: [{id, name}], apply}.
+add_action('rest_api_init', function () {
+    register_rest_route('mcr/v1', '/social/names', [
+        'methods' => 'POST',
+        'permission_callback' => fn() => current_user_can('manage_woocommerce'),
+        'callback' => function (WP_REST_Request $r) {
+            $n = 0;
+            foreach ((array) $r->get_param('rows') as $row) {
+                $id = absint($row['id'] ?? 0);
+                $name = sanitize_text_field($row['name'] ?? '');
+                if ($id && $name !== '' && get_post_type($id) === 'product') {
+                    if ($r->get_param('apply')) {
+                        update_post_meta($id, '_mcr_social_name', $name);
+                    }
+                    $n++;
+                }
+            }
+            return ['names' => $n];
+        },
+    ]);
 });
