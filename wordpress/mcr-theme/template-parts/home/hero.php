@@ -31,6 +31,10 @@ foreach (array_slice($sale_ids, 0, 80) as $id) {
     }
 }
 $shop = mcr_shop_url();
+// The gold card shows the promotions only when products are really on sale and no promotion
+// section (Black Friday…) is already shown just below; otherwise it shows the new arrivals.
+$has_event = function_exists('mcr_promo_events') && mcr_promo_events();
+$show_deals = $sale_ids && !$has_event;
 ?>
 <section class="hero">
   <div class="container hero__grid">
@@ -77,12 +81,21 @@ $shop = mcr_shop_url();
         </span>
         <span class="hside__img"><?php echo mcrt_cat_image('perruques', 'medium', ['loading' => 'eager']); ?></span>
       </a>
+      <?php if ($show_deals) : ?>
       <a class="hside hside--gold" href="<?php echo esc_url(mcrt_promos_url()); ?>">
         <span class="hside__txt">
-          <span class="eyebrow"><?php echo esc_html($en ? 'Deals of the week' : 'Promotions de la semaine'); ?></span>
+          <span class="eyebrow"><?php echo esc_html($en ? 'Deals' : 'Promotions'); ?></span>
           <strong><?php echo $best > 0 ? esc_html(($en ? 'Up to ' : 'Jusqu’à ') . '-' . $best . ' %') : esc_html($en ? 'Our deals' : 'Nos promotions'); ?></strong>
           <span class="link-arrow"><?php echo esc_html(sprintf($en ? '%d products on sale' : '%d produits en promotion', count($sale_ids))); ?> <?php echo mcr_icon('arrow-right', 16); ?></span>
         </span>
+      <?php else : ?>
+      <a class="hside hside--gold" href="<?php echo esc_url(add_query_arg('orderby', 'date', $shop)); ?>">
+        <span class="hside__txt">
+          <span class="eyebrow"><?php echo esc_html($en ? 'Just arrived' : 'Fraîchement arrivés'); ?></span>
+          <strong><?php echo esc_html($en ? 'New arrivals' : 'Nos nouveautés'); ?></strong>
+          <span class="link-arrow"><?php echo esc_html($en ? 'Discover' : 'Découvrir'); ?> <?php echo mcr_icon('arrow-right', 16); ?></span>
+        </span>
+      <?php endif; ?>
         <span class="hside__img"><?php echo mcrt_cat_image('petit-dejeuner', 'medium', ['loading' => 'eager']); ?></span>
       </a>
     </div>

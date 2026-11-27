@@ -3,7 +3,8 @@
 defined('ABSPATH') || exit;
 $en = mcr_is_en();
 $ids = array_values(array_filter(wc_get_product_ids_on_sale(), fn($id) => get_post_type($id) === 'product'));
-if (!$ids) {
+// A promotion section (Black Friday…) is already on the page with its products: no second deals section.
+if (!$ids || (function_exists('mcr_promo_events') && mcr_promo_events())) {
     return;
 }
 $products = mcrt_products(['include' => array_slice($ids, 0, 60), 'limit' => 60]);
