@@ -35,6 +35,7 @@ $end_label = $pct ? mcrt_end_label(mcrt_sale_end($product)) : '';
 $saving = !empty($args['show_saving']) && $pct ? mcrt_saving($product) : 0;
 // Upcoming promotion preview: future price shown, not for sale at that price yet.
 $soon = $args['soon'] ?? null;
+$compact = !empty($args['compact']); // name, prices and add to cart only
 if ($soon) {
     $pct = (int) $soon['pct'];
     $deal_labels = [];
@@ -43,7 +44,7 @@ if ($soon) {
     $sold30 = '';
 }
 ?>
-<article class="pcard<?php echo $in_stock ? '' : ' is-out'; ?>" data-reveal>
+<article class="pcard<?php echo $in_stock ? '' : ' is-out'; ?><?php echo $compact ? ' pcard--compact' : ''; ?>" data-reveal>
   <div class="pcard__media">
     <a href="<?php echo esc_url($product->get_permalink()); ?>" tabindex="-1" aria-hidden="true">
       <?php echo $product->get_image('woocommerce_thumbnail', ['loading' => $eager ? 'eager' : 'lazy', 'alt' => '', 'decoding' => 'async']); ?>
@@ -60,8 +61,9 @@ if ($soon) {
     <button class="pcard__wish" type="button" data-wish="<?php echo esc_attr(mcrt_wish_data($product)); ?>" aria-pressed="false" aria-label="<?php echo esc_attr(mcr_t('Ajouter à ma liste') . ' : ' . $product->get_name()); ?>"><?php echo mcr_icon('heart', 18); ?></button>
   </div>
   <div class="pcard__body">
-    <?php if ($cat) : ?><a class="pcard__cat" href="<?php echo esc_url(get_term_link($cat)); ?>"><?php echo esc_html($cat->name); ?></a><?php endif; ?>
+    <?php if ($cat && !$compact) : ?><a class="pcard__cat" href="<?php echo esc_url(get_term_link($cat)); ?>"><?php echo esc_html($cat->name); ?></a><?php endif; ?>
     <h3 class="pcard__title"><a href="<?php echo esc_url($product->get_permalink()); ?>"><?php echo esc_html($product->get_name()); ?></a></h3>
+    <?php if (!$compact) : ?>
     <?php if ($reviews > 0) : $avg = (float) $product->get_average_rating(); ?>
       <p class="pcard__rating" aria-label="<?php echo esc_attr(sprintf($en ? 'Rated %s out of 5 (%d reviews)' : 'Noté %s sur 5 (%d avis)', number_format_i18n($avg, 1), $reviews)); ?>">
         <span class="stars" style="--r:<?php echo esc_attr($avg / 5 * 100); ?>%"></span><small>(<?php echo (int) $reviews; ?>)</small>
@@ -74,13 +76,15 @@ if ($soon) {
       <?php if ($low) : ?><span class="pcard__low"><?php echo esc_html(sprintf($en ? 'Only %d left' : 'Plus que %d', $low)); ?></span>
       <?php elseif ($in_stock) : ?><span class="pcard__stock"><?php echo esc_html($en ? 'In stock' : 'En stock'); ?></span><?php endif; ?>
     </p>
+    <?php endif; ?>
     <div class="pcard__foot">
       <?php if ($soon) : ?>
         <span class="pcard__price is-sale"><del><?php echo wc_price($soon['regular']); // phpcs:ignore ?></del> <ins><?php echo ($product->is_type('variable') ? '<small class="pcard__from">' . esc_html($en ? 'From' : 'Dès') . '</small> ' : '') . wc_price($soon['price']); // phpcs:ignore ?></ins></span>
       <?php else : ?>
       <span class="pcard__price<?php echo $pct ? ' is-sale' : ''; ?>"><?php echo $price_html; // phpcs:ignore ?></span>
       <?php endif; ?>
-      <?php if ($soon) : ?>
+      <?php if ($soon && $compact) : ?>
+      <?php elseif ($soon) : ?>
         <span class="pcard__soonbar" title="<?php echo esc_attr($soon['when']); ?>"><?php echo mcr_icon('clock', 16); ?> <?php echo esc_html($en ? 'In' : 'Dans'); ?> <b data-countdown="<?php echo (int) ($soon['starts'] ?? 0); ?>" data-countdown-short data-countdown-reload><?php echo esc_html(mcrt_end_label((int) ($soon['starts'] ?? 0))); ?></b></span>
       <?php elseif ($simple_buyable) : ?>
         <a href="<?php echo esc_url($product->add_to_cart_url()); ?>" class="pcard__add" data-add-to-cart="<?php echo esc_attr($product->get_id()); ?>" data-name="<?php echo esc_attr($product->get_name()); ?>" rel="nofollow" aria-label="<?php echo esc_attr(($en ? 'Add to cart: ' : 'Ajouter au panier : ') . $product->get_name()); ?>"><?php echo mcr_icon('plus', 18); ?><span><?php mcr_e('Ajouter'); ?></span></a>

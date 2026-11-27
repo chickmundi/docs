@@ -12,7 +12,24 @@ $e = $events[0];
 $en = mcr_is_en();
 $soon = $e['state'] === 'scheduled';
 $at = $soon ? $e['starts'] : $e['ends'];
-$items = array_slice(array_values(array_filter(mcr_promo_event_items($e), fn($x) => $x['stock'])), 0, 8);
+// A mix of the offers (one wig, one grocery item, one wig…), a different mix on each visit.
+$byPart = [];
+foreach (array_filter(mcr_promo_event_items($e), fn($x) => $x['stock']) as $x) {
+    $byPart[$x['part']][] = $x;
+}
+foreach ($byPart as &$list) {
+    $list = array_slice($list, 0, 24);
+    shuffle($list);
+}
+unset($list);
+$items = [];
+for ($r = 0; count($items) < 12 && $r < 24; $r++) {
+    foreach ($byPart as $list) {
+        if (isset($list[$r]) && count($items) < 12) {
+            $items[] = $list[$r];
+        }
+    }
+}
 $url = mcrt_promos_url() . ($soon ? '#bientot' : '#produits');
 $when = mcrt_event_when($e);
 ?>
@@ -28,10 +45,10 @@ $when = mcrt_event_when($e);
         <a class="btn btn--gold" href="<?php echo esc_url($url); ?>"><?php echo esc_html($soon ? ($en ? 'Preview the deals' : 'Voir les produits en promo') : ($en ? 'Shop the deals' : 'Profiter des promos')); ?> <?php echo mcr_icon('arrow-right', 16); ?></a>
       </div>
       <?php if ($items) : ?>
-        <div class="prow-wrap evt__row" data-carousel>
+        <div class="prow-wrap evt__row" data-carousel data-autoplay>
           <ul class="prow prow--scroll">
             <?php foreach ($items as $it) : $p = wc_get_product($it['id']); if (!$p) { continue; } ?>
-              <li><?php get_template_part('template-parts/card', null, $soon ? ['product' => $p, 'soon' => $it + ['when' => $when, 'starts' => $e['starts']]] : ['product' => $p]); ?></li>
+              <li><?php get_template_part('template-parts/card', null, $soon ? ['product' => $p, 'compact' => true, 'soon' => $it + ['when' => $when, 'starts' => $e['starts']]] : ['product' => $p, 'compact' => true]); ?></li>
             <?php endforeach; ?>
           </ul>
         </div>

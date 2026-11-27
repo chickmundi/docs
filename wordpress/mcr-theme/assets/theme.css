@@ -201,6 +201,8 @@ a:hover .link-arrow .icon, .link-arrow:hover .icon { transform: translateX(3px);
 @media (min-width: 960px) { .evt__box { grid-template-columns: 330px 1fr; align-items: center; padding: 30px; } }
 /* Preview cards (promotion not started yet) */
 .pcard__foot:has(.pcard__soonbar) { flex-wrap: wrap; }
+.pcard--compact .pcard__title { margin-bottom: 6px; }
+.pcard--compact .pcard__badges .badge--time, .pcard--compact .pcard__badges .badge--flash { display: none; }
 .pcard__soonbar { flex: 1 0 100%; display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 10px; padding: 9px 10px; border-radius: 12px; background: var(--gold-500); color: var(--green-900, #103b2b); font-weight: 800; font-size: .86rem; white-space: nowrap; }
 .pcard__soonbar .icon { flex: none; }
 .pcard__soonbar b { font-variant-numeric: tabular-nums; }
